@@ -1,1 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Planner | Início</title>
 
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 80%;
+    max-width: 340px;
+    text-align: center;
+  }
+
+  input {
+    padding: 16px;
+    font-size: 18px;
+    border: 2px solid #b0b0b0;
+    border-radius: 12px;
+    width: 100%;
+    outline: none;
+  }
+
+  #entrarBtn {
+    width: 120px;
+    height: 54px;
+    background: #4CAF50;
+    color: #fff;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 12px;
+    cursor: pointer;
+    align-self: flex-end;
+  }
+
+  #entrarBtn:active {
+    transform: scale(0.97);
+  }
+
+  /* Barra progresso */
+  #progress-bar-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: rgba(0,0,0,.1);
+    display: none;
+  }
+
+  #progress-bar {
+    width: 0;
+    height: 100%;
+    background: #4CAF50;
+    transition: width .1s linear;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Digite seu CPF</h2>
+  <input type="text" id="cpfInput" placeholder="Somente números">
+  <button id="entrarBtn">ENTRAR</button>
+</div>
+
+<!-- Barra de progresso -->
+<div id="progress-bar-container"><div id="progress-bar"></div></div>
+
+<script>
+  const input = document.getElementById("cpfInput");
+  const btn = document.getElementById("entrarBtn");
+  const bar = document.getElementById("progress-bar");
+  const barWrap = document.getElementById("progress-bar-container");
+
+  /* Validação de CPF igual ao sistema atual */
+  const validarCPF = (cpf) => {
+    cpf = cpf.replace(/\D/g, '').padStart(11, '0');
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+
+    let s = 0;
+    for (let i = 0; i < 9; i++) s += cpf[i] * (10 - i);
+    let r = (s * 10) % 11; if (r === 10) r = 0;
+    if (r != cpf[9]) return false;
+
+    s = 0;
+    for (let i = 0; i < 10; i++) s += cpf[i] * (11 - i);
+    r = (s * 10) % 11; if (r === 10) r = 0;
+
+    return r == cpf[10];
+  };
+
+  /* Animação da barra */
+  const animarBarra = (alvo) => {
+    barWrap.style.display = "block";
+    let w = 0;
+    const step = () => {
+      if (w < alvo) {
+        w += 0.5;
+        bar.style.width = w + "%";
+        requestAnimationFrame(step);
+      }
+    };
+    step();
+  };
+
+  /* Clique no botão entrar */
+  btn.onclick = () => {
+    let cpf = input.value.replace(/\D/g, '');
+
+    if (!validarCPF(cpf)) {
+      alert("CPF inválido.");
+      return;
+    }
+
+    sessionStorage.setItem("cpf", cpf);
+
+    animarBarra(100);
+
+    setTimeout(() => {
+      window.location.href = "mapa.html";
+    }, 1200);
+  };
+</script>
+
+</body>
+</html>
