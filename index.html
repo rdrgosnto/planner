@@ -19,36 +19,36 @@
 
   .container {
     width: 90%;
-    max-width: 300px; /* reduzido de 350px */
+    max-width: 300px;
   }
 
   label {
     display: block;
-    font-size: 16px;       /* reduzido */
-    margin-bottom: 10px;   /* reduzido proporcionalmente */
-    font-weight: bold;     /* CPF em negrito */
+    font-size: 16px;
+    margin-bottom: 10px;
+    font-weight: bold; /* CPF em negrito */
     text-align: left;
   }
 
   input {
-    padding: 12px;         /* reduzido */
-    font-size: 16px;       /* reduzido */
+    padding: 12px;
+    font-size: 16px;
     border: 2px solid #b0b0b0;
-    border-radius: 10px;   /* reduzido */
+    border-radius: 10px;
     width: 100%;
     box-sizing: border-box;
   }
 
   #entrarBtn {
-    margin-top: 10px;      /* reduzido */
-    width: 100px;          /* reduzido de 120px */
-    height: 45px;          /* reduzido de 54px */
+    margin-top: 10px;
+    width: 100px;
+    height: 45px;
     background: #4CAF50;
     color: white;
     border: none;
-    font-size: 16px;       /* reduzido */
+    font-size: 16px;
     font-weight: bold;
-    border-radius: 10px;   /* reduzido */
+    border-radius: 10px;
     cursor: pointer;
     float: right;
   }
@@ -57,13 +57,12 @@
     transform: scale(0.97);
   }
 
-  /* Barra progresso */
   #progress-bar-container {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 6px;           /* ligeiramente reduzida */
+    height: 6px;
     background: rgba(0,0,0,.1);
     display: none;
   }
@@ -81,62 +80,133 @@
 
 <div class="container">
   <label for="cpfInput">CPF</label>
-  <input type="text" id="cpfInput" placeholder="CPF (somente números)">
+  <input type="text" id="cpfInput" placeholder="Somente números">
   <button id="entrarBtn">ENTRAR</button>
 </div>
 
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-  const input = document.getElementById("cpfInput");
-  const btn = document.getElementById("entrarBtn");
-  const bar = document.getElementById("progress-bar");
+/* ====== CONSTANTES TRAZIDAS DO INDEX ANTIGO ====== */
+
+const GET_ENDPOINT =
+ "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+
+const courseBusMap = { AAL:"0046", ALI:"0046", QUI:"0046" };
+
+/* Buscar campo ignorando maiúsculas/minúsculas */
+const getFieldIgnoreCase = (obj, ...names) => {
+  const keys = Object.keys(obj || {});
+  for (const name of names) {
+    const match = keys.find(k => k.toLowerCase() === name.toLowerCase());
+    if (match) return obj[match];
+  }
+};
+
+/* Função fetch JSON */
+const fJSON = async url => {
+  try {
+    const r = await fetch(url);
+    return r.ok ? await r.json() : null;
+  } catch {
+    return null;
+  }
+};
+
+/* ====== VALIDA CPF ====== */
+
+const validarCPF = cpf => {
+  cpf = cpf.replace(/\D/g, "").padStart(11, "0");
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+
+  let s = 0;
+  for (let i = 0; i < 9; i++) s += cpf[i] * (10 - i);
+  let r = (s * 10) % 11; if (r == 10) r = 0;
+  if (r != cpf[9]) return false;
+
+  s = 0;
+  for (let i = 0; i < 10; i++) s += cpf[i] * (11 - i);
+  r = (s * 10) % 11; if (r == 10) r = 0;
+
+  return r == cpf[10];
+};
+
+/* ====== ANIMAÇÃO DA BARRA ====== */
+
+const animarBarra = (max = 100) => {
   const barWrap = document.getElementById("progress-bar-container");
+  const bar = document.getElementById("progress-bar");
+  barWrap.style.display = "block";
 
-  const validarCPF = (cpf) => {
-    cpf = cpf.replace(/\D/g, '').padStart(11, '0');
-    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-
-    let s = 0;
-    for (let i = 0; i < 9; i++) s += cpf[i] * (10 - i);
-    let r = (s * 10) % 11; if (r === 10) r = 0;
-    if (r != cpf[9]) return false;
-
-    s = 0;
-    for (let i = 0; i < 10; i++) s += cpf[i] * (11 - i);
-    r = (s * 10) % 11; if (r === 10) r = 0;
-
-    return r == cpf[10];
-  };
-
-  const animarBarra = () => {
-    barWrap.style.display = "block";
-    let w = 0;
-    const step = () => {
-      if (w < 100) {
-        w += 0.5;
-        bar.style.width = w + "%";
-        requestAnimationFrame(step);
-      }
-    };
-    step();
-  };
-
-  btn.onclick = () => {
-    let cpf = input.value.replace(/\D/g, '');
-    if (!validarCPF(cpf)) {
-      alert("CPF inválido.");
-      return;
+  let w = 0;
+  const step = () => {
+    if (w < max) {
+      w += 0.7;
+      bar.style.width = w + "%";
+      requestAnimationFrame(step);
     }
-
-    sessionStorage.setItem("cpf", cpf);
-
-    animarBarra();
-
-    setTimeout(() => {
-      window.location.href = "mapa.html";
-    }, 1200);
   };
+  step();
+};
+
+/* ====== BOTÃO ENTRAR ====== */
+
+document.getElementById("entrarBtn").onclick = async () => {
+  let cpf = document.getElementById("cpfInput").value.replace(/\D/g, "");
+
+  if (!validarCPF(cpf)) {
+    alert("CPF inválido.");
+    return;
+  }
+
+  animarBarra(30);
+
+  /* === CONSULTA API DO POWER AUTOMATE (GET) === */
+
+  const res = await fJSON(GET_ENDPOINT);
+  if (!res) {
+    alert("Erro ao consultar dados.");
+    return;
+  }
+
+  animarBarra(60);
+
+  const lista = res.poltronas || res.lista || [];
+  const codigos = res.codigo || res.cursos || [];
+
+  const normalizeCPF = v =>
+    v ? v.toString().replace(/\D/g, '').padStart(11, '0') : '';
+
+  const aluno = codigos.find(r =>
+    normalizeCPF(getFieldIgnoreCase(r, "CPF2", "CPF")) === cpf
+  );
+
+  if (!aluno) {
+    alert("CPF não encontrado no sistema.");
+    return;
+  }
+
+  const cursoVal = getFieldIgnoreCase(aluno, "CODIGO", "Codigo", "codigo");
+  if (!cursoVal) {
+    alert("Usuário encontrado, mas sem turma associada.");
+    return;
+  }
+
+  const cursoFinal = cursoVal.toString().trim().toUpperCase();
+  const onibusFinal = courseBusMap[cursoFinal] || "0046";
+
+  /* ===== SALVA NO SESSIONSTORAGE PARA O mapa.html ===== */
+  sessionStorage.setItem("cpf", cpf);
+  sessionStorage.setItem("curso", cursoFinal);
+  sessionStorage.setItem("onibus", onibusFinal);
+
+  animarBarra(100);
+
+  /* ===== REDIRECIONA ===== */
+  setTimeout(() => {
+    window.location.href = "mapa.html";
+  }, 800);
+};
 </script>
 
 </body>
