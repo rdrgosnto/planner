@@ -26,7 +26,7 @@
     display: block;
     font-size: 16px;
     margin-bottom: 10px;
-    font-weight: bold; /* CPF em negrito */
+    font-weight: bold;
     text-align: left;
   }
 
@@ -87,14 +87,13 @@
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-/* ====== CONSTANTES TRAZIDAS DO INDEX ANTIGO ====== */
+/* ====== CONSTANTES ====== */
 
 const GET_ENDPOINT =
  "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 
 const courseBusMap = { AAL:"0046", ALI:"0046", QUI:"0046" };
 
-/* Buscar campo ignorando maiúsculas/minúsculas */
 const getFieldIgnoreCase = (obj, ...names) => {
   const keys = Object.keys(obj || {});
   for (const name of names) {
@@ -103,7 +102,6 @@ const getFieldIgnoreCase = (obj, ...names) => {
   }
 };
 
-/* Função fetch JSON */
 const fJSON = async url => {
   try {
     const r = await fetch(url);
@@ -161,8 +159,6 @@ document.getElementById("entrarBtn").onclick = async () => {
 
   animarBarra(30);
 
-  /* === CONSULTA API DO POWER AUTOMATE (GET) === */
-
   const res = await fJSON(GET_ENDPOINT);
   if (!res) {
     alert("Erro ao consultar dados.");
@@ -195,16 +191,15 @@ document.getElementById("entrarBtn").onclick = async () => {
   const cursoFinal = cursoVal.toString().trim().toUpperCase();
   const onibusFinal = courseBusMap[cursoFinal] || "0046";
 
-  /* ===== SALVA NO SESSIONSTORAGE PARA O mapa.html ===== */
   sessionStorage.setItem("cpf", cpf);
   sessionStorage.setItem("curso", cursoFinal);
   sessionStorage.setItem("onibus", onibusFinal);
 
   animarBarra(100);
 
-  /* ===== REDIRECIONA ===== */
+  /* ===== REDIRECIONA PARA /planner/mapa ===== */
   setTimeout(() => {
-    window.location.href = "mapa.html";
+    window.location.href = "mapa/";
   }, 800);
 };
 </script>
