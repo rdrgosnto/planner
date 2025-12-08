@@ -13,7 +13,7 @@
   #entrarBtn{margin-top:10px;width:100px;height:45px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:10px;cursor:pointer;float:right}
   #entrarBtn:active{transform:scale(0.97)}
   #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:6px;background:rgba(0,0,0,.1);display:none}
-  #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
+  #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .15s linear}
 </style>
 </head>
 
@@ -28,10 +28,16 @@
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
+/* ============================
+     CONFIGURAÇÕES
+============================ */
 const GET_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 
 const courseBusMap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
+/* ============================
+     FUNÇÕES AUXILIARES
+============================ */
 const getFieldIgnoreCase=(obj,...names)=>{
   const keys=Object.keys(obj||{});
   for(const name of names){
@@ -41,8 +47,12 @@ const getFieldIgnoreCase=(obj,...names)=>{
 };
 
 const fJSON=async url=>{
-  try{const r=await fetch(url);return r.ok?await r.json():null;}
-  catch{return null;}
+  try{
+    const r=await fetch(url);
+    return r.ok?await r.json():null;
+  }catch{
+    return null;
+  }
 };
 
 const validarCPF=cpf=>{
@@ -58,39 +68,58 @@ const validarCPF=cpf=>{
   return r==cpf[10];
 };
 
-const animarBarra=max=>{
+/* ============================
+     BARRA SUAVE (OPÇÃO A)
+============================ */
+let currentProgress = 0;
+
+const setProgress = (target) => {
   const wrap=document.getElementById("progress-bar-container");
-  const bar=document.getElementById("progress-bar");
   wrap.style.display="block";
-  let w=0;
-  const step=()=>{
-    if(w<max){
-      w+=0.7;
-      bar.style.width=w+"%";
-      requestAnimationFrame(step);
-    }
-  };
-  step();
+
+  const bar=document.getElementById("progress-bar");
+
+  // anima suavemente até o alvo
+  currentProgress = Math.max(currentProgress, target);
+  bar.style.width = currentProgress + "%";
 };
 
+/* ============================
+     BOTÃO ENTRAR
+============================ */
 document.getElementById("entrarBtn").onclick=async()=>{
+
   let cpf=document.getElementById("cpfInput").value.replace(/\D/g,"");
 
-  if(!validarCPF(cpf)){alert("CPF inválido.");return;}
-  animarBarra(30);
+  if(!validarCPF(cpf)){
+    alert("CPF inválido.");
+    return;
+  }
+
+  setProgress(20);
 
   const res=await fJSON(GET_ENDPOINT);
-  if(!res){alert("Erro ao consultar dados.");return;}
-  animarBarra(60);
+  if(!res){
+    alert("Erro ao consultar dados.");
+    return;
+  }
+
+  setProgress(55);
 
   const codigos=res.codigo||res.cursos||[];
   const normalize=v=>v?v.toString().replace(/\D/g,"").padStart(11,"0"):"";
 
   const aluno=codigos.find(r=>normalize(getFieldIgnoreCase(r,"CPF2","CPF"))===cpf);
-  if(!aluno){alert("CPF não encontrado no sistema.");return;}
+  if(!aluno){
+    alert("CPF não encontrado no sistema.");
+    return;
+  }
 
   const cursoVal=getFieldIgnoreCase(aluno,"CODIGO","Codigo","codigo");
-  if(!cursoVal){alert("CPF encontrado, mas sem mapa associado.");return;}
+  if(!cursoVal){
+    alert("CPF encontrado, mas sem mapa associado.");
+    return;
+  }
 
   const cursoFinal=cursoVal.toString().trim().toUpperCase();
   const onibusFinal=courseBusMap[cursoFinal]||"0046";
@@ -99,9 +128,11 @@ document.getElementById("entrarBtn").onclick=async()=>{
   sessionStorage.setItem("curso",cursoFinal);
   sessionStorage.setItem("onibus",onibusFinal);
 
-  animarBarra(100);
+  setProgress(100);
 
-  setTimeout(()=>{window.location.href="mapa/";},800);
+  setTimeout(()=>{
+    window.location.href="mapa/";
+  },500);
 };
 </script>
 
