@@ -179,12 +179,7 @@ const courseBusMap={AAL:"0046",ALI:"0046",QUI:"0046"};
 const GET_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 
-const fJSON=async u=>{
-  try{
-    const r=await fetch(u);
-    return r.ok?await r.json():null;
-  }catch{return null;}
-};
+const fJSON=async u=>{try{const r=await fetch(u);return r.ok?await r.json():null;}catch{return null;}};
 
 /* CPF validation */
 const vCPF=cpf=>{
@@ -315,7 +310,7 @@ const renderSeats=async()=>{
 
   animProg(70);
 
-  /* CORREÇÃO IMPORTANTE DE CAMINHO */
+  /* Caminho correto para rodar dentro de /planner/mapa/index.html */
   const cfg=await fJSON(`../configs/${currentBus}.json`);
   if(!cfg)return alert("Erro ao carregar layout.");
 
