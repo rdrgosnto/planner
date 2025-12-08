@@ -1,78 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Planner | Início</title>
 
 <style>
-  body {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    background: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-
-  .container {
-    width: 90%;
-    max-width: 300px;
-  }
-
-  label {
-    display: block;
-    font-size: 16px;
-    margin-bottom: 10px;
-    font-weight: bold;
-    text-align: left;
-  }
-
-  input {
-    padding: 12px;
-    font-size: 16px;
-    border: 2px solid #b0b0b0;
-    border-radius: 10px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  #entrarBtn {
-    margin-top: 10px;
-    width: 100px;
-    height: 45px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 10px;
-    cursor: pointer;
-    float: right;
-  }
-
-  #entrarBtn:active {
-    transform: scale(0.97);
-  }
-
-  #progress-bar-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    background: rgba(0,0,0,.1);
-    display: none;
-  }
-
-  #progress-bar {
-    width: 0;
-    height: 100%;
-    background: #4CAF50;
-    transition: width .1s linear;
-  }
+  body{margin:0;padding:0;font-family:Arial,sans-serif;background:#fff;display:flex;justify-content:center;align-items:center;height:100vh}
+  .container{width:90%;max-width:300px}
+  label{display:block;font-size:16px;margin-bottom:10px;font-weight:bold;text-align:left}
+  input{padding:12px;font-size:16px;border:2px solid #b0b0b0;border-radius:10px;width:100%;box-sizing:border-box}
+  #entrarBtn{margin-top:10px;width:100px;height:45px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:10px;cursor:pointer;float:right}
+  #entrarBtn:active{transform:scale(0.97)}
+  #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:6px;background:rgba(0,0,0,.1);display:none}
+  #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 </style>
 </head>
 
@@ -87,120 +28,80 @@
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-/* ====== CONSTANTES ====== */
+const GET_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 
-const GET_ENDPOINT =
- "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+const courseBusMap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-const courseBusMap = { AAL:"0046", ALI:"0046", QUI:"0046" };
-
-const getFieldIgnoreCase = (obj, ...names) => {
-  const keys = Object.keys(obj || {});
-  for (const name of names) {
-    const match = keys.find(k => k.toLowerCase() === name.toLowerCase());
-    if (match) return obj[match];
+const getFieldIgnoreCase=(obj,...names)=>{
+  const keys=Object.keys(obj||{});
+  for(const name of names){
+    const k=keys.find(x=>x.toLowerCase()===name.toLowerCase());
+    if(k) return obj[k];
   }
 };
 
-const fJSON = async url => {
-  try {
-    const r = await fetch(url);
-    return r.ok ? await r.json() : null;
-  } catch {
-    return null;
-  }
+const fJSON=async url=>{
+  try{const r=await fetch(url);return r.ok?await r.json():null;}
+  catch{return null;}
 };
 
-/* ====== VALIDA CPF ====== */
-
-const validarCPF = cpf => {
-  cpf = cpf.replace(/\D/g, "").padStart(11, "0");
-  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-
-  let s = 0;
-  for (let i = 0; i < 9; i++) s += cpf[i] * (10 - i);
-  let r = (s * 10) % 11; if (r == 10) r = 0;
-  if (r != cpf[9]) return false;
-
-  s = 0;
-  for (let i = 0; i < 10; i++) s += cpf[i] * (11 - i);
-  r = (s * 10) % 11; if (r == 10) r = 0;
-
-  return r == cpf[10];
+const validarCPF=cpf=>{
+  cpf=cpf.replace(/\D/g,"").padStart(11,"0");
+  if(cpf.length!==11||/^(\d)\1+$/.test(cpf))return false;
+  let s=0;
+  for(let i=0;i<9;i++)s+=cpf[i]*(10-i);
+  let r=(s*10)%11;if(r==10)r=0;
+  if(r!=cpf[9])return false;
+  s=0;
+  for(let i=0;i<10;i++)s+=cpf[i]*(11-i);
+  r=(s*10)%11;if(r==10)r=0;
+  return r==cpf[10];
 };
 
-/* ====== ANIMAÇÃO DA BARRA ====== */
-
-const animarBarra = (max = 100) => {
-  const barWrap = document.getElementById("progress-bar-container");
-  const bar = document.getElementById("progress-bar");
-  barWrap.style.display = "block";
-
-  let w = 0;
-  const step = () => {
-    if (w < max) {
-      w += 0.7;
-      bar.style.width = w + "%";
+const animarBarra=max=>{
+  const wrap=document.getElementById("progress-bar-container");
+  const bar=document.getElementById("progress-bar");
+  wrap.style.display="block";
+  let w=0;
+  const step=()=>{
+    if(w<max){
+      w+=0.7;
+      bar.style.width=w+"%";
       requestAnimationFrame(step);
     }
   };
   step();
 };
 
-/* ====== BOTÃO ENTRAR ====== */
+document.getElementById("entrarBtn").onclick=async()=>{
+  let cpf=document.getElementById("cpfInput").value.replace(/\D/g,"");
 
-document.getElementById("entrarBtn").onclick = async () => {
-  let cpf = document.getElementById("cpfInput").value.replace(/\D/g, "");
-
-  if (!validarCPF(cpf)) {
-    alert("CPF inválido.");
-    return;
-  }
-
+  if(!validarCPF(cpf)){alert("CPF inválido.");return;}
   animarBarra(30);
 
-  const res = await fJSON(GET_ENDPOINT);
-  if (!res) {
-    alert("Erro ao consultar dados.");
-    return;
-  }
-
+  const res=await fJSON(GET_ENDPOINT);
+  if(!res){alert("Erro ao consultar dados.");return;}
   animarBarra(60);
 
-  const lista = res.poltronas || res.lista || [];
-  const codigos = res.codigo || res.cursos || [];
+  const codigos=res.codigo||res.cursos||[];
+  const normalize=v=>v?v.toString().replace(/\D/g,"").padStart(11,"0"):"";
 
-  const normalizeCPF = v =>
-    v ? v.toString().replace(/\D/g, '').padStart(11, '0') : '';
+  const aluno=codigos.find(r=>normalize(getFieldIgnoreCase(r,"CPF2","CPF"))===cpf);
+  if(!aluno){alert("CPF não encontrado no sistema.");return;}
 
-  const aluno = codigos.find(r =>
-    normalizeCPF(getFieldIgnoreCase(r, "CPF2", "CPF")) === cpf
-  );
+  const cursoVal=getFieldIgnoreCase(aluno,"CODIGO","Codigo","codigo");
+  if(!cursoVal){alert("CPF encontrado, mas sem mapa associado.");return;}
 
-  if (!aluno) {
-    alert("CPF não encontrado no sistema.");
-    return;
-  }
+  const cursoFinal=cursoVal.toString().trim().toUpperCase();
+  const onibusFinal=courseBusMap[cursoFinal]||"0046";
 
-  const cursoVal = getFieldIgnoreCase(aluno, "CODIGO", "Codigo", "codigo");
-  if (!cursoVal) {
-    alert("CPF encontrado, mas sem mapa associado.");
-    return;
-  }
-
-  const cursoFinal = cursoVal.toString().trim().toUpperCase();
-  const onibusFinal = courseBusMap[cursoFinal] || "0046";
-
-  sessionStorage.setItem("cpf", cpf);
-  sessionStorage.setItem("curso", cursoFinal);
-  sessionStorage.setItem("onibus", onibusFinal);
+  sessionStorage.setItem("cpf",cpf);
+  sessionStorage.setItem("curso",cursoFinal);
+  sessionStorage.setItem("onibus",onibusFinal);
 
   animarBarra(100);
 
-  /* ===== REDIRECIONA PARA /planner/mapa ===== */
-  setTimeout(() => {
-    window.location.href = "mapa/";
-  }, 800);
+  setTimeout(()=>{window.location.href="mapa/";},800);
 };
 </script>
 
