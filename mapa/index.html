@@ -40,7 +40,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 <script>
 const q=(s,d=document)=>d.querySelector(s);
 
-let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
+let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="",modoConsultaSomente=false;
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
@@ -78,7 +78,7 @@ const cSeat=v=>{
 };
 
 const selSeat=e=>{
-    if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own"))return;
+    if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")||modoConsultaSomente) return;
     sel?.classList.remove("selected");
     e.classList.add("selected");
     sel=e;
@@ -122,11 +122,11 @@ const render=layout=>{
 const load=async()=>{
     anim(20);
 
-    // Envia CPF ao GET
     const r=await fetchFlow(GET,currentUserCPF);
 
-    // ⚡ Se fluxo retornar vazio {} → modo somente consulta
+    // Se fluxo retornar vazio → modo consulta somente
     if(!r || Object.keys(r).length===0){
+        modoConsultaSomente=true;
         const cfg=await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
         if(!cfg){alert("Erro ao carregar layout."); return;}
         userBlockedSeats=[...sessionStorage.getItem("userSeats")?.split(",")||[]];
@@ -139,14 +139,14 @@ const load=async()=>{
         return;
     }
 
-    // Se não existe arquivo → criar e retorna JSON normal
+    // Caso normal: cria arquivo e retorna JSON
     const lista=r.poltronas||r.lista||[];
     const cod=r.codigo||r.cursos||[];
 
     anim(50);
 
     const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
-    if(!aluno){alert("CPF não encontrado.");return;}
+    if(!aluno){alert("CPF não encontrado."); return;}
 
     currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
     currentBus=map[currentCurso]||"0046";
@@ -165,11 +165,9 @@ const load=async()=>{
         .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
 
     const cfg=await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
-
-    if(!cfg){alert("Erro ao carregar layout.");return;}
+    if(!cfg){alert("Erro ao carregar layout."); return;}
 
     render(cfg.layout);
-
     anim(100);
     setTimeout(()=>q("#progress-bar-container").remove(),600);
     q("#bus-wrapper").style.display="block";
@@ -177,6 +175,8 @@ const load=async()=>{
 
 q("#confirmarBtn").onclick=async()=>{
     if(!sel){alert("Selecione uma poltrona.");return;}
+    if(modoConsultaSomente){alert("Página em modo somente consulta. Não é possível reservar."); return;}
+    
     document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
     q("#confirmarBtn").disabled=true;
 
