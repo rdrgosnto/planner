@@ -11,8 +11,6 @@ label{display:block;font-size:16px;margin-bottom:10px;font-weight:bold;text-alig
 input{padding:12px;font-size:16px;border:2px solid #b0b0b0;border-radius:10px;width:100%;box-sizing:border-box}
 #entrarBtn{margin-top:10px;width:100px;height:45px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:10px;cursor:pointer;float:right}
 #entrarBtn:active{transform:scale(.97)}
-#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:rgba(0,0,0,.1);display:none}
-#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .15s linear}
 </style>
 </head>
 <body>
@@ -21,76 +19,29 @@ input{padding:12px;font-size:16px;border:2px solid #b0b0b0;border-radius:10px;wi
     <input type="text" id="cpfInput" placeholder="CPF (somente números)">
     <button id="entrarBtn">ENTRAR</button>
 </div>
-<div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-const GET_ENDPOINT = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
-const courseBusMap = {AAL:"0046", ALI:"0046", QUI:"0046"};
-const q = (s,d=document) => d.querySelector(s);
+const q = s => document.querySelector(s);
 
-// Função para carregar JSON do fluxo
-async function fJSON(url) {
-    try {
-        const r = await fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({}) });
-        return r.ok ? await r.json() : null;
-    } catch { return null; }
-}
+// Validação simples de CPF
+const validarCPF = c => {
+    c = c.replace(/\D/g,"").padStart(11,"0");
+    if(c.length!==11 || /^(\d)\1+$/.test(c)) return false;
+    let s=0,r;
+    for(let i=0;i<9;i++) s+=c[i]*(10-i);
+    r=(s*10)%11; if(r==10) r=0; if(r!=c[9]) return false;
+    s=0;
+    for(let i=0;i<10;i++) s+=c[i]*(11-i);
+    r=(s*10)%11; if(r==10) r=0;
+    return r==c[10];
+};
 
-// Validação CPF
-function validarCPF(cpf){
-    cpf = cpf.replace(/\D/g,"").padStart(11,"0");
-    if(cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-    let soma=0, r;
-    for(let i=0;i<9;i++) soma += cpf[i]*(10-i);
-    r=(soma*10)%11; if(r==10) r=0; if(r!=cpf[9]) return false;
-    soma=0;
-    for(let i=0;i<10;i++) soma += cpf[i]*(11-i);
-    r=(soma*10)%11; if(r==10) r=0; return r==cpf[10];
-}
-
-// Fake progress bar
-let fakeProgress=0,fakeInterval=null;
-function startFakeProgress(){
-    q("#progress-bar-container").style.display="block";
-    fakeProgress=0;
-    fakeInterval = setInterval(()=>{
-        if(fakeProgress<90){ fakeProgress += Math.random()*3; q("#progress-bar").style.width=fakeProgress+"%" }
-    },120);
-}
-function finishProgress(){
-    clearInterval(fakeInterval);
-    q("#progress-bar").style.transition="width .4s ease";
-    q("#progress-bar").style.width="100%";
-}
-
-// Botão entrar
-q("#entrarBtn").onclick = async () => {
-    let cpf = q("#cpfInput").value.replace(/\D/g,"");
+q("#entrarBtn").onclick = () => {
+    const cpf = q("#cpfInput").value.trim();
     if(!validarCPF(cpf)){ alert("CPF inválido."); return; }
-
-    startFakeProgress();
-
-    const dados = await fJSON(GET_ENDPOINT);
-    if(!dados){ alert("Erro ao consultar fluxo."); return; }
-
-    const cod = dados.codigo || dados.cursos || [];
-    const norm = v => v?v.toString().replace(/\D/g,"").padStart(11,"0"):"";
-    const aluno = cod.find(r=>norm(r.CPF2 || r.CPF) === cpf);
-
-    if(!aluno){ alert("CPF não encontrado no sistema."); return; }
-
-    const curso = (aluno.CODIGO || aluno.Codigo || aluno.codigo).toString().trim().toUpperCase();
-    const onibus = courseBusMap[curso] || "0046";
-
-    // ✅ Armazena CPF, curso e ônibus no sessionStorage
-    sessionStorage.setItem("cpf", cpf);
-    sessionStorage.setItem("curso", curso);
-    sessionStorage.setItem("onibus", onibus);
-
-    finishProgress();
-
-    // Redireciona para o mapa
-    setTimeout(()=>{ window.location.href = "mapa/"; }, 400);
+    // Armazena na sessão e redireciona para mapa
+    sessionStorage.setItem("cpf", cpf.replace(/\D/g,"").padStart(11,"0"));
+    window.location.href = "mapa/index.html";
 };
 </script>
 </body>
