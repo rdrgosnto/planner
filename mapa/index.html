@@ -41,13 +41,13 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 <script>
 const q=(s,d=document)=>d.querySelector(s);
 
+// ---------- Configurações ----------
 let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="";
-
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
-
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
+// ---------- Funções utilitárias ----------
 const fetchFlow=async(url,cpf)=>{
     try{
         const r=await fetch(url,{
@@ -59,15 +59,11 @@ const fetchFlow=async(url,cpf)=>{
         return await r.json();
     }catch{return null;}
 };
-
 const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
-
 const anim=t=>{
     let w=parseFloat(q("#progress-bar").style.width)||0;
-    const s=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}};
-    s();
+    const s=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}}; s();
 };
-
 const cSeat=v=>{
     const e=document.createElement("div");
     if(v===null) e.className="empty";
@@ -75,14 +71,12 @@ const cSeat=v=>{
     else{e.className="seat"; e.textContent=v.toString().padStart(2,"0");}
     return e;
 };
-
 const selSeat=e=>{
     if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")) return;
     sel?.classList.remove("selected");
     e.classList.add("selected");
     sel=e;
 };
-
 const getField=(o,...n)=>{
     for(const x of n){
         const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
@@ -90,8 +84,9 @@ const getField=(o,...n)=>{
     }
 };
 
+// ---------- Inicialização ----------
 const cpfStored=sessionStorage.getItem("cpf");
-if(!cpfStored){location.href="https://rdrgosnto.github.io/planner"; throw"";}
+if(!cpfStored){location.href="../"; throw"";}
 currentUserCPF=normCPF(cpfStored);
 
 const render=layout=>{
@@ -104,9 +99,8 @@ const render=layout=>{
         if(v!==null&&v!=="white"){
             const id=v.toString().padStart(2,"0");
             if(bl.includes(id)) e.classList.add("blocked");
-            if(userBlockedSeats.includes(id)){
-                e.classList.add("own"); e.title="Sua poltrona";
-            } else e.onclick=()=>selSeat(e);
+            if(userBlockedSeats.includes(id)){ e.classList.add("own"); e.title="Sua poltrona"; }
+            else e.onclick=()=>selSeat(e);
         }
         g.appendChild(e);
     });
@@ -118,16 +112,14 @@ const load=async()=>{
     const jsonOut=q("#jsonOutput");
 
     const r=await fetchFlow(GET,currentUserCPF);
-
-    if(!r){jsonOut.textContent="Erro ao consultar fluxo ou fluxo não chamado."; return;}
+    if(!r){ jsonOut.textContent="Erro ao consultar fluxo ou fluxo não chamado."; return; }
     jsonOut.textContent=JSON.stringify(r,null,2);
 
-    // Modo somente consulta se retorno {}
+    // Modo somente consulta
     if(Object.keys(r).length===0){
         const cfg=await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
         if(!cfg){alert("Erro ao carregar layout."); return;}
-        userBlockedSeats=[...sessionStorage.getItem("userSeats")?.split(",")||[]];
-        bl=[]; rb=[];
+        userBlockedSeats=[...sessionStorage.getItem("userSeats")?.split(",")||[]]; bl=[]; rb=[];
         render(cfg.layout);
         anim(100);
         setTimeout(()=>q("#progress-bar-container").remove(),600);
@@ -136,7 +128,7 @@ const load=async()=>{
         return;
     }
 
-    // Fluxo normal → mapa de poltronas
+    // Fluxo normal → mapa
     const lista=r.poltronas||r.lista||[];
     const cod=r.codigo||r.cursos||[];
     anim(50);
@@ -153,8 +145,7 @@ const load=async()=>{
     const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
     bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
     rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-    userBlockedSeats=cursoRows
-        .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
+    userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
         .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
 
     const cfg=await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
@@ -166,6 +157,7 @@ const load=async()=>{
     q("#bus-wrapper").style.display="block";
 };
 
+// ---------- Seleção de poltrona ----------
 q("#confirmarBtn").onclick=async()=>{
     if(!sel){alert("Selecione uma poltrona."); return;}
     document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
@@ -173,9 +165,11 @@ q("#confirmarBtn").onclick=async()=>{
 
     if(rb.includes(currentUserCPF)){
         alert("Usuário já possui reserva.");
-        setTimeout(()=>{sel?.classList.remove("selected"); sel=null;
+        setTimeout(()=>{
+            sel?.classList.remove("selected"); sel=null;
             document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-            q("#confirmarBtn").disabled=false;},2000);
+            q("#confirmarBtn").disabled=false;
+        },2000);
         return;
     }
 
@@ -196,8 +190,8 @@ q("#confirmarBtn").onclick=async()=>{
     }
 };
 
+// ---------- Carrega mapa ----------
 load();
 </script>
-
 </body>
 </html>
