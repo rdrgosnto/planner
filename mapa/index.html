@@ -46,7 +46,6 @@ const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.po
 const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 
 const map = {AAL:"0046",ALI:"0046",QUI:"0046"};
-
 const normCPF = c => c ? c.toString().replace(/\D/g,"").padStart(11,"0") : "";
 
 const anim = t => {
@@ -88,7 +87,7 @@ const render = layout => {
     g.className = "grid";
     layout.flat().forEach(v=>{
         const e = cSeat(v);
-        if(v!==null&&v!=="white"){
+        if(v!==null && v!=="white"){
             const id=v.toString().padStart(2,"0");
             if(bl.includes(id)) e.classList.add("blocked");
             if(userBlockedSeats.includes(id)) { e.classList.add("own"); e.title="Sua poltrona"; }
@@ -114,46 +113,23 @@ const fetchFlow = async (url, cpf) => {
 
 const load = async () => {
     anim(20);
-
     const r = await fetchFlow(GET, currentUserCPF);
-
-    if(!r.ok){
-        alert(`Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`);
-        return;
-    }
-
-    if(!r.json){
-        alert("Fluxo retornou vazio ou dados inválidos.");
-        return;
-    }
-
-    // Se fluxo vazio → modo consulta
-    if(Object.keys(r.json).length===0){
-        modoConsulta = true;
-        q("#modoConsulta").style.display = "block";
-        q("#confirmarBtn").disabled = true;
-
-        const cfg = await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
-        if(!cfg){alert("Erro ao carregar layout."); return;}
-        userBlockedSeats = [...sessionStorage.getItem("userSeats")?.split(",")||[]];
-        bl = [...userBlockedSeats]; rb = [];
-        render(cfg.layout);
-        anim(100);
-        setTimeout(()=>q("#progress-bar-container").remove(),600);
-        q("#bus-wrapper").style.display="block";
-        return;
-    }
+    if(!r.ok){ alert(`Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`); return; }
+    if(!r.json){ alert("Fluxo retornou vazio ou dados inválidos."); return; }
 
     const lista = r.json.poltronas || r.json.lista || [];
     const cod = r.json.codigo || r.json.cursos || [];
+
     anim(50);
 
     const aluno = cod.find(x => normCPF(getField(x,"CPF2","CPF")) === currentUserCPF);
+
     if(!aluno){
         modoConsulta = true;
         q("#modoConsulta").style.display = "block";
         q("#confirmarBtn").disabled = true;
-        alert("CPF não encontrado. Apenas visualização.");
+        currentCurso = "Curso desconhecido";
+        currentBus = "0046";
     } else {
         currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
         currentBus = map[currentCurso] || "0046";
@@ -162,18 +138,23 @@ const load = async () => {
 
     anim(70);
 
-    const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase() === currentCurso);
-    bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-    rb = cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-    userBlockedSeats = cursoRows
-        .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
-        .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
-
     const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
     if(!cfg){alert("Erro ao carregar layout."); return;}
 
-    // Se usuário já possui reserva, ativar modo consulta
-    if(userBlockedSeats.length>0) modoConsulta = true;
+    // Popular poltronas bloqueadas e do usuário
+    if(aluno){
+        const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase() === currentCurso);
+        bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+        rb = cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+        userBlockedSeats = cursoRows
+            .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
+            .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+        if(userBlockedSeats.length>0) modoConsulta = true;
+    } else {
+        bl = [...sessionStorage.getItem("userSeats")?.split(",")||[]];
+        userBlockedSeats = [];
+    }
+
     if(modoConsulta){
         q("#modoConsulta").style.display = "block";
         q("#confirmarBtn").disabled = true;
