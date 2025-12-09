@@ -73,19 +73,17 @@ const cSeat=v=>{
   const e=document.createElement("div");
   if(v===null) e.className="empty";
   else if(v==="white") e.className="seat white";
-  else e.className="seat", e.textContent=v.toString().padStart(2,"0");
+  else { e.className="seat"; e.textContent=v.toString().padStart(2,"0"); }
   return e;
 };
 
 const select=e=>{
+  // bloqueia se o CPF já tem poltrona
+  if(userBlockedSeats.length>0) return; 
   if(e.classList.contains("blocked") || e.classList.contains("white")) return;
-  if(userBlockedSeats.length>0) return; // já possui poltrona, bloqueia clique
   if(sel) sel.classList.remove("selected");
   e.classList.add("selected");
   sel = e;
-
-  // adiciona a poltrona à lista do próprio CPF imediatamente
-  userBlockedSeats.push(e.textContent);
 };
 
 const renderGrid=layout=>{
@@ -100,11 +98,13 @@ const renderGrid=layout=>{
       const id=v.toString().padStart(2,"0");
 
       if(bl.includes(id)) e.classList.add("blocked");
+
       if(userBlockedSeats.includes(id)) {
         e.classList.add("blocked");
         e.title="Você já selecionou esta poltrona";
       }
 
+      // só permite clicar se ainda não houver poltrona selecionada
       if(userBlockedSeats.length===0 && !bl.includes(id)){
         e.onclick=()=>select(e);
       }
