@@ -38,7 +38,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 <script>
 const q = (s,d=document)=>d.querySelector(s);
 
-let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="", viewOnly=false;
+let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="";
 
 const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
@@ -61,7 +61,7 @@ const cSeat = v => {
 };
 
 const selSeat = e => {
-    if(viewOnly || e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")) return;
+    if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")) return;
     sel?.classList.remove("selected");
     e.classList.add("selected");
     sel = e;
@@ -124,21 +124,32 @@ const load = async () => {
         return;
     }
 
+    if(Object.keys(r.json).length===0){
+        const cfg = await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
+        if(!cfg){alert("Erro ao carregar layout."); return;}
+        userBlockedSeats = [...sessionStorage.getItem("userSeats")?.split(",")||[]];
+        bl=[]; rb=[];
+        render(cfg.layout);
+        anim(100);
+        setTimeout(()=>q("#progress-bar-container").remove(),600);
+        q("#bus-wrapper").style.display="block";
+        alert("Você já possui reserva. Página em modo somente consulta.");
+        return;
+    }
+
+    // Fluxo normal → mapa de poltronas
     const lista = r.json.poltronas || r.json.lista || [];
     const cod = r.json.codigo || r.json.cursos || [];
+    anim(50);
 
     const aluno = cod.find(x => normCPF(getField(x,"CPF2","CPF")) === currentUserCPF);
-    viewOnly = !!aluno; // Se CPF existe, modo visualização
+    if(!aluno){alert("CPF não encontrado."); return;}
 
-    if(viewOnly){
-        currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
-        currentBus = map[currentCurso] || "0046";
-        q("#cursoText").textContent = currentCurso;
-    } else {
-        currentCurso = prompt("CPF não encontrado. Digite o código do curso para reservar:")?.toUpperCase() || "AAL";
-        currentBus = map[currentCurso] || "0046";
-        q("#cursoText").textContent = currentCurso;
-    }
+    currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+    currentBus = map[currentCurso] || "0046";
+    q("#cursoText").textContent = currentCurso;
+
+    anim(70);
 
     const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase() === currentCurso);
     bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
@@ -154,12 +165,9 @@ const load = async () => {
     anim(100);
     setTimeout(()=>q("#progress-bar-container").remove(),600);
     q("#bus-wrapper").style.display="block";
-
-    if(viewOnly) alert("Página em modo somente visualização.");
 };
 
 q("#confirmarBtn").onclick = async () => {
-    if(viewOnly){alert("Modo visualização. Não é possível selecionar poltrona."); return;}
     if(!sel){alert("Selecione uma poltrona."); return;}
     document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
     q("#confirmarBtn").disabled=true;
