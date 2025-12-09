@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+
 <style>
 body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff;}
 #bus-wrapper{transform:scale(.9);transform-origin:top center;display:none;}
@@ -24,99 +25,188 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap;line-height:1;}
 </style>
 </head>
+
 <body>
+
 <div id="bus-wrapper">
-<div class="bus-container">
-<div id="cursoBox"><div id="cursoText"></div></div>
-<button id="confirmarBtn">CONFIRMAR</button>
+    <div class="bus-container">
+        <div id="cursoBox"><div id="cursoText"></div></div>
+        <button id="confirmarBtn">CONFIRMAR</button>
+    </div>
 </div>
-</div>
+
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
 const q=(s,d=document)=>d.querySelector(s);
+
 let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
+
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
-const map={AAL:"0046",ALI:"0046",QUI:"0046"},cache={};
 
-const fJSON=async u=>{if(cache[u])return cache[u];try{const r=await fetch(u);if(r.ok){const j=await r.json();cache[u]=j;return j;}}catch{}return null};
+const map={AAL:"0046",ALI:"0046",QUI:"0046"};
+
+const fetchFlow=async(url,cpf)=>{
+    try{
+        const r=await fetch(url,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({cpf})
+        });
+        if(!r.ok) return null;
+        return await r.json();
+    }catch{return null;}
+};
+
 const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
-const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;const s=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}};s()};
-const cSeat=v=>{const e=document.createElement("div");if(v===null)e.className="empty";else if(v==="white")e.className="seat white";else{e.className="seat";e.textContent=v.toString().padStart(2,"0");}return e};
-const selSeat=e=>{if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own"))return;sel?.classList.remove("selected");e.classList.add("selected");sel=e};
-const getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
+
+const anim=t=>{
+    let w=parseFloat(q("#progress-bar").style.width)||0;
+    const s=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}};
+    s();
+};
+
+const cSeat=v=>{
+    const e=document.createElement("div");
+    if(v===null)e.className="empty";
+    else if(v==="white")e.className="seat white";
+    else{
+        e.className="seat";
+        e.textContent=v.toString().padStart(2,"0");
+    }
+    return e;
+};
+
+const selSeat=e=>{
+    if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own"))return;
+    sel?.classList.remove("selected");
+    e.classList.add("selected");
+    sel=e;
+};
+
+const getField=(o,...n)=>{
+    for(const x of n){
+        const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
+        if(k) return o[k];
+    }
+};
 
 const cpfStored=sessionStorage.getItem("cpf");
 if(!cpfStored){location.href="https://rdrgosnto.github.io/planner";throw"";}
+
 currentUserCPF=normCPF(cpfStored);
 
 const render=layout=>{
-const wrap=q(".bus-container");
-wrap.querySelector(".grid")?.remove();
-const g=document.createElement("div");
-g.className="grid";
-layout.flat().forEach(v=>{
-const e=cSeat(v);
-if(v!==null&&v!=="white"){
-const id=v.toString().padStart(2,"0");
-if(bl.includes(id))e.classList.add("blocked");
-if(userBlockedSeats.includes(id)){e.classList.add("own");e.title="Sua poltrona";}
-else e.onclick=()=>selSeat(e);
-}
-g.appendChild(e);
-});
-wrap.appendChild(g);
+    const wrap=q(".bus-container");
+    wrap.querySelector(".grid")?.remove();
+    const g=document.createElement("div");
+    g.className="grid";
+
+    layout.flat().forEach(v=>{
+        const e=cSeat(v);
+        if(v!==null&&v!=="white"){
+            const id=v.toString().padStart(2,"0");
+            if(bl.includes(id))e.classList.add("blocked");
+            if(userBlockedSeats.includes(id)){
+                e.classList.add("own");
+                e.title="Sua poltrona";
+            } else {
+                e.onclick=()=>selSeat(e);
+            }
+        }
+        g.appendChild(e);
+    });
+
+    wrap.appendChild(g);
 };
 
 const load=async()=>{
-anim(20);
-const r=await fJSON(GET);
-if(!r){alert("Erro ao consultar.");return;}
-const lista=r.poltronas||r.lista||[],cod=r.codigo||r.cursos||[];
-anim(50);
-const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
-if(!aluno){alert("CPF não encontrado.");return;}
-currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
-currentBus=map[currentCurso]||"0046";
-q("#cursoText").textContent=currentCurso;
-anim(70);
-const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
-bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF).map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
-const cfg=await fJSON(`../configs/${currentBus}.json`);
-if(!cfg){alert("Erro ao carregar layout.");return;}
-render(cfg.layout);
-anim(100);
-setTimeout(()=>q("#progress-bar-container").remove(),600);
-q("#bus-wrapper").style.display="block";
+    anim(20);
+
+    // 🔥 AGORA envia CPF no POST para o fluxo GET
+    const r=await fetchFlow(GET,currentUserCPF);
+    if(!r){alert("Erro ao consultar.");return;}
+
+    const lista=r.poltronas||r.lista||[];
+    const cod=r.codigo||r.cursos||[];
+
+    anim(50);
+
+    const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
+    if(!aluno){alert("CPF não encontrado.");return;}
+
+    currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+    currentBus=map[currentCurso]||"0046";
+    q("#cursoText").textContent=currentCurso;
+
+    anim(70);
+
+    const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+
+    bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+
+    rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+
+    userBlockedSeats=cursoRows
+        .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
+        .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+
+    const cfg=await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
+
+    if(!cfg){alert("Erro ao carregar layout.");return;}
+
+    render(cfg.layout);
+
+    anim(100);
+
+    setTimeout(()=>q("#progress-bar-container").remove(),600);
+
+    q("#bus-wrapper").style.display="block";
 };
 
 q("#confirmarBtn").onclick=async()=>{
-if(!sel){alert("Selecione uma poltrona.");return;}
-document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
-q("#confirmarBtn").disabled=true;
-if(rb.includes(currentUserCPF)){
-alert("Usuário já possui reserva.");
-setTimeout(()=>{
-sel?.classList.remove("selected");sel=null;
-document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-q("#confirmarBtn").disabled=false;
-},2000);
-return;
-}
-const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};
-try{
-const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-if(r.ok){alert("Poltrona selecionada!");setTimeout(()=>location.reload(),2000);}
-else{alert("Erro ao enviar.");document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");q("#confirmarBtn").disabled=false;}
-}catch{
-alert("Erro de comunicação.");
-document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-q("#confirmarBtn").disabled=false;
-}};
+    if(!sel){alert("Selecione uma poltrona.");return;}
+
+    document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
+    q("#confirmarBtn").disabled=true;
+
+    if(rb.includes(currentUserCPF)){
+        alert("Usuário já possui reserva.");
+        setTimeout(()=>{
+            sel?.classList.remove("selected");sel=null;
+            document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
+            q("#confirmarBtn").disabled=false;
+        },2000);
+        return;
+    }
+
+    const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};
+
+    try{
+        const r=await fetch(POST,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(body)
+        });
+
+        if(r.ok){
+            alert("Poltrona selecionada!");
+            setTimeout(()=>location.reload(),2000);
+        }else{
+            alert("Erro ao enviar.");
+            document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
+            q("#confirmarBtn").disabled=false;
+        }
+    }catch{
+        alert("Erro de comunicação.");
+        document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
+        q("#confirmarBtn").disabled=false;
+    }
+};
+
 load();
 </script>
+
 </body>
 </html>
