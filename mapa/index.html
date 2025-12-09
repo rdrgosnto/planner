@@ -22,11 +22,13 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;}
 #cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;border:0;pointer-events:none;}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap;line-height:1;}
+#modoConsulta{position:absolute;top:-40px;left:50%;transform:translateX(-50%);background:#f39c12;color:#fff;padding:6px 12px;border-radius:12px;font-weight:bold;display:none;z-index:10000;}
 </style>
 </head>
 <body>
 
 <div id="bus-wrapper">
+    <div id="modoConsulta">Modo consulta – não é permitido alterar poltrona</div>
     <div class="bus-container">
         <div id="cursoBox"><div id="cursoText"></div></div>
         <button id="confirmarBtn">CONFIRMAR</button>
@@ -38,7 +40,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 <script>
 const q = (s,d=document)=>d.querySelector(s);
 
-let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="";
+let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="", modoConsulta=false;
 
 const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
@@ -61,6 +63,7 @@ const cSeat = v => {
 };
 
 const selSeat = e => {
+    if(modoConsulta) return;
     if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")) return;
     sel?.classList.remove("selected");
     e.classList.add("selected");
@@ -89,7 +92,7 @@ const render = layout => {
             const id=v.toString().padStart(2,"0");
             if(bl.includes(id)) e.classList.add("blocked");
             if(userBlockedSeats.includes(id)) { e.classList.add("own"); e.title="Sua poltrona"; }
-            else e.onclick = ()=>selSeat(e);
+            else if(!modoConsulta) e.onclick = ()=>selSeat(e);
         }
         g.appendChild(e);
     });
@@ -124,30 +127,38 @@ const load = async () => {
         return;
     }
 
+    // Se fluxo vazio → modo consulta
     if(Object.keys(r.json).length===0){
+        modoConsulta = true;
+        q("#modoConsulta").style.display = "block";
+        q("#confirmarBtn").disabled = true;
+
         const cfg = await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
         if(!cfg){alert("Erro ao carregar layout."); return;}
         userBlockedSeats = [...sessionStorage.getItem("userSeats")?.split(",")||[]];
-        bl=[]; rb=[];
+        bl = [...userBlockedSeats]; rb = [];
         render(cfg.layout);
         anim(100);
         setTimeout(()=>q("#progress-bar-container").remove(),600);
         q("#bus-wrapper").style.display="block";
-        alert("Você já possui reserva. Página em modo somente consulta.");
         return;
     }
 
-    // Fluxo normal → mapa de poltronas
     const lista = r.json.poltronas || r.json.lista || [];
     const cod = r.json.codigo || r.json.cursos || [];
     anim(50);
 
     const aluno = cod.find(x => normCPF(getField(x,"CPF2","CPF")) === currentUserCPF);
-    if(!aluno){alert("CPF não encontrado."); return;}
-
-    currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
-    currentBus = map[currentCurso] || "0046";
-    q("#cursoText").textContent = currentCurso;
+    if(!aluno){
+        modoConsulta = true;
+        q("#modoConsulta").style.display = "block";
+        q("#confirmarBtn").disabled = true;
+        alert("CPF não encontrado. Apenas visualização.");
+    } else {
+        currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+        currentBus = map[currentCurso] || "0046";
+        q("#cursoText").textContent = currentCurso;
+    }
 
     anim(70);
 
@@ -161,6 +172,13 @@ const load = async () => {
     const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
     if(!cfg){alert("Erro ao carregar layout."); return;}
 
+    // Se usuário já possui reserva, ativar modo consulta
+    if(userBlockedSeats.length>0) modoConsulta = true;
+    if(modoConsulta){
+        q("#modoConsulta").style.display = "block";
+        q("#confirmarBtn").disabled = true;
+    }
+
     render(cfg.layout);
     anim(100);
     setTimeout(()=>q("#progress-bar-container").remove(),600);
@@ -168,6 +186,7 @@ const load = async () => {
 };
 
 q("#confirmarBtn").onclick = async () => {
+    if(modoConsulta) return;
     if(!sel){alert("Selecione uma poltrona."); return;}
     document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
     q("#confirmarBtn").disabled=true;
