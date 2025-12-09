@@ -71,7 +71,7 @@ const cSeat = v => {
 };
 
 const select = e => {
-  if(userBlockedSeats.length>0) return; // bloqueia se já tem poltrona
+  if(userBlockedSeats.length>0) return; // bloqueia clique se já tem poltrona
   if(e.classList.contains("blocked") || e.classList.contains("white")) return;
   if(sel) sel.classList.remove("selected");
   e.classList.add("selected");
@@ -153,8 +153,18 @@ loadSeats();
 
 const POST_ENDPOINT = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 
+// === Atualização: alerta se usuário já possui reserva ===
 q("#confirmarBtn").onclick = async () => {
-  if(!sel){ alert("Selecione uma poltrona."); return; }
+  if(!sel){ 
+    alert("Selecione uma poltrona."); 
+    return; 
+  }
+
+  if(userBlockedSeats.length > 0){
+    alert("Usuário já possui reserva.");
+    return;
+  }
+
   const body = { poltrona: sel.textContent, CURSO: currentCurso, cpf: cpf };
   try {
     const r = await fetch(POST_ENDPOINT, {
@@ -162,7 +172,10 @@ q("#confirmarBtn").onclick = async () => {
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(body)
     });
-    if(r.ok){ alert("Poltrona selecionada!"); setTimeout(()=>location.reload(),2000); }
+    if(r.ok){ 
+      alert("Poltrona selecionada!"); 
+      setTimeout(()=>location.reload(),2000); 
+    }
     else alert("Erro ao enviar.");
   } catch {
     alert("Erro de comunicação.");
