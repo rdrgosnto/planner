@@ -37,7 +37,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 const q=(s,d=document)=>d.querySelector(s);
 let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
-const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
+const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerautomate.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 const map={AAL:"0046",ALI:"0046",QUI:"0046"},cache={};
 
 const fJSON=async u=>{if(cache[u])return cache[u];try{const r=await fetch(u);if(r.ok){const j=await r.json();cache[u]=j;return j;}}catch{}return null};
@@ -108,27 +108,51 @@ return;
 }
 const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};
 try{
-const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const r = await fetch(POST, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    });
 
-if(r.ok){
-    alert("Poltrona selecionada!");
-    setTimeout(()=>location.reload(),2000);
-} else {
-    try {
-        const msg = await r.json();
-        alert(msg.erro || "Erro ao enviar.");
-    } catch {
-        alert("Erro ao enviar.");
+    if (r.ok) {
+        // sucesso normal
+        alert("Poltrona selecionada!");
+        setTimeout(() => location.reload(), 2000);
+        return;
     }
+
+    // Se não ok, tentamos extrair mensagem detalhada do retorno
+    let displayed = "Erro ao enviar.";
+    // 1) Se o status 409, usamos mensagem padrão mais amigável, mas ainda tentamos ler o corpo
+    if (r.status === 409) displayed = "Poltrona selecionada por outro usuário.";
+
+    try {
+        // verificar content-type para decidir parse
+        const ct = r.headers.get("content-type") || "";
+        if (ct.includes("application/json")) {
+            const j = await r.json();
+            // procurar campos comuns
+            displayed = j.erro || j.error || j.message || j.msg || displayed;
+        } else {
+            // tentar ler como texto
+            const txt = await r.text();
+            if (txt && txt.trim()) displayed = txt;
+        }
+    } catch (e) {
+        // parse falhou, manter displayed
+    }
+
+    alert(displayed);
+    document.querySelectorAll(".seat").forEach(s => s.style.pointerEvents = "auto");
+    q("#confirmarBtn").disabled = false;
+
+} catch (err) {
+    // erro de comunicação (timeout, rede, CORS)
+    alert("Erro de comunicação.");
     document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
     q("#confirmarBtn").disabled=false;
-}
-
-}catch{
-alert("Erro de comunicação.");
-document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-q("#confirmarBtn").disabled=false;
-}};
+}}
+;
 load();
 </script>
 </body>
