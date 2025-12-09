@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Consulta CPF | Planner</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;padding:20px;background:#f5f5f5;}
+h2{color:#333;}
+input, button{padding:10px;font-size:16px;margin:5px 0;}
+button{cursor:pointer;background:#4CAF50;color:#fff;border:none;border-radius:6px;}
+pre{background:#fff;padding:10px;border:1px solid #ccc;margin-top:10px;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+
+<h2>Consulta de CPF no fluxo Power Automate</h2>
+
+<input type="text" id="cpfInput" placeholder="Digite o CPF (apenas números)" />
+<button id="btnTest">Testar</button>
+
+<pre id="resultado"></pre>
+
+<script>
+const FLOW_URL = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+
+// Função para chamar o fluxo com o CPF
+const fetchFlow = async (cpf) => {
+    try {
+        const response = await fetch(FLOW_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cpf })
+        });
+        if (!response.ok) return null;
+        return await response.json();
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+};
+
+// Evento do botão
+document.getElementById("btnTest").onclick = async () => {
+    const cpf = document.getElementById("cpfInput").value.trim();
+    if (!cpf) {
+        alert("Digite um CPF!");
+        return;
+    }
+
+    const resultadoEl = document.getElementById("resultado");
+    resultadoEl.textContent = "Consultando fluxo...";
+
+    const dados = await fetchFlow(cpf);
+
+    if (dados === null) {
+        resultadoEl.textContent = "Erro ao consultar fluxo ou fluxo não chamado.";
+    } else {
+        resultadoEl.textContent = JSON.stringify(dados, null, 2);
+    }
+};
+</script>
+
+</body>
+</html>
