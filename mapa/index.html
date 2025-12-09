@@ -22,7 +22,6 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;}
 #cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;border:0;pointer-events:none;}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap;line-height:1;}
-#jsonOutput{padding:10px;background:#f5f5f5;border:1px solid #ccc;margin:20px auto;width:90%;max-width:600px;white-space:pre-wrap;}
 </style>
 </head>
 <body>
@@ -35,24 +34,19 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 </div>
 
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
-<pre id="jsonOutput"></pre>
 
 <script>
 const q = (s,d=document)=>d.querySelector(s);
 
 let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="";
-
-const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
-const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
+const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com/...";
+const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com/...";
 
 const map = {AAL:"0046",ALI:"0046",QUI:"0046"};
 
 const normCPF = c => c ? c.toString().replace(/\D/g,"").padStart(11,"0") : "";
 
-const anim = t => {
-    let w = parseFloat(q("#progress-bar").style.width)||0;
-    const s = ()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}}; s();
-};
+const anim = t => {let w=parseFloat(q("#progress-bar").style.width)||0; const s=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}}; s();};
 
 const cSeat = v => {
     const e = document.createElement("div");
@@ -69,18 +63,13 @@ const selSeat = e => {
     sel = e;
 };
 
-const getField = (o,...n) => {
-    for(const x of n){
-        const k = Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
-        if(k) return o[k];
-    }
-};
+const getField = (o,...n) => {for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase()); if(k) return o[k];}};
 
 const cpfStored = sessionStorage.getItem("cpf");
 if(!cpfStored){location.href="https://rdrgosnto.github.io/planner"; throw"";}
 currentUserCPF = normCPF(cpfStored);
 
-const render = layout => {
+const render = (layout, interativo) => {
     const wrap = q(".bus-container");
     wrap.querySelector(".grid")?.remove();
     const g = document.createElement("div");
@@ -90,8 +79,8 @@ const render = layout => {
         if(v!==null&&v!=="white"){
             const id=v.toString().padStart(2,"0");
             if(bl.includes(id)) e.classList.add("blocked");
-            if(userBlockedSeats.includes(id)) { e.classList.add("own"); e.title="Sua poltrona"; }
-            else e.onclick = ()=>selSeat(e);
+            if(userBlockedSeats.includes(id)){ e.classList.add("own"); e.title="Sua poltrona"; }
+            else if(interativo) e.onclick = ()=>selSeat(e);
         }
         g.appendChild(e);
     });
@@ -99,78 +88,57 @@ const render = layout => {
 };
 
 const fetchFlow = async (url, cpf) => {
-    try {
-        const r = await fetch(url, {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({cpf})
-        });
-        return {ok: r.ok, status: r.status, json: r.ok ? await r.json() : null};
-    } catch (err) {
-        return {ok:false, status:0, error: err};
-    }
+    try{
+        const r = await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});
+        if(!r.ok) return null;
+        return await r.json();
+    }catch{return null;}
 };
 
 const load = async () => {
     anim(20);
-    const jsonOut = q("#jsonOutput");
-    jsonOut.textContent = "Consultando fluxo...";
+    const r = await fetchFlow(GET,currentUserCPF);
+    if(!r){alert("Erro ao consultar fluxo."); return;}
 
-    const r = await fetchFlow(GET, currentUserCPF);
-
-    if(!r.ok){
-        jsonOut.textContent = `Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`;
-        return;
-    }
-
-    if(!r.json){
-        jsonOut.textContent = "Fluxo retornou vazio ou dados inválidos.";
-        return;
-    }
-
-    jsonOut.textContent = JSON.stringify(r.json, null, 2);
-
-    if(Object.keys(r.json).length===0){
-        const cfg = await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
-        if(!cfg){alert("Erro ao carregar layout."); return;}
-        userBlockedSeats = [...sessionStorage.getItem("userSeats")?.split(",")||[]];
-        bl=[]; rb=[];
-        render(cfg.layout);
-        anim(100);
-        setTimeout(()=>q("#progress-bar-container").remove(),600);
-        q("#bus-wrapper").style.display="block";
-        alert("Você já possui reserva. Página em modo somente consulta.");
-        return;
-    }
-
-    // Fluxo normal → mapa de poltronas
-    const lista = r.json.poltronas || r.json.lista || [];
-    const cod = r.json.codigo || r.json.cursos || [];
-    anim(50);
+    const lista = r.poltronas || r.lista || [];
+    const cod = r.codigo || r.cursos || [];
 
     const aluno = cod.find(x => normCPF(getField(x,"CPF2","CPF")) === currentUserCPF);
-    if(!aluno){alert("CPF não encontrado."); return;}
 
-    currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
-    currentBus = map[currentCurso] || "0046";
-    q("#cursoText").textContent = currentCurso;
+    if(aluno){
+        // CPF existe → visualização
+        currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+        currentBus = map[currentCurso]||"0046";
+        q("#cursoText").textContent = currentCurso;
 
-    anim(70);
+        const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+        bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+        rb = cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+        userBlockedSeats = rb;
 
-    const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase() === currentCurso);
-    bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-    rb = cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-    userBlockedSeats = cursoRows
-        .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
-        .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+        const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
+        if(!cfg){alert("Erro ao carregar layout."); return;}
+        render(cfg.layout,false); // false → não interativo
+        q("#bus-wrapper").style.display="block";
+        anim(100);
+        setTimeout(()=>q("#progress-bar-container").remove(),600);
 
-    const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
-    if(!cfg){alert("Erro ao carregar layout."); return;}
+    } else {
+        // CPF não existe → interativo
+        currentCurso = sessionStorage.getItem("curso")||"";
+        currentBus = sessionStorage.getItem("onibus")||"0046";
 
-    render(cfg.layout);
-    anim(100);
-    setTimeout(()=>q("#progress-bar-container").remove(),600);
-    q("#bus-wrapper").style.display="block";
+        const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
+        if(!cfg){alert("Erro ao carregar layout."); return;}
+        render(cfg.layout,true); // true → interativo
+
+        bl = lista.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean);
+        rb = lista.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+        userBlockedSeats = [];
+        q("#bus-wrapper").style.display="block";
+        anim(100);
+        setTimeout(()=>q("#progress-bar-container").remove(),600);
+    }
 };
 
 q("#confirmarBtn").onclick = async () => {
@@ -180,29 +148,16 @@ q("#confirmarBtn").onclick = async () => {
 
     if(rb.includes(currentUserCPF)){
         alert("Usuário já possui reserva.");
-        setTimeout(()=>{
-            sel?.classList.remove("selected"); sel=null;
-            document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-            q("#confirmarBtn").disabled=false;
-        },2000);
+        setTimeout(()=>{sel?.classList.remove("selected"); sel=null; document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto"); q("#confirmarBtn").disabled=false;},2000);
         return;
     }
 
-    const body = {poltrona: sel.textContent, CURSO: currentCurso, cpf: currentUserCPF};
-
+    const body = {poltrona:sel.textContent, CURSO: currentCurso, cpf: currentUserCPF};
     try{
-        const r = await fetch(POST,{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body: JSON.stringify(body)
-        });
+        const r = await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
         if(r.ok){alert("Poltrona selecionada!"); setTimeout(()=>location.reload(),2000);}
         else {alert("Erro ao enviar."); document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto"); q("#confirmarBtn").disabled=false;}
-    }catch{
-        alert("Erro de comunicação.");
-        document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-        q("#confirmarBtn").disabled=false;
-    }
+    }catch{alert("Erro de comunicação."); document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto"); q("#confirmarBtn").disabled=false;}
 };
 
 load();
