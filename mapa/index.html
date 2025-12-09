@@ -122,18 +122,26 @@ const load = async () => {
 
     anim(50);
 
+    // Encontrar o aluno
     const aluno = cod.find(x => normCPF(getField(x,"CPF2","CPF")) === currentUserCPF);
 
-    if(!aluno){
-        modoConsulta = true;
-        q("#modoConsulta").style.display = "block";
-        q("#confirmarBtn").disabled = true;
-        currentCurso = "Curso desconhecido";
-        currentBus = "0046";
-    } else {
+    if(aluno){
         currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
         currentBus = map[currentCurso] || "0046";
         q("#cursoText").textContent = currentCurso;
+    } else {
+        // Se CPF não encontrado, pegar primeira turma do fluxo ou fallback
+        const turmaDisponivel = cod[0];
+        if(turmaDisponivel){
+            currentCurso = getField(turmaDisponivel,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+            currentBus = map[currentCurso] || "0046";
+        } else {
+            currentCurso = "Curso desconhecido";
+            currentBus = "0046";
+        }
+        modoConsulta = true;
+        q("#modoConsulta").style.display = "block";
+        q("#confirmarBtn").disabled = true;
     }
 
     anim(70);
@@ -141,21 +149,16 @@ const load = async () => {
     const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
     if(!cfg){alert("Erro ao carregar layout."); return;}
 
-    // Popular poltronas bloqueadas e do usuário
-    if(aluno){
-        const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase() === currentCurso);
-        bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-        rb = cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-        userBlockedSeats = cursoRows
-            .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
-            .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
-        if(userBlockedSeats.length>0) modoConsulta = true;
-    } else {
-        bl = [...sessionStorage.getItem("userSeats")?.split(",")||[]];
-        userBlockedSeats = [];
-    }
+    // Popular poltronas da turma
+    const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase() === currentCurso);
+    bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+    rb = cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+    userBlockedSeats = cursoRows
+        .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
+        .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
 
-    if(modoConsulta){
+    if(userBlockedSeats.length>0 || modoConsulta){
+        modoConsulta = true;
         q("#modoConsulta").style.display = "block";
         q("#confirmarBtn").disabled = true;
     }
