@@ -63,8 +63,7 @@ const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
 
 const anim=t=>{
     let w=parseFloat(q("#progress-bar").style.width)||0;
-    const s=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}};
-    s();
+    const s=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}}; s();
 };
 
 const cSeat=v=>{
@@ -94,7 +93,6 @@ const getField=(o,...n)=>{
 
 const cpfStored=sessionStorage.getItem("cpf");
 if(!cpfStored){location.href="https://rdrgosnto.github.io/planner";throw"";}
-
 currentUserCPF=normCPF(cpfStored);
 
 const render=layout=>{
@@ -107,7 +105,7 @@ const render=layout=>{
         const e=cSeat(v);
         if(v!==null&&v!=="white"){
             const id=v.toString().padStart(2,"0");
-            if(bl.includes(id))e.classList.add("blocked");
+            if(bl.includes(id)) e.classList.add("blocked");
             if(userBlockedSeats.includes(id)){
                 e.classList.add("own");
                 e.title="Sua poltrona";
@@ -124,10 +122,24 @@ const render=layout=>{
 const load=async()=>{
     anim(20);
 
-    // 🔥 AGORA envia CPF no POST para o fluxo GET
+    // Envia CPF ao GET
     const r=await fetchFlow(GET,currentUserCPF);
-    if(!r){alert("Erro ao consultar.");return;}
 
+    // ⚡ Se fluxo retornar vazio {} → modo somente consulta
+    if(!r || Object.keys(r).length===0){
+        const cfg=await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
+        if(!cfg){alert("Erro ao carregar layout."); return;}
+        userBlockedSeats=[...sessionStorage.getItem("userSeats")?.split(",")||[]];
+        bl=[]; rb=[];
+        render(cfg.layout);
+        anim(100);
+        setTimeout(()=>q("#progress-bar-container").remove(),600);
+        q("#bus-wrapper").style.display="block";
+        alert("Você já possui reserva. Página em modo somente consulta.");
+        return;
+    }
+
+    // Se não existe arquivo → criar e retorna JSON normal
     const lista=r.poltronas||r.lista||[];
     const cod=r.codigo||r.cursos||[];
 
@@ -159,22 +171,19 @@ const load=async()=>{
     render(cfg.layout);
 
     anim(100);
-
     setTimeout(()=>q("#progress-bar-container").remove(),600);
-
     q("#bus-wrapper").style.display="block";
 };
 
 q("#confirmarBtn").onclick=async()=>{
     if(!sel){alert("Selecione uma poltrona.");return;}
-
     document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
     q("#confirmarBtn").disabled=true;
 
     if(rb.includes(currentUserCPF)){
         alert("Usuário já possui reserva.");
         setTimeout(()=>{
-            sel?.classList.remove("selected");sel=null;
+            sel?.classList.remove("selected"); sel=null;
             document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
             q("#confirmarBtn").disabled=false;
         },2000);
