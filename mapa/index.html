@@ -15,7 +15,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 .seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default;}
 .seat.white::after{border-color:#8c96b2!important;}
 .seat.blocked{background:#6b6b6b;border-color:#6b6b6b;color:#fff!important;cursor:not-allowed;}
-.seat.selected{background:#e74c3c;border-color:#e74c3c;} 
+.seat.selected{background:#e74c3c;border-color:#e74c3c;}
 .empty{background:transparent;}
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:rgba(0,0,0,.1);z-index:9999;}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear;}
@@ -36,21 +36,20 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 
 <script>
 const q=(s,d=document)=>d.querySelector(s);
-let sel=null,bl=[],userBlockedSeats=[];
+let sel=null, bl=[], userBlockedSeats=[];
 const cacheJSON={};
 
 const fJSON=async u=>{
-  if(cacheJSON[u])return cacheJSON[u];
-  try{const r=await fetch(u);if(r.ok){const j=await r.json();cacheJSON[u]=j;return j;}return null;}catch{return null;}
+  if(cacheJSON[u]) return cacheJSON[u];
+  try{ const r=await fetch(u); if(r.ok){ const j=await r.json(); cacheJSON[u]=j; return j; } return null; }catch{return null;}
 };
 
 const cpf=sessionStorage.getItem("cpf");
 const currentCurso=sessionStorage.getItem("curso");
 const currentBus=sessionStorage.getItem("onibus");
-if(!cpf||!currentCurso||!currentBus)location.href="../";
+if(!cpf||!currentCurso||!currentBus) location.href="../";
 
 q("#cursoText").textContent=currentCurso.toUpperCase();
-q(".bus-container").style.pointerEvents="none";
 
 const animProg=t=>{
   let w=parseFloat(q("#progress-bar").style.width)||0;
@@ -62,14 +61,14 @@ const cSeat=v=>{
   const e=document.createElement("div");
   if(v===null)e.className="empty";
   else if(v==="white")e.className="seat white";
-  else{e.className="seat";e.textContent=v.toString().padStart(2,"0");}
+  else{e.className="seat"; e.textContent=v.toString().padStart(2,"0");}
   return e;
 };
 
 const select=e=>{
-  if(userBlockedSeats.length>0)return;
-  if(e.classList.contains("blocked")||e.classList.contains("white"))return;
-  if(sel)sel.classList.remove("selected");
+  if(userBlockedSeats.length>0) return;
+  if(e.classList.contains("blocked")||e.classList.contains("white")) return;
+  if(sel) sel.classList.remove("selected");
   e.classList.add("selected");
   sel=e;
 };
@@ -77,24 +76,23 @@ const select=e=>{
 const renderGrid=layout=>{
   const wrap=q(".bus-container");
   wrap.querySelector(".grid")?.remove();
-  const g=document.createElement("div");g.className="grid";
+  const g=document.createElement("div"); g.className="grid";
 
   layout.flat().forEach(v=>{
     const e=cSeat(v);
-    if(v!==null&&v!=="white"){
+    if(v!==null && v!=="white"){
       const id=v.toString().padStart(2,"0");
-      if(bl.includes(id))e.classList.add("blocked");
+      if(bl.includes(id)) e.classList.add("blocked");
       if(userBlockedSeats.includes(id)){
         e.classList.add("selected");
         e.title="Você já selecionou esta poltrona";
       }
-      if(userBlockedSeats.length===0&&!bl.includes(id))e.onclick=()=>select(e);
+      if(userBlockedSeats.length===0 && !bl.includes(id)) e.onclick=()=>select(e);
     }
     g.appendChild(e);
   });
 
   wrap.appendChild(g);
-  // ❌ Removido: não bloquear container com pointer-events
 };
 
 const GET_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
@@ -102,21 +100,27 @@ const GET_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment
 const loadSeats=async()=>{
   animProg(20);
   const res=await fJSON(GET_ENDPOINT);
-  if(!res){alert("Erro ao consultar dados.");return;}
+  if(!res){ alert("Erro ao consultar dados."); return; }
   const lista=res.poltronas||res.lista||[];
   animProg(50);
+
   const cursoRows=lista.filter(x=>{
     const cv=x.CURSO||x.Curso||x.curso;
-    return cv&&cv.toString().trim().toUpperCase()===currentCurso.toUpperCase();
+    return cv && cv.toString().trim().toUpperCase()===currentCurso.toUpperCase();
   });
-  bl=[...new Set(cursoRows.map(x=>{const id=x.ID||x.Id||x.id;return id?id.toString().padStart(2,"0"):null;}).filter(Boolean))];
-  userBlockedSeats=cursoRows.filter(x=>(x.CPF||x.Cpf||x.cpf)===cpf).map(x=>(x.ID||x.Id||x.id).toString().padStart(2,"0"));
+
+  bl=[...new Set(cursoRows.map(x=>{ const id=x.ID||x.Id||x.id; return id?id.toString().padStart(2,"0"):null; }).filter(Boolean))];
+
+  userBlockedSeats=cursoRows.filter(x=>(x.CPF||x.Cpf||x.cpf)===cpf)
+                            .map(x=>(x.ID||x.Id||x.id).toString().padStart(2,"0"));
+
   animProg(70);
+
   const cfg=await fJSON(`../configs/${currentBus}.json`);
-  if(!cfg){alert("Erro ao carregar layout do ônibus.");return;}
+  if(!cfg){ alert("Erro ao carregar layout do ônibus."); return; }
+
   renderGrid(cfg.layout);
   animProg(100);
-  if(userBlockedSeats.length===0)q(".bus-container").style.pointerEvents="auto";
   setTimeout(()=>q("#progress-bar-container").remove(),600);
   q("#bus-wrapper").style.display="block";
 };
@@ -126,14 +130,19 @@ loadSeats();
 const POST_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 
 q("#confirmarBtn").onclick=async()=>{
-  if(!sel){alert("Selecione uma poltrona.");return;}
-  if(userBlockedSeats.length>0){alert("Usuário já possui reserva.");return;}
-  const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:cpf};
+  if(!sel){ alert("Selecione uma poltrona."); return; }
+  if(userBlockedSeats.length>0){ alert("Usuário já possui reserva."); return; }
+
+  const body={poltrona: sel.textContent, CURSO: currentCurso, cpf: cpf};
   try{
-    const r=await fetch(POST_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    if(r.ok){alert("Poltrona selecionada!");setTimeout(()=>location.reload(),2000);}
+    const r=await fetch(POST_ENDPOINT,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(body)
+    });
+    if(r.ok){ alert("Poltrona selecionada!"); setTimeout(()=>location.reload(),2000); }
     else alert("Erro ao enviar.");
-  }catch{alert("Erro de comunicação.");}
+  }catch{ alert("Erro de comunicação."); }
 };
 </script>
 </body>
