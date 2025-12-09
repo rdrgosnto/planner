@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
-
 <style>
 body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff;}
 #bus-wrapper{transform:scale(.9);transform-origin:top center;display:none;}
@@ -23,6 +22,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;}
 #cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;border:0;pointer-events:none;}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap;line-height:1;}
+#jsonOutput{padding:10px;background:#f5f5f5;border:1px solid #ccc;margin:20px auto;width:90%;max-width:600px;white-space:pre-wrap;}
 </style>
 </head>
 
@@ -37,10 +37,12 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
+<pre id="jsonOutput"></pre>
+
 <script>
 const q=(s,d=document)=>d.querySelector(s);
 
-let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="",modoConsultaSomente=false;
+let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
@@ -78,7 +80,7 @@ const cSeat=v=>{
 };
 
 const selSeat=e=>{
-    if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")||modoConsultaSomente) return;
+    if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own"))return;
     sel?.classList.remove("selected");
     e.classList.add("selected");
     sel=e;
@@ -100,7 +102,6 @@ const render=layout=>{
     wrap.querySelector(".grid")?.remove();
     const g=document.createElement("div");
     g.className="grid";
-
     layout.flat().forEach(v=>{
         const e=cSeat(v);
         if(v!==null&&v!=="white"){
@@ -115,18 +116,24 @@ const render=layout=>{
         }
         g.appendChild(e);
     });
-
     wrap.appendChild(g);
 };
 
 const load=async()=>{
     anim(20);
-
     const r=await fetchFlow(GET,currentUserCPF);
 
-    // Se fluxo retornar vazio → modo consulta somente
-    if(!r || Object.keys(r).length===0){
-        modoConsultaSomente=true;
+    const jsonOut=q("#jsonOutput");
+
+    if(!r){ 
+        jsonOut.textContent="Erro ao consultar fluxo ou fluxo não chamado.";
+        return;
+    }
+
+    jsonOut.textContent=JSON.stringify(r,null,2);
+
+    // Se o fluxo retornar {} → modo somente consulta
+    if(Object.keys(r).length===0){
         const cfg=await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
         if(!cfg){alert("Erro ao carregar layout."); return;}
         userBlockedSeats=[...sessionStorage.getItem("userSeats")?.split(",")||[]];
@@ -139,10 +146,9 @@ const load=async()=>{
         return;
     }
 
-    // Caso normal: cria arquivo e retorna JSON
+    // Se existe JSON normal → carregamento normal do mapa
     const lista=r.poltronas||r.lista||[];
     const cod=r.codigo||r.cursos||[];
-
     anim(50);
 
     const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
@@ -157,9 +163,7 @@ const load=async()=>{
     const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
 
     bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-
     rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-
     userBlockedSeats=cursoRows
         .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
         .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
@@ -174,9 +178,7 @@ const load=async()=>{
 };
 
 q("#confirmarBtn").onclick=async()=>{
-    if(!sel){alert("Selecione uma poltrona.");return;}
-    if(modoConsultaSomente){alert("Página em modo somente consulta. Não é possível reservar."); return;}
-    
+    if(!sel){alert("Selecione uma poltrona."); return;}
     document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
     q("#confirmarBtn").disabled=true;
 
