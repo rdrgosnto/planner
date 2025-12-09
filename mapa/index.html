@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+
 <style>
 body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff;}
 #bus-wrapper{transform:scale(.9);transform-origin:top center;display:none;}
@@ -14,8 +15,8 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2;}
 .seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default;}
 .seat.white::after{border-color:#8c96b2!important;}
-.seat.blocked{background:#6b6b6b;border-color:#6b6b6b;color:#fff!important;cursor:not-allowed;pointer-events:none;} /* bloqueia clique */
-.seat.selected{background:#e74c3c;border-color:#e74c3c;} /* vermelho para seleção */
+.seat.blocked{background:#6b6b6b;border-color:#6b6b6b;color:#fff!important;cursor:not-allowed;}
+.seat.selected{background:#e74c3c;border-color:#e74c3c;} /* vermelho para poltrona do usuário */
 .empty{background:transparent;}
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:rgba(0,0,0,.1);z-index:9999;}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear;}
@@ -24,6 +25,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap;line-height:1;}
 </style>
 </head>
+
 <body>
 <div id="bus-wrapper">
   <div class="bus-container">
@@ -31,18 +33,23 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
     <button id="confirmarBtn">CONFIRMAR</button>
   </div>
 </div>
+
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
 const q=(s,d=document)=>d.querySelector(s);
-let sel=null, bl=[], userBlockedSeats=[];
+let sel=null, bl=[], userBlockedSeats=[]; 
 const cacheJSON={};
 
 const fJSON=async u=>{
   if(cacheJSON[u]) return cacheJSON[u];
   try{
     const r=await fetch(u);
-    if(r.ok){ const j=await r.json(); cacheJSON[u]=j; return j; }
+    if(r.ok){
+      const j=await r.json();
+      cacheJSON[u]=j;
+      return j;
+    }
     return null;
   }catch{return null;}
 };
@@ -54,11 +61,12 @@ const currentBus=sessionStorage.getItem("onibus");
 if(!cpf || !currentCurso || !currentBus) location.href="../";
 
 q("#cursoText").textContent=currentCurso.toUpperCase();
-q(".bus-container").style.pointerEvents="none";
+q(".bus-container").style.pointerEvents="none"; // bloqueia até carregar
 
 const animProg=t=>{
   let w=parseFloat(q("#progress-bar").style.width)||0;
-  const step=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(step);}}; step();
+  const step=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(step);}};
+  step();
 };
 
 const cSeat=v=>{
@@ -69,10 +77,13 @@ const cSeat=v=>{
   return e;
 };
 
+// Seleção de poltrona
 const select=e=>{
+  if(userBlockedSeats.length>0) return; // já possui poltrona
+  if(e.classList.contains("blocked") || e.classList.contains("white")) return;
   if(sel) sel.classList.remove("selected");
   e.classList.add("selected");
-  sel=e;
+  sel = e;
 };
 
 const renderGrid=layout=>{
@@ -86,17 +97,16 @@ const renderGrid=layout=>{
     if(v!==null && v!=="white"){
       const id=v.toString().padStart(2,"0");
 
-      // poltronas bloqueadas
-      if(bl.includes(id)){
-        e.classList.add("blocked");
-      }
+      // bloqueadas por qualquer usuário
+      if(bl.includes(id)) e.classList.add("blocked");
 
-      // poltrona do próprio usuário
+      // poltrona do próprio CPF
       if(userBlockedSeats.includes(id)){
         e.classList.add("selected");
+        e.title="Você já selecionou esta poltrona";
       }
 
-      // só permite clicar se o usuário não tiver nenhuma poltrona
+      // se usuário não tiver poltrona ainda, permite clique em verdes
       if(userBlockedSeats.length===0 && !bl.includes(id)){
         e.onclick=()=>select(e);
       }
@@ -111,35 +121,36 @@ const GET_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment
 
 const loadSeats=async()=>{
   animProg(20);
-  const res=await fJSON(GET_ENDPOINT);
+  const res = await fJSON(GET_ENDPOINT);
   if(!res){ alert("Erro ao consultar dados."); return; }
 
-  const lista=res.poltronas||res.lista||[];
+  const lista = res.poltronas || res.lista || [];
   animProg(50);
 
-  const cursoRows=lista.filter(x=>{
-    const cv=x.CURSO||x.Curso||x.curso;
-    return cv && cv.toString().trim().toUpperCase()===currentCurso.toUpperCase();
+  const cursoRows = lista.filter(x=>{
+    const cv = x.CURSO||x.Curso||x.curso;
+    return cv && cv.toString().trim().toUpperCase() === currentCurso.toUpperCase();
   });
 
-  // poltronas bloqueadas por qualquer CPF
-  bl=[...new Set(cursoRows.map(x=>{
-    const id=x.ID||x.Id||x.id;
+  bl = [...new Set(cursoRows.map(x=>{
+    const id = x.ID||x.Id||x.id;
     return id ? id.toString().padStart(2,"0") : null;
   }).filter(Boolean))];
 
-  // poltronas do próprio CPF
-  userBlockedSeats=cursoRows
-    .filter(x => (x.CPF||x.Cpf||x.cpf)===cpf)
+  // poltrona do próprio CPF
+  userBlockedSeats = cursoRows
+    .filter(x => (x.CPF||x.Cpf||x.cpf) === cpf)
     .map(x => (x.ID||x.Id||x.id).toString().padStart(2,"0"));
 
   animProg(70);
-  const cfg=await fJSON(`../configs/${currentBus}.json`);
+
+  const cfg = await fJSON(`../configs/${currentBus}.json`);
   if(!cfg){ alert("Erro ao carregar layout do ônibus."); return; }
 
   renderGrid(cfg.layout);
   animProg(100);
-  q(".bus-container").style.pointerEvents="auto";
+
+  q(".bus-container").style.pointerEvents="auto"; // libera clique
   setTimeout(()=>q("#progress-bar-container").remove(),600);
   q("#bus-wrapper").style.display="block";
 };
@@ -150,9 +161,11 @@ const POST_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environmen
 
 q("#confirmarBtn").onclick=async()=>{
   if(!sel){ alert("Selecione uma poltrona."); return; }
-  const body={ poltrona: sel.textContent, CURSO: currentCurso, cpf: cpf };
+
+  const body = { poltrona: sel.textContent, CURSO: currentCurso, cpf: cpf };
+
   try{
-    const r=await fetch(POST_ENDPOINT,{
+    const r = await fetch(POST_ENDPOINT,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(body)
