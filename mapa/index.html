@@ -35,10 +35,9 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-const q=(s,d=document)=>d.querySelector(s);
+const q = (s,d=document)=>d.querySelector(s);
 let sel=null, bl=[], rb=[], currentUserCPF=null, currentCurso="", currentBus="";
 const cacheJSON={};
-
 const courseBusMap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
 const GET_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
@@ -46,31 +45,51 @@ const POST_ENDPOINT="https://default264c851fa4e743cf86bcd7b10dca85.78.environmen
 
 const fJSON=async u=>{if(cacheJSON[u])return cacheJSON[u]; try{const r=await fetch(u);if(r.ok){const j=await r.json();cacheJSON[u]=j;return j;}return null;}catch{return null;}};
 
-// Normaliza CPF para 11 dígitos somente números
+// Normaliza CPF
 const normCPF=cpf=>cpf?cpf.toString().replace(/\D/g,'').padStart(11,'0'):'';
 
+// Progress bar
 const animProg=t=>{let w=parseFloat(q("#progress-bar").style.width)||0; const step=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(step);}};step();};
 
-const cSeat=v=>{const e=document.createElement("div"); if(v===null)e.className="empty"; else if(v==="white")e.className="seat white"; else {e.className="seat"; e.textContent=v.toString().padStart(2,"0");} return e;};
+// Criação poltrona
+const cSeat=v=>{const e=document.createElement("div"); if(v===null)e.className="empty"; else if(v==="white")e.className="seat white"; else{e.className="seat"; e.textContent=v.toString().padStart(2,"0");} return e;};
 
-const select=e=>{if(rb.includes(currentUserCPF))return; if(e.classList.contains("blocked")||e.classList.contains("white"))return; sel?.classList.remove("selected"); e.classList.add("selected"); sel=e;};
+// Seleciona poltrona
+const select=e=>{if(e.classList.contains("blocked")||e.classList.contains("white"))return; sel?.classList.remove("selected"); e.classList.add("selected"); sel=e;};
 
-const renderGrid=layout=>{const wrap=q(".bus-container"); wrap.querySelector(".grid")?.remove(); const g=document.createElement("div"); g.className="grid"; layout.flat().forEach(v=>{const e=cSeat(v); if(v!==null && v!=="white"){ const id=v.toString().padStart(2,"0"); if(bl.includes(id)) e.classList.add("blocked"); if(rb.includes(currentUserCPF) && id===userBlockedSeats[0]){e.classList.add("selected"); e.title="Você já selecionou esta poltrona";} if(!rb.includes(currentUserCPF) && !bl.includes(id)) e.onclick=()=>select(e);} g.appendChild(e);}); wrap.appendChild(g);};
+// Renderiza grid
+const renderGrid=(layout)=>{
+  const wrap=q(".bus-container"); wrap.querySelector(".grid")?.remove(); const g=document.createElement("div"); g.className="grid";
+  layout.flat().forEach(v=>{
+    const e=cSeat(v);
+    if(v!==null && v!=="white"){
+      const id=v.toString().padStart(2,"0");
+      if(bl.includes(id)) e.classList.add("blocked");
+      if(rb.includes(currentUserCPF) && id===userBlockedSeats[0]){ e.classList.add("selected"); e.title="Você já selecionou esta poltrona"; }
+      if(!rb.includes(currentUserCPF) && !bl.includes(id)) e.onclick=()=>select(e);
+    }
+    g.appendChild(e);
+  });
+  wrap.appendChild(g);
+};
 
+// Busca campo ignorando maiúsculas/minúsculas
 const getFieldIgnoreCase=(obj,...names)=>{const ks=Object.keys(obj||{}); for(const n of names){const k=ks.find(x=>x.toLowerCase()===n.toLowerCase()); if(k)return obj[k];}};
 
 // Carrega poltronas
 const loadSeats=async()=>{
+  const cpfStored=sessionStorage.getItem("cpf");
+  if(!cpfStored){ location.href="https://rdrgosnto.github.io/planner"; return; } // sem alert
+
+  currentUserCPF=normCPF(cpfStored);
+
   animProg(20);
   const res=await fJSON(GET_ENDPOINT);
   if(!res){ alert("Erro ao consultar dados."); return; }
   const lista=res.poltronas||res.lista||[];
   const codigos=res.codigo||res.cursos||[];
-  animProg(50);
 
-  const cpfStored=sessionStorage.getItem("cpf");
-  if(!cpfStored){ alert("CPF não encontrado em sessionStorage."); location.href="../"; return; }
-  currentUserCPF=normCPF(cpfStored);
+  animProg(50);
 
   // Encontra aluno e curso
   const aluno=codigos.find(r=>normCPF(getFieldIgnoreCase(r,"CPF2","CPF"))===currentUserCPF);
@@ -83,8 +102,7 @@ const loadSeats=async()=>{
 
   animProg(70);
 
-  // Filtra poltronas do curso
-  const cursoRows=lista.filter(x=>{const cv=getFieldIgnoreCase(x,"CURSO","Curso","curso"); return cv&&cv.toString().trim().toUpperCase()===currentCurso;});
+  const cursoRows=lista.filter(x=>{ const cv=getFieldIgnoreCase(x,"CURSO","Curso","curso"); return cv&&cv.toString().trim().toUpperCase()===currentCurso;});
   bl=[...new Set(cursoRows.map(x=>{ const id=getFieldIgnoreCase(x,"ID","Id","id"); return id?id.toString().padStart(2,"0"):null; }).filter(Boolean))];
   rb=cursoRows.map(x=>normCPF(getFieldIgnoreCase(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
   window.userBlockedSeats=cursoRows.filter(x=>normCPF(getFieldIgnoreCase(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF).map(x=>getFieldIgnoreCase(x,"ID","Id","id").toString().padStart(2,"0"));
@@ -98,6 +116,7 @@ const loadSeats=async()=>{
   q("#bus-wrapper").style.display="block";
 };
 
+// Botão confirmar
 q("#confirmarBtn").onclick=async()=>{
   if(!sel){ alert("Selecione uma poltrona."); return; }
   if(rb.includes(currentUserCPF)){ alert("Usuário já possui reserva."); return; }
