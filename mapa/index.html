@@ -12,9 +12,8 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative;}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;}
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2;}
-.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default;}
+.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:not-allowed;}
 .seat.white::after{border-color:#8c96b2!important;}
-.seat.blocked,.seat.own{background:#6b6b6b;border-color:#6b6b6b;color:#fff!important;cursor:not-allowed;}
 .seat.selected{background:#e74c3c;border-color:#e74c3c;}
 .empty{background:transparent;}
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:rgba(0,0,0,.1);z-index:9999;}
@@ -22,13 +21,11 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;}
 #cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;border:0;pointer-events:none;}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap;line-height:1;}
-#modoConsulta{position:absolute;top:-40px;left:50%;transform:translateX(-50%);background:#f39c12;color:#fff;padding:6px 12px;border-radius:12px;font-weight:bold;display:none;z-index:10000;}
 </style>
 </head>
 <body>
 
 <div id="bus-wrapper">
-    <div id="modoConsulta">Modo consulta – não é permitido alterar poltrona</div>
     <div class="bus-container">
         <div id="cursoBox"><div id="cursoText"></div></div>
         <button id="confirmarBtn">CONFIRMAR</button>
@@ -40,10 +37,10 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 <script>
 const q = (s,d=document)=>d.querySelector(s);
 
-let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="", modoConsulta=false;
+let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="";
 
-const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
-const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
+const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com/..."; // GET Power Automate
+const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com/..."; // POST Power Automate
 
 const map = {AAL:"0046",ALI:"0046",QUI:"0046"};
 const normCPF = c => c ? c.toString().replace(/\D/g,"").padStart(11,"0") : "";
@@ -53,22 +50,29 @@ const anim = t => {
     const s = ()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}}; s();
 };
 
+// Cria elemento de poltrona
 const cSeat = v => {
     const e = document.createElement("div");
     if(v===null) e.className="empty";
-    else if(v==="white") e.className="seat white";
+    else if(bl.includes(v.toString().padStart(2,"0"))) e.className="seat white"; // já ocupada
     else {e.className="seat"; e.textContent=v.toString().padStart(2,"0");}
     return e;
 };
 
+// Seleção/desseleção de poltrona
 const selSeat = e => {
-    if(modoConsulta) return;
-    if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")) return;
-    sel?.classList.remove("selected");
-    e.classList.add("selected");
-    sel = e;
+    if(e.classList.contains("white")) return;
+    if(e.classList.contains("selected")) {
+        e.classList.remove("selected");
+        sel = null;
+    } else {
+        sel?.classList.remove("selected");
+        e.classList.add("selected");
+        sel = e;
+    }
 };
 
+// Obter campo de objeto
 const getField = (o,...n) => {
     for(const x of n){
         const k = Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
@@ -80,6 +84,7 @@ const cpfStored = sessionStorage.getItem("cpf");
 if(!cpfStored){location.href="https://rdrgosnto.github.io/planner"; throw"";}
 currentUserCPF = normCPF(cpfStored);
 
+// Renderiza layout
 const render = layout => {
     const wrap = q(".bus-container");
     wrap.querySelector(".grid")?.remove();
@@ -87,17 +92,14 @@ const render = layout => {
     g.className = "grid";
     layout.flat().forEach(v=>{
         const e = cSeat(v);
-        if(v!==null && v!=="white"){
-            const id=v.toString().padStart(2,"0");
-            if(bl.includes(id)) e.classList.add("blocked");
-            if(userBlockedSeats.includes(id)) { e.classList.add("own"); e.title="Sua poltrona"; }
-            else if(!modoConsulta) e.onclick = ()=>selSeat(e);
-        }
+        const id = v?.toString().padStart(2,"0");
+        if(id && !bl.includes(id)) e.onclick = ()=>selSeat(e);
         g.appendChild(e);
     });
     wrap.appendChild(g);
 };
 
+// Fetch Power Automate
 const fetchFlow = async (url, cpf) => {
     try {
         const r = await fetch(url, {
@@ -111,37 +113,30 @@ const fetchFlow = async (url, cpf) => {
     }
 };
 
+// Carrega layout e dados
 const load = async () => {
     anim(20);
     const r = await fetchFlow(GET, currentUserCPF);
-    if(!r.ok){ alert(`Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`); return; }
-    if(!r.json){ alert("Fluxo retornou vazio ou dados inválidos."); return; }
+    if(!r.ok){ alert(`Erro ao consultar fluxo.\nStatus: ${r.status}`); return; }
+    if(!r.json){ alert("Dados inválidos"); return; }
 
     const lista = r.json.poltronas || r.json.lista || [];
     const cod = r.json.codigo || r.json.cursos || [];
 
     anim(50);
 
-    // Encontrar o aluno
     const aluno = cod.find(x => normCPF(getField(x,"CPF2","CPF")) === currentUserCPF);
-
     if(aluno){
         currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
         currentBus = map[currentCurso] || "0046";
         q("#cursoText").textContent = currentCurso;
     } else {
-        // Se CPF não encontrado, pegar primeira turma do fluxo ou fallback
         const turmaDisponivel = cod[0];
         if(turmaDisponivel){
             currentCurso = getField(turmaDisponivel,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
             currentBus = map[currentCurso] || "0046";
-        } else {
-            currentCurso = "Curso desconhecido";
-            currentBus = "0046";
+            q("#cursoText").textContent = currentCurso;
         }
-        modoConsulta = true;
-        q("#modoConsulta").style.display = "block";
-        q("#confirmarBtn").disabled = true;
     }
 
     anim(70);
@@ -149,19 +144,8 @@ const load = async () => {
     const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
     if(!cfg){alert("Erro ao carregar layout."); return;}
 
-    // Popular poltronas da turma
-    const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase() === currentCurso);
-    bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-    rb = cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-    userBlockedSeats = cursoRows
-        .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
-        .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
-
-    if(userBlockedSeats.length>0 || modoConsulta){
-        modoConsulta = true;
-        q("#modoConsulta").style.display = "block";
-        q("#confirmarBtn").disabled = true;
-    }
+    // Poltronas ocupadas
+    bl = [...new Set(lista.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
 
     render(cfg.layout);
     anim(100);
@@ -169,22 +153,9 @@ const load = async () => {
     q("#bus-wrapper").style.display="block";
 };
 
+// Confirmar seleção
 q("#confirmarBtn").onclick = async () => {
-    if(modoConsulta) return;
     if(!sel){alert("Selecione uma poltrona."); return;}
-    document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
-    q("#confirmarBtn").disabled=true;
-
-    if(rb.includes(currentUserCPF)){
-        alert("Usuário já possui reserva.");
-        setTimeout(()=>{
-            sel?.classList.remove("selected"); sel=null;
-            document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-            q("#confirmarBtn").disabled=false;
-        },2000);
-        return;
-    }
-
     const body = {poltrona: sel.textContent, CURSO: currentCurso, cpf: currentUserCPF};
 
     try{
@@ -194,11 +165,9 @@ q("#confirmarBtn").onclick = async () => {
             body: JSON.stringify(body)
         });
         if(r.ok){alert("Poltrona selecionada!"); setTimeout(()=>location.reload(),2000);}
-        else {alert("Erro ao enviar."); document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto"); q("#confirmarBtn").disabled=false;}
+        else {alert("Erro ao enviar.");}
     }catch{
         alert("Erro de comunicação.");
-        document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-        q("#confirmarBtn").disabled=false;
     }
 };
 
