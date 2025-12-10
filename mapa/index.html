@@ -74,11 +74,11 @@ const anim=t=>{
 
 const cSeat=v=>{
     const e=document.createElement("div");
-    if(v===null)e.className="empty";
-    else if(v==="white")e.className="seat white";
-    else{
+    if(v===null) e.className="empty";
+    else if(v==="white") e.className="seat white";
+    else {
         e.className="seat";
-        e.textContent=v.toString().padStart(2,"0");
+        e.textContent = v.toString().padStart(2,"0");
     }
     return e;
 };
@@ -90,7 +90,7 @@ const selSeat=e=>{
         e.classList.remove("selected");
         sel=null;
     }else{
-        if(sel)sel.classList.remove("selected");
+        if(sel) sel.classList.remove("selected");
         e.classList.add("selected");
         sel=e;
     }
@@ -99,7 +99,7 @@ const selSeat=e=>{
 const getField=(o,...n)=>{
     for(const x of n){
         const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
-        if(k)return o[k];
+        if(k) return o[k];
     }
 };
 
@@ -113,22 +113,27 @@ currentUserCPF=normCPF(cpfStored);
 const render=layout=>{
     const wrap=q(".bus-container");
     wrap.querySelector(".grid")?.remove();
-
     const g=document.createElement("div");
     g.className="grid";
 
     layout.flat().forEach(v=>{
         const e=cSeat(v);
-        if(v!==null&&v!=="white"){
-            const id=v.toString().padStart(2,"0");
-            if(bl.includes(id)||userBlockedSeats.includes(id)){
+        if(v!==null && v!=="white"){
+            const id = v.toString().padStart(2,"0");
+            // sempre gravar o id no dataset (mesmo que a exibição do número seja removida)
+            e.dataset.seat = id;
+
+            if(bl.includes(id) || userBlockedSeats.includes(id)){
                 e.classList.add("white");
-                e.textContent="";
-                e.onclick=null;
-            }else e.onclick=()=>selSeat(e);
+                e.textContent = ""; // mantém o visual branco para bloqueadas
+                e.onclick = null;
+            } else {
+                e.onclick = ()=> selSeat(e);
+            }
         }
         g.appendChild(e);
     });
+
     wrap.appendChild(g);
 };
 
@@ -139,16 +144,16 @@ const fetchFlow=async(url,cpf)=>{
             headers:{"Content-Type":"application/json"},
             body:JSON.stringify({cpf})
         });
-        return{ok:r.ok,status:r.status,json:r.ok?await r.json():null};
+        return {ok:r.ok, status:r.status, json: r.ok ? await r.json() : null};
     }catch(err){
-        return{ok:false,status:0,error:err};
+        return {ok:false, status:0, error:err};
     }
 };
 
 const load=async()=>{
     anim(20);
     const r=await fetchFlow(GET,currentUserCPF);
-    
+
     if(!r.ok){
         alert(`Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`);
         return;
@@ -196,10 +201,16 @@ const load=async()=>{
     if (last) {
         const lastId = last.toString().padStart(2,"0");
 
-        // se está bloqueada, significa que o usuário perdeu a disputa
+        // se está bloqueada (bl contém), significa que o usuário perdeu a disputa
         if (bl.includes(lastId)) {
-            const seatEl = [...document.querySelectorAll(".seat")].find(s => s.textContent === lastId);
-            if (seatEl) seatEl.classList.add("lost");
+            // procurar pelo dataset.seat — funciona mesmo que textContent tenha sido limpo
+            const seatEl = [...document.querySelectorAll(".seat")].find(s => s.dataset.seat === lastId);
+            if (seatEl) {
+                // garantir que ela não esteja com a classe white (visual de bloqueada),
+                // removemos white e aplicamos lost para o X cinza.
+                seatEl.classList.remove("white");
+                seatEl.classList.add("lost");
+            }
         }
         sessionStorage.removeItem("lastAttempt");
     }
@@ -230,7 +241,8 @@ q("#confirmarBtn").onclick=async()=>{
         return;
     }
 
-    sessionStorage.setItem("lastAttempt", sel.textContent);
+    // guarda a tentativa (id) antes do POST
+    sessionStorage.setItem("lastAttempt", sel.dataset.seat || sel.textContent);
 
     const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};
 
