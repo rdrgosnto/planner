@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Mapa Clean Moderno</title>
+<title>Mapa Estilo Google</title>
 <style>
     body {
         font-family: Arial, sans-serif;
-        background: #f7f7f7;
+        background: #eef2f3;
         padding: 40px;
         display: flex;
         justify-content: center;
@@ -30,99 +30,73 @@
     .row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 16px;
+        margin-bottom: 22px;
     }
 
     .seat {
         width: 55px;
         height: 55px;
-        background: #e6ffe9;
-        border: 2px solid #57d37c;
-        border-radius: 12px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 3px solid #0088ff;
         display: flex;
-        align-items: center;
         justify-content: center;
+        align-items: center;
         font-weight: bold;
         cursor: pointer;
         transition: 0.2s;
-        user-select: none;
     }
 
     .seat:hover {
-        background: #d9f5dd;
-        transform: scale(1.05);
+        transform: scale(1.12);
+        background: #eaf4ff;
     }
 
     .seat.selected {
-        background: #ff5c5c;
-        border-color: #ff2f2f;
+        background: #ff4747;
+        border-color: #cc0000;
         color: white;
+        transform: scale(1.1);
     }
 
     .seat.occupied {
-        background: #ddd;
+        background: #d8d8d8;
         border-color: #999;
         cursor: not-allowed;
-    }
-
-    .legend {
-        margin-top: 25px;
-        font-size: 14px;
-    }
-    .legend div {
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-    }
-    .legend span {
-        width: 20px;
-        height: 20px;
-        margin-right: 6px;
-        border-radius: 5px;
-        display: inline-block;
+        color: #777;
     }
 </style>
 </head>
 <body>
 
 <div class="bus-container">
-    <h2>Mapa de Poltronas - Clean Modern</h2>
+    <h2>Mapa Estilo Google</h2>
 
-    <!-- MAPA -->
     <div class="row">
-        <div class="seat" data-seat="01">01</div>
-        <div class="seat" data-seat="02">02</div>
-        <div class="seat" data-seat="03">03</div>
-        <div class="seat occupied" data-seat="04">04</div>
+        <div class="seat">01</div>
+        <div class="seat">02</div>
+        <div class="seat">03</div>
+        <div class="seat occupied">04</div>
     </div>
 
     <div class="row">
-        <div class="seat" data-seat="05">05</div>
-        <div class="seat" data-seat="06">06</div>
-        <div class="seat selected" data-seat="07">07</div>
-        <div class="seat" data-seat="08">08</div>
+        <div class="seat">05</div>
+        <div class="seat">06</div>
+        <div class="seat">07</div>
+        <div class="seat">08</div>
     </div>
 
     <div class="row">
-        <div class="seat" data-seat="09">09</div>
-        <div class="seat" data-seat="10">10</div>
-        <div class="seat" data-seat="11">11</div>
-        <div class="seat occupied" data-seat="12">12</div>
-    </div>
-
-    <!-- LEGENDA -->
-    <div class="legend">
-        <div><span style="background:#e6ffe9;border:2px solid #57d37c;"></span> Disponível</div>
-        <div><span style="background:#ff5c5c;"></span> Selecionado</div>
-        <div><span style="background:#ddd;"></span> Ocupado</div>
+        <div class="seat">09</div>
+        <div class="seat selected">10</div>
+        <div class="seat">11</div>
+        <div class="seat occupied">12</div>
     </div>
 </div>
 
 <script>
 document.querySelectorAll(".seat:not(.occupied)").forEach(seat => {
-    seat.addEventListener("click", () => {
-        seat.classList.toggle("selected");
-    });
+    seat.addEventListener("click", () => seat.classList.toggle("selected"));
 });
 </script>
 
