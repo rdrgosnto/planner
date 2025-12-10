@@ -2,103 +2,143 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Interior Realista</title>
+<title>Mapa Futurista NeoGlass</title>
+
 <style>
     body {
-        font-family: Arial, sans-serif;
+        margin: 0;
+        height: 100vh;
         display: flex;
         justify-content: center;
-        padding: 40px;
-        background: #f0f0f0;
+        align-items: center;
+        background: radial-gradient(circle at top, #0f1f3a, #060b14 70%);
+        font-family: "Segoe UI", sans-serif;
     }
 
-    .bus {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-        width: 420px;
+    .container {
+        padding: 35px 45px;
+        border-radius: 25px;
+        backdrop-filter: blur(18px);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.12);
+        animation: fadeIn 0.8s ease;
     }
 
     h2 {
         text-align: center;
-        margin-bottom: 20px;
+        color: #dffaff;
+        letter-spacing: 1px;
+        margin-bottom: 25px;
+        text-shadow: 0 0 10px #00eaff60;
+        font-weight: 300;
     }
 
-    .row {
+    .grid {
         display: grid;
-        grid-template-columns: 1fr 1fr 40px 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 16px;
-        align-items: center;
+        grid-template-columns: repeat(4, 75px);
+        gap: 22px;
+        justify-content: center;
     }
 
     .seat {
-        background: #e8ffe8;
-        border: 2px solid #33c75d;
-        border-radius: 8px;
-        height: 55px;
+        height: 75px;
+        border-radius: 14px;
+        backdrop-filter: blur(10px);
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: #dffaff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
         cursor: pointer;
-        transition: 0.15s;
+        font-size: 18px;
+        transition: 0.25s;
+        position: relative;
+    }
+
+    .seat::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+        opacity: 0;
+        transition: 0.25s;
+        box-shadow: 0 0 15px #00eaff;
+    }
+
+    .seat:hover {
+        transform: scale(1.08);
+        background: rgba(255,255,255,0.14);
+        box-shadow: 0 0 10px #00eaff55;
     }
 
     .seat.selected {
-        background: #ff4d4d;
-        border-color: #c10000;
-        color: white;
+        background: rgba(0, 255, 255, 0.25);
+        border-color: #00f0ff;
+        color: #00151f;
+        font-weight: bold;
+    }
+
+    .seat.selected::before {
+        opacity: 1;
+        box-shadow: 0 0 22px #00eaff;
+    }
+
+    .seat.selected {
+        animation: pulse 1.2s infinite ease-in-out;
     }
 
     .seat.occupied {
-        background: #ccc;
-        border-color: #888;
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.12);
+        color: #555;
         cursor: not-allowed;
+        text-decoration: line-through;
     }
 
-    .corridor {
-        text-align: center;
-        font-size: 10px;
-        color: #777;
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 12px #00eaff; }
+        50% { box-shadow: 0 0 22px #00f6ff; }
+        100% { box-shadow: 0 0 12px #00eaff; }
     }
 </style>
 </head>
+
 <body>
 
-<div class="bus">
-    <h2>Interior Realista</h2>
+<div class="container">
+    <h2>Mapa de Poltronas — Futurista</h2>
 
-    <div class="row">
+    <div class="grid">
+
         <div class="seat">01</div>
         <div class="seat">02</div>
-        <div class="corridor">|</div>
-        <div class="seat">03</div>
-        <div class="seat occupied">04</div>
-    </div>
+        <div class="seat occupied">03</div>
+        <div class="seat">04</div>
 
-    <div class="row">
         <div class="seat selected">05</div>
         <div class="seat">06</div>
-        <div class="corridor">|</div>
         <div class="seat">07</div>
-        <div class="seat">08</div>
-    </div>
+        <div class="seat occupied">08</div>
 
-    <div class="row">
         <div class="seat">09</div>
         <div class="seat">10</div>
-        <div class="corridor">|</div>
-        <div class="seat occupied">11</div>
+        <div class="seat">11</div>
         <div class="seat">12</div>
+
     </div>
 </div>
 
 <script>
-document.querySelectorAll(".seat:not(.occupied)").forEach(seat =>
-    seat.addEventListener("click", () => seat.classList.toggle("selected"))
-);
+document.querySelectorAll(".seat:not(.occupied)").forEach(seat => {
+    seat.addEventListener("click", () => seat.classList.toggle("selected"));
+});
 </script>
 
 </body>
