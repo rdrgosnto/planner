@@ -31,6 +31,9 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
     font-size:28px;
     font-weight:bold;
     position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%); /* CENTRA HORIZONTAL + VERTICAL */
 }
 
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:rgba(0,0,0,.1);z-index:9999;}
@@ -196,22 +199,24 @@ const load=async()=>{
 
     render(cfg.layout);
 
-    /* --------- MARCAR POLTRONA PERDIDA APÓS O RELOAD ---------- */
+    /* --------- MARCAR POLTRONA PERDIDA APÓS O RELOAD (apenas para quem perdeu) ---------- */
     const last = sessionStorage.getItem("lastAttempt");
     if (last) {
         const lastId = last.toString().padStart(2,"0");
 
-        // se está bloqueada (bl contém), significa que o usuário perdeu a disputa
-        if (bl.includes(lastId)) {
-            // procurar pelo dataset.seat — funciona mesmo que textContent tenha sido limpo
+        // encontrar o dono atual da poltrona (se houver) entre os registros do curso
+        const ownerRow = cursoRows.find(x => (getField(x,"ID","Id","id")||"").toString().padStart(2,"0") === lastId);
+        const ownerCpf = ownerRow ? normCPF(getField(ownerRow,"CPF2","Cpf2","cpf2","CPF","cpf")) : null;
+
+        // se a poltrona está bloqueada (bl) E o dono NÃO for o usuário atual -> usuário perdeu
+        if (bl.includes(lastId) && ownerCpf && ownerCpf !== currentUserCPF) {
             const seatEl = [...document.querySelectorAll(".seat")].find(s => s.dataset.seat === lastId);
             if (seatEl) {
-                // garantir que ela não esteja com a classe white (visual de bloqueada),
-                // removemos white e aplicamos lost para o X cinza.
                 seatEl.classList.remove("white");
                 seatEl.classList.add("lost");
             }
         }
+        // se ownerCpf === currentUserCPF -> o usuário venceu, então NÃO marca lost (fica branca)
         sessionStorage.removeItem("lastAttempt");
     }
     /* ---------------------------------------------------------- */
