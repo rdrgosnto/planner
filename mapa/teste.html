@@ -1,144 +1,378 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Mapa Futurista NeoGlass</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Planner | Mapa</title>
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Expires" content="0"/>
+
+<script>
+if(location.pathname.endsWith("index.html"))
+    location.replace(location.pathname.replace("index.html",""));
+</script>
 
 <style>
-    body {
-        margin: 0;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: radial-gradient(circle at top, #0f1f3a, #060b14 70%);
-        font-family: "Segoe UI", sans-serif;
-    }
 
-    .container {
-        padding: 35px 45px;
-        border-radius: 25px;
-        backdrop-filter: blur(18px);
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.12);
-        animation: fadeIn 0.8s ease;
-    }
+/* ===============================
+   NOVO LAYOUT FUTURISTA NEO GLASS
+   =============================== */
 
-    h2 {
-        text-align: center;
-        color: #dffaff;
-        letter-spacing: 1px;
-        margin-bottom: 25px;
-        text-shadow: 0 0 10px #00eaff60;
-        font-weight: 300;
-    }
+body{
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-height:100vh;
+    background: radial-gradient(circle at top, #0f1f3a, #060b14 70%);
+    font-family: "Segoe UI", sans-serif;
+}
 
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(4, 75px);
-        gap: 22px;
-        justify-content: center;
-    }
+#bus-wrapper{
+    transform:scale(.95);
+    transform-origin:top center;
+    display:none;
+}
 
-    .seat {
-        height: 75px;
-        border-radius: 14px;
-        backdrop-filter: blur(10px);
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.2);
-        color: #dffaff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 18px;
-        transition: 0.25s;
-        position: relative;
-    }
+.bus-container{
+    padding:35px 45px;
+    border-radius:25px;
+    backdrop-filter:blur(18px);
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 0 25px rgba(0,255,255,0.12);
+    position:relative;
+    animation:fadeIn .8s ease;
+}
 
-    .seat::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: 14px;
-        opacity: 0;
-        transition: 0.25s;
-        box-shadow: 0 0 15px #00eaff;
-    }
+.grid{
+    display:grid;
+    grid-template-columns:repeat(5,75px);
+    gap:22px;
+    justify-content:center;
+    justify-items:center;
+}
 
-    .seat:hover {
-        transform: scale(1.08);
-        background: rgba(255,255,255,0.14);
-        box-shadow: 0 0 10px #00eaff55;
-    }
+/* Poltronas */
+.seat,.empty{
+    width:75px;
+    height:75px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    font-weight:500;
+    backdrop-filter:blur(10px);
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.2);
+    color:#dffaff;
+    cursor:pointer;
+    position:relative;
+    transition:.25s;
+}
 
-    .seat.selected {
-        background: rgba(0, 255, 255, 0.25);
-        border-color: #00f0ff;
-        color: #00151f;
-        font-weight: bold;
-    }
+/* Poltronas vazias do layout */
+.empty{
+    background:transparent;
+    border:0;
+}
 
-    .seat.selected::before {
-        opacity: 1;
-        box-shadow: 0 0 22px #00eaff;
-    }
+/* Hover */
+.seat:hover:not(.white):not(.lost){
+    transform:scale(1.08);
+    background:rgba(255,255,255,0.14);
+    box-shadow:0 0 10px #00eaff55;
+}
 
-    .seat.selected {
-        animation: pulse 1.2s infinite ease-in-out;
-    }
+/* Ocupadas pelo sistema */
+.seat.white{
+    background:rgba(255,255,255,0.05)!important;
+    border:1px solid rgba(255,255,255,0.15)!important;
+    color:transparent!important;
+    cursor:default!important;
+    pointer-events:none!important;
+}
 
-    .seat.occupied {
-        background: rgba(255,255,255,0.05);
-        border-color: rgba(255,255,255,0.12);
-        color: #555;
-        cursor: not-allowed;
-        text-decoration: line-through;
-    }
+/* Marcadas como perdidas */
+.seat.lost{
+    background:rgba(255,90,90,0.25)!important;
+    border-color:#ff6b6b!important;
+    color:transparent!important;
+    pointer-events:none!important;
+}
+.seat.lost::before{
+    content:"✖";
+    color:#ffecec;
+    font-size:32px;
+    position:absolute;
+}
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+/* Selecionada */
+.seat.selected{
+    background:rgba(0,255,255,0.25);
+    border:1px solid #00f0ff;
+    color:#00151f!important;
+    font-weight:bold;
+    animation:pulse 1.2s infinite ease-in-out;
+}
 
-    @keyframes pulse {
-        0% { box-shadow: 0 0 12px #00eaff; }
-        50% { box-shadow: 0 0 22px #00f6ff; }
-        100% { box-shadow: 0 0 12px #00eaff; }
-    }
+/* Animações */
+@keyframes fadeIn{
+    from{opacity:0;transform:translateY(30px);}
+    to{opacity:1;transform:translateY(0);}
+}
+
+@keyframes pulse{
+    0%{box-shadow:0 0 12px #00eaff;}
+    50%{box-shadow:0 0 22px #00f6ff;}
+    100%{box-shadow:0 0 12px #00eaff;}
+}
+
+/* Botão confirmar */
+#confirmarBtn{
+    width:140px;
+    height:60px;
+    background:#00eaff;
+    color:#012631;
+    font-weight:bold;
+    border:none;
+    border-radius:14px;
+    cursor:pointer;
+    font-size:17px;
+    position:absolute;
+    bottom:-80px;
+    right:0;
+    box-shadow:0 0 14px #00eaff80;
+    transition:.25s;
+}
+
+#confirmarBtn:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 20px #00faff;
+}
+
+/* Curso lateral */
+#cursoBox{
+    position:absolute;
+    top:60px;
+    left:100%;
+    width:40px;
+    height:122px;
+    background:#00eaff;
+    color:#002933;
+    font-weight:bold;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+    pointer-events:none;
+}
+#cursoText{
+    transform:rotate(-90deg);
+    font-size:18px;
+}
+
+/* Barra de progresso */
+#progress-bar-container{
+    position:fixed;
+    bottom:0;left:0;
+    width:100%;
+    height:8px;
+    background:#0003;
+}
+#progress-bar{
+    width:0;height:100%;
+    background:#00eaff;
+    transition:.1s linear;
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="container">
-    <h2>Mapa de Poltronas — Futurista</h2>
+<!-- Wrapper -->
+<div id="bus-wrapper">
+    <div class="bus-container">
+        <div id="cursoBox"><div id="cursoText"></div></div>
 
-    <div class="grid">
-
-        <div class="seat">01</div>
-        <div class="seat">02</div>
-        <div class="seat occupied">03</div>
-        <div class="seat">04</div>
-
-        <div class="seat selected">05</div>
-        <div class="seat">06</div>
-        <div class="seat">07</div>
-        <div class="seat occupied">08</div>
-
-        <div class="seat">09</div>
-        <div class="seat">10</div>
-        <div class="seat">11</div>
-        <div class="seat">12</div>
-
+        <button id="confirmarBtn">CONFIRMAR</button>
     </div>
 </div>
 
+<div id="progress-bar-container"><div id="progress-bar"></div></div>
+
+<!-- ================= JS ORIGINAL (SEM ALTERAR) ================= -->
 <script>
-document.querySelectorAll(".seat:not(.occupied)").forEach(seat => {
-    seat.addEventListener("click", () => seat.classList.toggle("selected"));
-});
+(()=>{const s=Date.now();if(!sessionStorage.getItem("cacheStamp"))sessionStorage.setItem("cacheStamp",s)})();
+
+const q=(s,d=document)=>d.querySelector(s);
+let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
+const map={AAL:"0046",ALI:"0046",QUI:"0046"};
+const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
+const fetchJSON=u=>fetch(u+"?v="+Date.now()).then(r=>r.json());
+const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){if(w<t){w++;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s)}})()};
+
+const cSeat=v=>{
+    const e=document.createElement("div");
+    if(v===null)e.className="empty";
+    else if(v=="white")e.className="seat white";
+    else{e.className="seat";e.textContent=v.toString().padStart(2,"0")}
+    return e
+};
+
+const selSeat=e=>{
+    if(e.classList.contains("white")||e.classList.contains("lost"))return;
+    if(e.classList.contains("selected"))
+        e.classList.remove("selected"),sel=null;
+    else{
+        if(sel)sel.classList.remove("selected");
+        e.classList.add("selected");
+        sel=e;
+    }
+};
+
+const getField=(o,...n)=>{
+    for(const x of n){
+        const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
+        if(k)return o[k]
+    }
+};
+
+const cpfStored=sessionStorage.getItem("cpf");
+if(!cpfStored){
+    location.href="https://rdrgosnto.github.io/planner";
+    throw"";
+}
+
+currentUserCPF=normCPF(cpfStored);
+
+const render=l=>{
+    const w=q(".bus-container");
+    w.querySelector(".grid")?.remove();
+
+    const g=document.createElement("div");
+    g.className="grid";
+
+    l.flat().forEach(v=>{
+        const e=cSeat(v);
+        if(v!==null&&v!=="white"){
+            const id=v.toString().padStart(2,"0");
+            e.dataset.seat=id;
+
+            if(bl.includes(id)||userBlockedSeats.includes(id)){
+                e.classList.add("white");
+                e.textContent="";
+            } else {
+                e.onclick=()=>selSeat(e);
+            }
+        }
+        g.appendChild(e);
+    });
+
+    w.appendChild(g);
+};
+
+const fetchFlow=async(u,c)=>{
+    try{
+        const r=await fetch(u,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({cpf:c})
+        });
+        return{ok:r.ok,status:r.status,json:r.ok?await r.json():null};
+    }catch(e){return{ok:0,status:0,error:e}};
+};
+
+const load=async()=>{
+    anim(20);
+    const r=await fetchFlow(GET,currentUserCPF);
+    if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}
+
+    const lista=r.json.poltronas||r.json.lista||[],
+          cod=r.json.codigo||r.json.cursos||[];
+
+    anim(50);
+
+    const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
+    if(!aluno){alert("CPF não encontrado.");return}
+
+    currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+    currentBus=map[currentCurso]||"0046";
+    q("#cursoText").textContent=currentCurso;
+
+    anim(70);
+
+    const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+
+    bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+    rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+
+    userBlockedSeats=cursoRows
+        .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
+        .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+
+    const cfg=await fetchJSON(`../configs/${currentBus}.json`);
+    if(!cfg){alert("Erro layout");return}
+
+    render(cfg.layout);
+
+    const last=sessionStorage.getItem("lastAttempt");
+    if(last){
+        const lastId=last.toString().padStart(2,"0");
+        const row=cursoRows.find(x=>getField(x,"ID","Id","id").toString().padStart(2,"0")===lastId);
+        const owner=row?normCPF(getField(row,"CPF2","Cpf2","cpf2","CPF","cpf")):null;
+
+        if(bl.includes(lastId)&&owner&&owner!==currentUserCPF){
+            const el=[...document.querySelectorAll(".seat")].find(s=>s.dataset.seat===lastId);
+            if(el){el.classList.remove("white");el.classList.add("lost")}
+        }
+        sessionStorage.removeItem("lastAttempt");
+    }
+
+    anim(100);
+    setTimeout(()=>q("#progress-bar-container").remove(),600);
+    q("#bus-wrapper").style.display="block";
+};
+
+q("#confirmarBtn").onclick=async()=>{
+    if(!sel){alert("Selecione uma poltrona.");return}
+
+    document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
+    q("#confirmarBtn").disabled=true;
+
+    if(rb.includes(currentUserCPF)){
+        alert("Usuário já possui reserva.");
+        setTimeout(()=>{
+            sel?.classList.remove("selected");
+            sel=null;
+            document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
+            q("#confirmarBtn").disabled=false
+        },2000);
+        return
+    }
+
+    sessionStorage.setItem("lastAttempt",sel.dataset.seat||sel.textContent);
+
+    try{
+        const r=await fetch(POST,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})
+        });
+        alert(r.ok?"Poltrona selecionada!":"Poltrona selecionada por outro usuário.");
+        setTimeout(()=>location.reload(true),2000);
+    }catch{
+        alert("Erro de comunicação.");
+        setTimeout(()=>location.reload(true),2200);
+    }
+};
+
+load();
 </script>
 
 </body>
