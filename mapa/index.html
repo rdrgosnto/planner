@@ -17,14 +17,13 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 .seat.selected{background:#e74c3c;border-color:#e74c3c;}
 .empty{background:transparent;}
 
-/* NOVA CLASSE – poltrona perdida por concorrência */
+/* Poltrona perdida após concorrência */
 .seat.lost{
     background:#b0b0b0!important;
     border-color:#b0b0b0!important;
     color:transparent!important;
     pointer-events:none!important;
     cursor:default!important;
-    position:relative;
 }
 .seat.lost::before{
     content:"✖";
@@ -192,6 +191,20 @@ const load=async()=>{
 
     render(cfg.layout);
 
+    /* --------- MARCAR POLTRONA PERDIDA APÓS O RELOAD ---------- */
+    const last = sessionStorage.getItem("lastAttempt");
+    if (last) {
+        const lastId = last.toString().padStart(2,"0");
+
+        // se está bloqueada, significa que o usuário perdeu a disputa
+        if (bl.includes(lastId)) {
+            const seatEl = [...document.querySelectorAll(".seat")].find(s => s.textContent === lastId);
+            if (seatEl) seatEl.classList.add("lost");
+        }
+        sessionStorage.removeItem("lastAttempt");
+    }
+    /* ---------------------------------------------------------- */
+
     anim(100);
     setTimeout(()=>q("#progress-bar-container").remove(),600);
     q("#bus-wrapper").style.display="block";
@@ -217,6 +230,8 @@ q("#confirmarBtn").onclick=async()=>{
         return;
     }
 
+    sessionStorage.setItem("lastAttempt", sel.textContent);
+
     const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};
 
     try{
@@ -230,24 +245,12 @@ q("#confirmarBtn").onclick=async()=>{
             alert("Poltrona selecionada!");
             setTimeout(()=>location.reload(),2000);
         }else{
-            alert("A poltrona acabou de ser selecionada por outra pessoa.");
-
-            if(sel){
-                sel.classList.remove("selected");
-                sel.classList.add("lost");  // <<< AQUI A MÁGICA ACONTECE
-            }
-
+            alert("Poltrona selecionada por outro usuário.");
             setTimeout(()=>location.reload(),2200);
         }
 
     }catch{
         alert("Erro de comunicação.");
-
-        if(sel){
-            sel.classList.remove("selected");
-            sel.classList.add("lost");
-        }
-
         setTimeout(()=>location.reload(),2200);
     }
 };
