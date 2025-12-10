@@ -4,7 +4,8 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Expires" content="0"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <script>if(location.pathname.endsWith("index.html"))location.replace(location.pathname.replace("index.html",""));</script>
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
@@ -48,32 +49,42 @@ l.flat().forEach(v=>{const e=cSeat(v);if(v!==null&&v!=="white"){const id=v.toStr
 w.appendChild(g)};
 const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,status:r.status,json:r.ok?await r.json():null}}catch(e){return{ok:0,status:0,error:e}}};
 const load=async()=>{
-anim(20);
-const r=await fetchFlow(GET,currentUserCPF);
-if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}
-const lista=r.json.poltronas||r.json.lista||[],cod=r.json.codigo||r.json.cursos||[];
-anim(50);
-const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
-if(!aluno){alert("CPF não encontrado.");return}
-currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();currentBus=map[currentCurso]||"0046";q("#cursoText").textContent=currentCurso;
-anim(70);
-const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
-bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF).map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
-const cfg=await fetchJSON(`../configs/${currentBus}.json`);if(!cfg){alert("Erro layout");return}
-render(cfg.layout);
-const last=sessionStorage.getItem("lastAttempt");if(last){const lastId=last.toString().padStart(2,"0"),ownerRow=cursoRows.find(x=>getField(x,"ID","Id","id").toString().padStart(2,"0")===lastId),ownerCpf=ownerRow?normCPF(getField(ownerRow,"CPF2","Cpf2","cpf2","CPF","cpf")):null;if(bl.includes(lastId)&&ownerCpf&&ownerCpf!==currentUserCPF){const el=[...document.querySelectorAll(".seat")].find(s=>s.dataset.seat===lastId);if(el){el.classList.remove("white");el.classList.add("lost")}}sessionStorage.removeItem("lastAttempt")}
-anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block"};
+    anim(20);
+    const r=await fetchFlow(GET,currentUserCPF);
+    if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}
+    const lista=r.json.poltronas||r.json.lista||[],cod=r.json.codigo||r.json.cursos||[];
+    anim(50);
+    const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
+    
+    // Se CPF não encontrado
+    if(!aluno){
+        alert("CPF não encontrado."); // mostra a mensagem
+        sessionStorage.removeItem("cpf"); // limpa o CPF armazenado
+        location.href = "https://rdrgosnto.github.io/planner"; // volta à tela inicial
+        return;
+    }
+
+    currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();currentBus=map[currentCurso]||"0046";q("#cursoText").textContent=currentCurso;
+    anim(70);
+    const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+    bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+    rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+    userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF).map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+    const cfg=await fetchJSON(`../configs/${currentBus}.json`);if(!cfg){alert("Erro layout");return}
+    render(cfg.layout);
+    const last=sessionStorage.getItem("lastAttempt");if(last){const lastId=last.toString().padStart(2,"0"),ownerRow=cursoRows.find(x=>getField(x,"ID","Id","id").toString().padStart(2,"0")===lastId),ownerCpf=ownerRow?normCPF(getField(ownerRow,"CPF2","Cpf2","cpf2","CPF","cpf")):null;if(bl.includes(lastId)&&ownerCpf&&ownerCpf!==currentUserCPF){const el=[...document.querySelectorAll(".seat")].find(s=>s.dataset.seat===lastId);if(el){el.classList.remove("white");el.classList.add("lost")}}sessionStorage.removeItem("lastAttempt")}
+    anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block"
+};
 q("#confirmarBtn").onclick=async()=>{
-if(!sel){alert("Selecione uma poltrona.");return}
-document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");q("#confirmarBtn").disabled=true;
-if(rb.includes(currentUserCPF)){alert("Usuário já possui reserva.");setTimeout(()=>{sel?.classList.remove("selected");sel=null;document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");q("#confirmarBtn").disabled=false},2e3);return}
-sessionStorage.setItem("lastAttempt",sel.dataset.seat||sel.textContent);
-try{
-const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
-alert(r.ok?"Poltrona selecionada!":"Poltrona selecionada por outro usuário.");setTimeout(()=>location.reload(true),2e3)
-}catch{alert("Erro de comunicação.");setTimeout(()=>location.reload(true),2200)}};
+    if(!sel){alert("Selecione uma poltrona.");return}
+    document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");q("#confirmarBtn").disabled=true;
+    if(rb.includes(currentUserCPF)){alert("Usuário já possui reserva.");setTimeout(()=>{sel?.classList.remove("selected");sel=null;document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");q("#confirmarBtn").disabled=false},2e3);return}
+    sessionStorage.setItem("lastAttempt",sel.dataset.seat||sel.textContent);
+    try{
+        const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
+        alert(r.ok?"Poltrona selecionada!":"Poltrona selecionada por outro usuário.");setTimeout(()=>location.reload(true),2e3)
+    }catch{alert("Erro de comunicação.");setTimeout(()=>location.reload(true),2200)}
+};
 load();
 </script>
 </body>
