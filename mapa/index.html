@@ -16,6 +16,24 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 .seat.white::after{border-color:#8c96b2!important;}
 .seat.selected{background:#e74c3c;border-color:#e74c3c;}
 .empty{background:transparent;}
+
+/* NOVA CLASSE – poltrona perdida por concorrência */
+.seat.lost{
+    background:#b0b0b0!important;
+    border-color:#b0b0b0!important;
+    color:transparent!important;
+    pointer-events:none!important;
+    cursor:default!important;
+    position:relative;
+}
+.seat.lost::before{
+    content:"✖";
+    color:#fff;
+    font-size:28px;
+    font-weight:bold;
+    position:absolute;
+}
+
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:rgba(0,0,0,.1);z-index:9999;}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear;}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;}
@@ -31,23 +49,209 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 </div>
 </div>
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
+
 <script>
 const q=(s,d=document)=>d.querySelector(s);
 let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
+
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
+
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
+
 const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
-const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;const s=()=>{if(w<t){w+=1;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s);}};s();};
-const cSeat=v=>{const e=document.createElement("div");if(v===null)e.className="empty";else if(v==="white")e.className="seat white";else{e.className="seat";e.textContent=v.toString().padStart(2,"0");}return e;};
-const selSeat=e=>{if(e.classList.contains("white"))return;if(e.classList.contains("selected")){e.classList.remove("selected");sel=null;}else{if(sel)sel.classList.remove("selected");e.classList.add("selected");sel=e;}};
-const getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k];}};
-const cpfStored=sessionStorage.getItem("cpf");if(!cpfStored){location.href="https://rdrgosnto.github.io/planner";throw"";}
+
+const anim=t=>{
+    let w=parseFloat(q("#progress-bar").style.width)||0;
+    const s=()=>{
+        if(w<t){
+            w+=1;
+            q("#progress-bar").style.width=w+"%";
+            requestAnimationFrame(s);
+        }
+    };
+    s();
+};
+
+const cSeat=v=>{
+    const e=document.createElement("div");
+    if(v===null)e.className="empty";
+    else if(v==="white")e.className="seat white";
+    else{
+        e.className="seat";
+        e.textContent=v.toString().padStart(2,"0");
+    }
+    return e;
+};
+
+const selSeat=e=>{
+    if(e.classList.contains("white"))return;
+    if(e.classList.contains("lost"))return;
+    if(e.classList.contains("selected")){
+        e.classList.remove("selected");
+        sel=null;
+    }else{
+        if(sel)sel.classList.remove("selected");
+        e.classList.add("selected");
+        sel=e;
+    }
+};
+
+const getField=(o,...n)=>{
+    for(const x of n){
+        const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
+        if(k)return o[k];
+    }
+};
+
+const cpfStored=sessionStorage.getItem("cpf");
+if(!cpfStored){
+    location.href="https://rdrgosnto.github.io/planner";
+    throw"";
+}
 currentUserCPF=normCPF(cpfStored);
-const render=layout=>{const wrap=q(".bus-container");wrap.querySelector(".grid")?.remove();const g=document.createElement("div");g.className="grid";layout.flat().forEach(v=>{const e=cSeat(v);if(v!==null&&v!=="white"){const id=v.toString().padStart(2,"0");if(bl.includes(id)||userBlockedSeats.includes(id)){e.classList.add("white");e.textContent="";e.onclick=null;}else e.onclick=()=>selSeat(e);}g.appendChild(e);});wrap.appendChild(g);};
-const fetchFlow=async(url,cpf)=>{try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});return{ok:r.ok,status:r.status,json:r.ok?await r.json():null};}catch(err){return{ok:false,status:0,error:err};}};
-const load=async()=>{anim(20);const r=await fetchFlow(GET,currentUserCPF);if(!r.ok){alert(`Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`);return;}if(!r.json){alert("Fluxo retornou vazio ou dados inválidos.");return;}const lista=r.json.poltronas||r.json.lista||[],cod=r.json.codigo||r.json.cursos||[];anim(50);const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);if(!aluno){alert("CPF não encontrado.");return;}currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();currentBus=map[currentCurso]||"0046";q("#cursoText").textContent=currentCurso;anim(70);const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF).map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);if(!cfg){alert("Erro ao carregar layout.");return;}render(cfg.layout);anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block";};
-q("#confirmarBtn").onclick=async()=>{if(!sel){alert("Selecione uma poltrona.");return;}document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");q("#confirmarBtn").disabled=true;if(rb.includes(currentUserCPF)){alert("Usuário já possui reserva.");setTimeout(()=>{sel?.classList.remove("selected");sel=null;document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");q("#confirmarBtn").disabled=false;},2000);return;}const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};try{const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(r.ok){alert("Poltrona selecionada!");setTimeout(()=>location.reload(),2000);}else{alert("Erro ao enviar.");setTimeout(()=>location.reload(),1500);}}catch{alert("Erro de comunicação.");setTimeout(()=>location.reload(),1500);}};
+
+const render=layout=>{
+    const wrap=q(".bus-container");
+    wrap.querySelector(".grid")?.remove();
+
+    const g=document.createElement("div");
+    g.className="grid";
+
+    layout.flat().forEach(v=>{
+        const e=cSeat(v);
+        if(v!==null&&v!=="white"){
+            const id=v.toString().padStart(2,"0");
+            if(bl.includes(id)||userBlockedSeats.includes(id)){
+                e.classList.add("white");
+                e.textContent="";
+                e.onclick=null;
+            }else e.onclick=()=>selSeat(e);
+        }
+        g.appendChild(e);
+    });
+    wrap.appendChild(g);
+};
+
+const fetchFlow=async(url,cpf)=>{
+    try{
+        const r=await fetch(url,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({cpf})
+        });
+        return{ok:r.ok,status:r.status,json:r.ok?await r.json():null};
+    }catch(err){
+        return{ok:false,status:0,error:err};
+    }
+};
+
+const load=async()=>{
+    anim(20);
+    const r=await fetchFlow(GET,currentUserCPF);
+    
+    if(!r.ok){
+        alert(`Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`);
+        return;
+    }
+    if(!r.json){
+        alert("Fluxo retornou vazio ou dados inválidos.");
+        return;
+    }
+
+    const lista=r.json.poltronas||r.json.lista||[];
+    const cod=r.json.codigo||r.json.cursos||[];
+
+    anim(50);
+
+    const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
+    if(!aluno){
+        alert("CPF não encontrado.");
+        return;
+    }
+
+    currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+    currentBus=map[currentCurso]||"0046";
+    q("#cursoText").textContent=currentCurso;
+
+    anim(70);
+
+    const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+    bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+    rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+
+    userBlockedSeats=cursoRows
+        .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
+        .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+
+    const cfg=await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
+    if(!cfg){
+        alert("Erro ao carregar layout.");
+        return;
+    }
+
+    render(cfg.layout);
+
+    anim(100);
+    setTimeout(()=>q("#progress-bar-container").remove(),600);
+    q("#bus-wrapper").style.display="block";
+};
+
+q("#confirmarBtn").onclick=async()=>{
+    if(!sel){
+        alert("Selecione uma poltrona.");
+        return;
+    }
+
+    document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
+    q("#confirmarBtn").disabled=true;
+
+    if(rb.includes(currentUserCPF)){
+        alert("Usuário já possui reserva.");
+        setTimeout(()=>{
+            sel?.classList.remove("selected");
+            sel=null;
+            document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
+            q("#confirmarBtn").disabled=false;
+        },2000);
+        return;
+    }
+
+    const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};
+
+    try{
+        const r=await fetch(POST,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(body)
+        });
+
+        if(r.ok){
+            alert("Poltrona selecionada!");
+            setTimeout(()=>location.reload(),2000);
+        }else{
+            alert("A poltrona acabou de ser selecionada por outra pessoa.");
+
+            if(sel){
+                sel.classList.remove("selected");
+                sel.classList.add("lost");  // <<< AQUI A MÁGICA ACONTECE
+            }
+
+            setTimeout(()=>location.reload(),2200);
+        }
+
+    }catch{
+        alert("Erro de comunicação.");
+
+        if(sel){
+            sel.classList.remove("selected");
+            sel.classList.add("lost");
+        }
+
+        setTimeout(()=>location.reload(),2200);
+    }
+};
+
 load();
 </script>
 </body>
