@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Expires" content="0"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <script>if(location.pathname.endsWith("index.html"))location.replace(location.pathname.replace("index.html",""));</script>
 
 <style>
-/* ------------------------------------------------ */
-/* BASE                                            */
-/* ------------------------------------------------ */
+/* ----------------------------------------- */
+/* BASE                                     */
+/* ----------------------------------------- */
 body{
     font-family:Arial;
     margin:0;
@@ -19,7 +21,9 @@ body{
     flex-direction:column;
     min-height:100vh;
     justify-content:center;
-    background:#fff
+    background:#0a0a0a; /* Dark VisionOS */
+    perspective:1200px;
+    overflow-x:hidden;
 }
 
 #bus-wrapper{
@@ -30,15 +34,19 @@ body{
 
 .bus-container{
     padding:20px;
-    border:3px solid #b0b0b0;
     border-radius:16px;
     width:fit-content;
     margin:20px auto;
     position:relative;
     display:flex;
-    justify-content:center
+    justify-content:center;
+    background: rgba(20,20,30,0.4);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.15);
 }
 
+/* Grid de poltronas */
 .grid{
     display:grid;
     grid-template-columns:repeat(5,54px);
@@ -47,11 +55,10 @@ body{
     justify-items:center
 }
 
-/* ------------------------------------------------ */
-/* ✨ VISION PRO 3D REALISTA — POLTRONAS           */
-/* ------------------------------------------------ */
-
-.seat,.empty{
+/* ----------------------------------------- */
+/* POLTRONAS 3D VISION PRO ESCURO            */
+/* ----------------------------------------- */
+.seat, .empty{
     width:54px;
     height:54px;
     display:flex;
@@ -60,34 +67,30 @@ body{
     border-radius:14px;
     position:relative;
     font-weight:bold;
+    transform-style: preserve-3d;
+    transition: all 0.25s ease;
 }
 
-/* VIDRO translúcido */
+/* POLTRONAS NORMAIS */
 .seat{
-    background:rgba(255,255,255,0.10);
-    border:2px solid rgba(255,255,255,0.25);
-    color:#1a1a1a;
+    background: rgba(30,30,60,0.15);
+    border:2px solid rgba(0,122,255,0.5);
+    color:#fff;
     cursor:pointer;
-    backdrop-filter:blur(10px);
-    -webkit-backdrop-filter:blur(10px);
-
+    backdrop-filter: blur(8px);
     box-shadow:
-        inset 0 0 8px rgba(255,255,255,0.20),
-        0 4px 14px rgba(0,0,0,0.25);
-
-    transition:
-        transform 0.18s ease,
-        border 0.25s ease,
-        box-shadow 0.25s ease,
-        background 0.25s ease;
+        inset 0 0 12px rgba(0,122,255,0.2),
+        0 6px 22px rgba(0,0,0,0.5);
+    position:relative;
+    overflow:hidden;
 }
 
-/* Hover suave */
+/* Hover com elevação 3D */
 .seat:hover{
-    transform:translateY(-3px) scale(1.04);
+    transform: translateY(-6px) rotateX(5deg) rotateY(5deg) scale(1.06);
     box-shadow:
-        inset 0 0 12px rgba(255,255,255,0.25),
-        0 8px 22px rgba(0,0,0,0.35);
+        inset 0 0 18px rgba(0,122,255,0.35),
+        0 10px 28px rgba(0,0,0,0.6);
 }
 
 /* Poltronas vazias */
@@ -95,28 +98,26 @@ body{
     background:transparent !important;
 }
 
-/* DESABILITADAS */
+/* Poltronas desabilitadas */
 .seat.white{
-    background:rgba(200,200,200,0.08)!important;
-    border:2px solid rgba(150,150,150,0.25) !important;
-    color:transparent !important;
-    cursor:default !important;
-    pointer-events:none !important;
-    filter:grayscale(55%);
+    background: rgba(100,100,120,0.08) !important;
+    border: 2px solid rgba(50,50,70,0.2) !important;
+    color: transparent !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    filter: grayscale(55%);
 }
 
-/* SELECIONADA — 🔵 Glow Azul Vision Pro */
+/* Poltronas selecionadas */
 .seat.selected{
-    background:rgba(0,122,255,0.22);
+    background: rgba(0,122,255,0.25);
     border:2px solid rgba(0,122,255,0.92);
     color:#fff;
-
     box-shadow:
-        inset 0 0 15px rgba(0,122,255,0.45),
-        0 0 18px rgba(0,132,255,0.65),
-        0 8px 22px rgba(0,0,0,0.45);
-
-    transform:scale(1.05);
+        inset 0 0 20px rgba(0,122,255,0.55),
+        0 0 24px rgba(0,132,255,0.65),
+        0 10px 28px rgba(0,0,0,0.65);
+    transform: scale(1.06) translateZ(10px);
 }
 
 /* Reflexo superior */
@@ -127,10 +128,7 @@ body{
     left:7px;
     right:7px;
     height:24px;
-    background:linear-gradient(
-        rgba(255,255,255,0.45),
-        rgba(255,255,255,0.05)
-    );
+    background: linear-gradient(rgba(255,255,255,0.45), rgba(255,255,255,0.05));
     border-radius:12px;
     pointer-events:none;
 }
@@ -143,24 +141,19 @@ body{
     left:6px;
     right:6px;
     height:14px;
-    background:radial-gradient(
-        ellipse at bottom,
-        rgba(0,122,255,0.55),
-        transparent 70%
-    );
+    background: radial-gradient(ellipse at bottom, rgba(0,122,255,0.55), transparent 70%);
     filter:blur(6px);
     border-radius:50%;
     pointer-events:none;
 }
 
-/* LUGARES PERDIDOS */
+/* Lugares perdidos */
 .seat.lost{
-    background:#b0b0b0 !important;
-    border-color:#b0b0b0 !important;
-    color:transparent!important;
-    pointer-events:none!important;
+    background:#444 !important;
+    border-color:#333 !important;
+    color:transparent !important;
+    pointer-events:none !important;
 }
-
 .seat.lost::before{
     content:"✖";
     color:#fff;
@@ -172,45 +165,46 @@ body{
     transform:translate(-50%,-50%)
 }
 
-/* ------------------------------------------------ */
-/* RESTO DO SEU CSS (sem alterações)               */
-/* ------------------------------------------------ */
-#progress-bar-container{
-    position:fixed;
-    bottom:0;left:0;
-    width:100%;height:8px;
-    background:#0001;
-    z-index:9999
-}
-#progress-bar{
-    width:0;height:100%;
-    background:#4CAF50;
-    transition:width .1s linear
-}
-
-#confirmarBtn{
-    width:112px;height:54px;
-    background:#4CAF50;color:#fff;
-    border:none;font-size:16px;font-weight:bold;
-    border-radius:12px;cursor:pointer;
-    position:absolute;bottom:-64px;right:20px
-}
-
-#cursoBox{
+/* ----------------------------------------- */
+/* LUZ CORRENDO NAS BORDAS (FOG ANIMATION)  */
+/* ----------------------------------------- */
+.seat::after{
+    content:"";
     position:absolute;
-    top:60px;left:100%;
-    width:40px;height:122px;
-    background:#4CAF50;color:#fff;
-    font-weight:bold;
-    display:flex;align-items:center;justify-content:center;
-    z-index:9999;overflow:hidden;pointer-events:none
+    top:0; left:0; right:0; bottom:0;
+    border-radius:14px;
+    pointer-events:none;
+    background: linear-gradient(
+        120deg,
+        rgba(0,122,255,0.3),
+        rgba(0,255,255,0.15),
+        rgba(0,122,255,0.3)
+    );
+    background-size:200% 200%;
+    animation: border-glow 3s linear infinite;
+    z-index:0;
 }
 
-#cursoText{
-    transform:rotate(-90deg);
-    font-size:18px;
-    white-space:nowrap
+@keyframes border-glow {
+    0% {background-position:0% 50%;}
+    50% {background-position:100% 50%;}
+    100% {background-position:0% 50%;}
 }
+
+/* ----------------------------------------- */
+/* RESTO DO CSS ORIGINAL                      */
+/* ----------------------------------------- */
+#progress-bar-container{
+    position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999
+}
+#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
+#confirmarBtn{
+    width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px
+}
+#cursoBox{
+    position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none
+}
+#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 </style>
 </head>
 
@@ -225,7 +219,7 @@ body{
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-/* ---- Seu JavaScript Original (100% preservado) ---- */
+/* ---- Seu JS original ---- */
 (()=>{const s=Date.now();if(!sessionStorage.getItem("cacheStamp"))sessionStorage.setItem("cacheStamp",s)})();
 const q=(s,d=document)=>d.querySelector(s);let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
@@ -268,6 +262,21 @@ try{
 const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
 alert(r.ok?"Poltrona selecionada!":"Poltrona selecionada por outro usuário.");setTimeout(()=>location.reload(true),2e3)
 }catch{alert("Erro de comunicação.");setTimeout(()=>location.reload(true),2200)}};
+
+/* ----------------------------------------- */
+/* MOVIMENTO 3D BASEADO NO MOUSE             */
+/* ----------------------------------------- */
+document.addEventListener("mousemove", e => {
+    const wrapper = document.querySelector(".bus-container");
+    const x = (window.innerWidth/2 - e.clientX)/30;
+    const y = (window.innerHeight/2 - e.clientY)/30;
+    wrapper.style.transform = `scale(0.9) rotateX(${y}deg) rotateY(${-x}deg)`;
+    const seats = document.querySelectorAll(".seat");
+    seats.forEach(s=>{
+        s.style.transform = `translateZ(10px) rotateX(${y}deg) rotateY(${-x}deg)`;
+    });
+});
+
 load();
 </script>
 </body>
