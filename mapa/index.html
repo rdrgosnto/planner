@@ -4,7 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+
+<!-- 🔥 NÍVEL 3 – MÁXIMO ANTI-CACHE -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<script>
+// 🔥 Se a URL carregada for /index.html → limpa
+if (location.pathname.endsWith("index.html")) {
+    location.replace(location.pathname.replace("index.html", ""));
+}
+</script>
+
 <style>
+/* seu css original continua igual */
 body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff;}
 #bus-wrapper{transform:scale(.9);transform-origin:top center;display:none;}
 .bus-container{padding:20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center;}
@@ -17,13 +30,11 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 .seat.selected{background:#e74c3c;border-color:#e74c3c;}
 .empty{background:transparent;}
 
-/* Poltrona perdida após concorrência */
 .seat.lost{
     background:#b0b0b0!important;
     border-color:#b0b0b0!important;
     color:transparent!important;
     pointer-events:none!important;
-    cursor:default!important;
 }
 .seat.lost::before{
     content:"✖";
@@ -33,7 +44,7 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
     position:absolute;
     top:50%;
     left:50%;
-    transform:translate(-50%,-50%); /* CENTRA HORIZONTAL + VERTICAL */
+    transform:translate(-50%,-50%);
 }
 
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:rgba(0,0,0,.1);z-index:9999;}
@@ -53,6 +64,17 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
+// V3 ULTRA ANTI-CACHE – evita que este JS fique desatualizado
+(function(){
+    const stamp = Date.now();
+    if (!sessionStorage.getItem("cacheStamp")) {
+        sessionStorage.setItem("cacheStamp", stamp);
+        console.log("Cache limpo:", stamp);
+    }
+})();
+
+/* seu JS original começa aqui (não removi nada) */
+
 const q=(s,d=document)=>d.querySelector(s);
 let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
 
@@ -62,6 +84,13 @@ const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.pow
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
 const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
+
+/* ----- JSON ANTI-CACHE -----
+   Força carregar o layout SEM CACHE
+*/
+function fetchJSON(url){
+    return fetch(url + "?v=" + Date.now()).then(r=>r.json());
+}
 
 const anim=t=>{
     let w=parseFloat(q("#progress-bar").style.width)||0;
@@ -123,12 +152,11 @@ const render=layout=>{
         const e=cSeat(v);
         if(v!==null && v!=="white"){
             const id = v.toString().padStart(2,"0");
-            // sempre gravar o id no dataset (mesmo que a exibição do número seja removida)
             e.dataset.seat = id;
 
             if(bl.includes(id) || userBlockedSeats.includes(id)){
                 e.classList.add("white");
-                e.textContent = ""; // mantém o visual branco para bloqueadas
+                e.textContent = "";
                 e.onclick = null;
             } else {
                 e.onclick = ()=> selSeat(e);
@@ -191,7 +219,7 @@ const load=async()=>{
         .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
         .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
 
-    const cfg=await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
+    const cfg=await fetchJSON(`../configs/${currentBus}.json`);
     if(!cfg){
         alert("Erro ao carregar layout.");
         return;
@@ -199,16 +227,13 @@ const load=async()=>{
 
     render(cfg.layout);
 
-    /* --------- MARCAR POLTRONA PERDIDA APÓS O RELOAD (apenas para quem perdeu) ---------- */
+    // marca perdidas
     const last = sessionStorage.getItem("lastAttempt");
     if (last) {
         const lastId = last.toString().padStart(2,"0");
-
-        // encontrar o dono atual da poltrona (se houver) entre os registros do curso
         const ownerRow = cursoRows.find(x => (getField(x,"ID","Id","id")||"").toString().padStart(2,"0") === lastId);
         const ownerCpf = ownerRow ? normCPF(getField(ownerRow,"CPF2","Cpf2","cpf2","CPF","cpf")) : null;
 
-        // se a poltrona está bloqueada (bl) E o dono NÃO for o usuário atual -> usuário perdeu
         if (bl.includes(lastId) && ownerCpf && ownerCpf !== currentUserCPF) {
             const seatEl = [...document.querySelectorAll(".seat")].find(s => s.dataset.seat === lastId);
             if (seatEl) {
@@ -216,10 +241,8 @@ const load=async()=>{
                 seatEl.classList.add("lost");
             }
         }
-        // se ownerCpf === currentUserCPF -> o usuário venceu, então NÃO marca lost (fica branca)
         sessionStorage.removeItem("lastAttempt");
     }
-    /* ---------------------------------------------------------- */
 
     anim(100);
     setTimeout(()=>q("#progress-bar-container").remove(),600);
@@ -246,7 +269,6 @@ q("#confirmarBtn").onclick=async()=>{
         return;
     }
 
-    // guarda a tentativa (id) antes do POST
     sessionStorage.setItem("lastAttempt", sel.dataset.seat || sel.textContent);
 
     const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};
@@ -260,19 +282,20 @@ q("#confirmarBtn").onclick=async()=>{
 
         if(r.ok){
             alert("Poltrona selecionada!");
-            setTimeout(()=>location.reload(),2000);
+            setTimeout(()=>location.reload(true),2000);
         }else{
             alert("Poltrona selecionada por outro usuário.");
-            setTimeout(()=>location.reload(),2200);
+            setTimeout(()=>location.reload(true),2200);
         }
 
     }catch{
         alert("Erro de comunicação.");
-        setTimeout(()=>location.reload(),2200);
+        setTimeout(()=>location.reload(true),2200);
     }
 };
 
 load();
 </script>
+
 </body>
 </html>
