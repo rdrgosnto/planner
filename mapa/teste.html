@@ -2,45 +2,44 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mapa — Dark Ultra Minimal</title>
+<title>Mapa — Vision Pro Style</title>
 <style>
-  :root{--bg:#0a0a0a;--muted:#2b2b2b;--accent:#a6ffcb}
-  *{box-sizing:border-box}
-  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:Inter,Arial}
-  .card{width:720px;padding:28px;border-radius:12px;background:linear-gradient(180deg,#060606,#0e0e0e);border:1px solid #111;color:#d6d6d6}
-  h1{margin:0 0 14px 0;font-weight:500;text-align:center;color:#fff}
+  :root{--bg:#f3f6f8;--panel:#ffffff;--muted:#8b98a5;--accent:#0aa1ff}
+  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#e9eef3,#f6f9fb);font-family:Inter,Arial}
+  .card{width:720px;padding:36px;border-radius:18px;background:rgba(255,255,255,0.9);box-shadow:0 12px 40px rgba(20,30,40,0.08);backdrop-filter:blur(6px)}
+  h1{margin:0 0 12px 0;color:#16324a;text-align:center}
   .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
-  .seat{height:62px;border-radius:10px;background:#0f0f0f;border:1px solid #202020;color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;transition:all .12s ease}
-  .seat:hover{transform:translateY(-4px);border-color:#2b2b2b;color:#fff}
-  .seat.selected{background:var(--accent);color:#051210;border-color:var(--accent);box-shadow:0 6px 20px rgba(166,255,203,0.08)}
-  .seat.occupied{background:#111;border-color:#171717;color:#666;cursor:not-allowed}
-  .actions{display:flex;justify-content:center;margin-top:14px;gap:10px}
-  .btn{background:#111;border:1px solid #1b1b1b;padding:8px 12px;border-radius:8px;color:#cfcfcf;cursor:pointer}
-  @media(max-width:780px){.card{width:94vw}.grid{grid-template-columns:repeat(3,1fr)}}
+  .seat{height:72px;border-radius:12px;background:#f7fbff;border:1px solid #e6eef5;color:#16324a;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s}
+  .seat:hover{transform:translateY(-6px);box-shadow:0 10px 30px rgba(20,60,100,0.06)}
+  .seat.selected{background:var(--accent);color:#03212a;border-color:rgba(10,161,255,0.6);box-shadow:0 8px 30px rgba(10,161,255,0.12)}
+  .seat.occupied{background:#f1f4f7;color:var(--muted);border:1px solid #e7eef5;cursor:not-allowed}
+  .legend{display:flex;gap:10px;justify-content:center;margin-top:16px;color:#6d7e8a}
+  .legend span{display:inline-flex;align-items:center;gap:8px}
+  .dot{width:16px;height:16px;border-radius:4px;display:inline-block}
+  @media(max-width:820px){.card{width:94vw}.grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>Mapa — Dark Ultra Minimal</h1>
-  <div class="grid" id="g"></div>
-  <div class="actions">
-    <button class="btn" id="clear">Limpar</button>
-    <button class="btn" id="ok">Confirmar</button>
+  <h1>Mapa — Vision Pro Style</h1>
+  <div class="grid" id="grid"></div>
+  <div class="legend">
+    <span><i class="dot" style="background:#f7fbff;border:1px solid #e6eef5"></i> Disponível</span>
+    <span><i class="dot" style="background:var(--accent)"></i> Selecionado</span>
+    <span><i class="dot" style="background:#f1f4f7;border:1px solid #e7eef5"></i> Ocupado</span>
   </div>
 </div>
 
 <script>
-  const g=document.getElementById('g');
-  const occupied=['03','07','12','28'];
-  for(let i=1;i<=30;i++){
-    const d=document.createElement('div');
-    d.className='seat'; d.textContent=String(i).padStart(2,'0'); d.dataset.seat=d.textContent;
-    if(occupied.includes(d.dataset.seat)) d.classList.add('occupied');
-    else d.addEventListener('click',()=>{document.querySelectorAll('.seat.selected').forEach(s=>s!==d&&s.classList.remove('selected'));d.classList.toggle('selected')});
-    g.appendChild(d);
+  const grid=document.getElementById('grid');
+  const occupied=['02','06','15','20'];
+  for(let i=1;i<=24;i++){
+    const el=document.createElement('div');
+    el.className='seat'; el.textContent=String(i).padStart(2,'0'); el.dataset.seat=el.textContent;
+    if(occupied.includes(el.dataset.seat)) el.classList.add('occupied');
+    else el.addEventListener('click',()=>{document.querySelectorAll('.seat.selected').forEach(s=>s!==el&&s.classList.remove('selected')); el.classList.toggle('selected')});
+    grid.appendChild(el);
   }
-  document.getElementById('clear').onclick=()=>document.querySelectorAll('.seat.selected').forEach(s=>s.classList.remove('selected'));
-  document.getElementById('ok').onclick=()=>{ const s=document.querySelector('.seat.selected'); alert(s?('Poltrona '+s.dataset.seat+' confirmada'):'Nenhuma poltrona selecionada') }
 </script>
 </body>
 </html>
