@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -40,10 +41,11 @@ const q = (s,d=document)=>d.querySelector(s);
 
 let sel=null, bl=[], rb=[], userBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="";
 
-const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/14fbdadc7108461599a895386b0a4ed2/triggers/manual/paths/invoke?api-version=1";
-const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1";
+const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+const POST = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 
 const map = {AAL:"0046",ALI:"0046",QUI:"0046"};
+
 const normCPF = c => c ? c.toString().replace(/\D/g,"").padStart(11,"0") : "";
 
 const anim = t => {
@@ -54,21 +56,16 @@ const anim = t => {
 const cSeat = v => {
     const e = document.createElement("div");
     if(v===null) e.className="empty";
-    else if(bl.includes(v.toString().padStart(2,"0"))) e.className="seat white"; // poltrona já selecionada
+    else if(v==="white") e.className="seat white";
     else {e.className="seat"; e.textContent=v.toString().padStart(2,"0");}
     return e;
 };
 
 const selSeat = e => {
     if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")) return;
-    if(sel===e){ 
-        e.classList.remove("selected");
-        sel=null;
-    } else {
-        sel?.classList.remove("selected");
-        e.classList.add("selected");
-        sel = e;
-    }
+    sel?.classList.remove("selected");
+    e.classList.add("selected");
+    sel = e;
 };
 
 const getField = (o,...n) => {
@@ -89,8 +86,9 @@ const render = layout => {
     g.className = "grid";
     layout.flat().forEach(v=>{
         const e = cSeat(v);
-        if(v!==null && !bl.includes(v.toString().padStart(2,"0"))){
+        if(v!==null&&v!=="white"){
             const id=v.toString().padStart(2,"0");
+            if(bl.includes(id)) e.classList.add("blocked");
             if(userBlockedSeats.includes(id)) { e.classList.add("own"); e.title="Sua poltrona"; }
             else e.onclick = ()=>selSeat(e);
         }
@@ -114,37 +112,45 @@ const fetchFlow = async (url, cpf) => {
 
 const load = async () => {
     anim(20);
+
     const r = await fetchFlow(GET, currentUserCPF);
-    if(!r.ok){ alert(`Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`); return; }
-    if(!r.json){ alert("Fluxo retornou vazio ou dados inválidos."); return; }
 
-    const lista = r.json.poltronas || r.json.lista || [];
-    const cod = r.json.codigo || r.json.cursos || [];
-
-    anim(50);
-
-    // Encontrar o aluno
-    const aluno = cod.find(x => normCPF(getField(x,"CPF2","CPF")) === currentUserCPF);
-
-    if(aluno){
-        currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
-        currentBus = map[currentCurso] || "0046";
-        q("#cursoText").textContent = currentCurso;
-    } else {
-        const turmaDisponivel = cod[0];
-        if(turmaDisponivel){
-            currentCurso = getField(turmaDisponivel,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
-            currentBus = map[currentCurso] || "0046";
-        } else {
-            currentCurso = "Curso desconhecido";
-            currentBus = "0046";
-        }
+    if(!r.ok){
+        alert(`Erro ao consultar fluxo.\nStatus: ${r.status}\nErro interno: ${r.error||"nenhum"}`);
+        return;
     }
 
-    anim(70);
+    if(!r.json){
+        alert("Fluxo retornou vazio ou dados inválidos.");
+        return;
+    }
 
-    const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
-    if(!cfg){alert("Erro ao carregar layout."); return;}
+    if(Object.keys(r.json).length===0){
+        const cfg = await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
+        if(!cfg){alert("Erro ao carregar layout."); return;}
+        userBlockedSeats = [...sessionStorage.getItem("userSeats")?.split(",")||[]];
+        bl=[]; rb=[];
+        render(cfg.layout);
+        anim(100);
+        setTimeout(()=>q("#progress-bar-container").remove(),600);
+        q("#bus-wrapper").style.display="block";
+        alert("Você já possui reserva. Página em modo somente consulta.");
+        return;
+    }
+
+    // Fluxo normal → mapa de poltronas
+    const lista = r.json.poltronas || r.json.lista || [];
+    const cod = r.json.codigo || r.json.cursos || [];
+    anim(50);
+
+    const aluno = cod.find(x => normCPF(getField(x,"CPF2","CPF")) === currentUserCPF);
+    if(!aluno){alert("CPF não encontrado."); return;}
+
+    currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+    currentBus = map[currentCurso] || "0046";
+    q("#cursoText").textContent = currentCurso;
+
+    anim(70);
 
     const cursoRows = lista.filter(x => getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase() === currentCurso);
     bl = [...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
@@ -152,6 +158,9 @@ const load = async () => {
     userBlockedSeats = cursoRows
         .filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
         .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+
+    const cfg = await fetch(`../configs/${currentBus}.json`).then(r=>r.json()).catch(()=>null);
+    if(!cfg){alert("Erro ao carregar layout."); return;}
 
     render(cfg.layout);
     anim(100);
