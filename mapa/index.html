@@ -151,12 +151,16 @@ const body={poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF};
 
 try{
 const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-if(r.ok){alert("Poltrona selecionada!");setTimeout(()=>location.reload(),2000);}
-else{alert("Erro ao enviar.");document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");q("#confirmarBtn").disabled=false;}
+if(r.ok){
+    alert("Poltrona selecionada!");
+    setTimeout(()=>location.reload(),2000);
+}else{
+    alert("Erro ao enviar.");
+    setTimeout(()=>location.reload(),1500);
+}
 }catch{
 alert("Erro de comunicação.");
-document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-q("#confirmarBtn").disabled=false;
+setTimeout(()=>location.reload(),1500);
 }
 };
 
