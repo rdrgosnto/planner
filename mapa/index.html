@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -15,7 +14,6 @@ body{font-family:Arial,sans-serif;margin:0;padding:0;display:flex;flex-direction
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2;}
 .seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default;}
 .seat.white::after{border-color:#8c96b2!important;}
-.seat.blocked,.seat.own{background:#6b6b6b;border-color:#6b6b6b;color:#fff!important;cursor:not-allowed;}
 .seat.selected{background:#e74c3c;border-color:#e74c3c;}
 .empty{background:transparent;}
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:rgba(0,0,0,.1);z-index:9999;}
@@ -61,11 +59,17 @@ const cSeat = v => {
     return e;
 };
 
+// Seleção/deseleção
 const selSeat = e => {
-    if(e.classList.contains("blocked")||e.classList.contains("white")||e.classList.contains("own")) return;
-    sel?.classList.remove("selected");
-    e.classList.add("selected");
-    sel = e;
+    if(e.classList.contains("white")) return;
+    if(e.classList.contains("selected")){
+        e.classList.remove("selected");
+        sel = null;
+    } else {
+        if(sel) sel.classList.remove("selected");
+        e.classList.add("selected");
+        sel = e;
+    }
 };
 
 const getField = (o,...n) => {
@@ -86,11 +90,13 @@ const render = layout => {
     g.className = "grid";
     layout.flat().forEach(v=>{
         const e = cSeat(v);
-        if(v!==null&&v!=="white"){
+        if(v!==null && v!=="white"){
             const id=v.toString().padStart(2,"0");
-            if(bl.includes(id)) e.classList.add("blocked");
-            if(userBlockedSeats.includes(id)) { e.classList.add("own"); e.title="Sua poltrona"; }
-            else e.onclick = ()=>selSeat(e);
+            if(bl.includes(id) || userBlockedSeats.includes(id)){
+                e.classList.add("white"); // bloqueadas ficam brancas
+            } else {
+                e.onclick = ()=>selSeat(e);
+            }
         }
         g.appendChild(e);
     });
@@ -122,19 +128,6 @@ const load = async () => {
 
     if(!r.json){
         alert("Fluxo retornou vazio ou dados inválidos.");
-        return;
-    }
-
-    if(Object.keys(r.json).length===0){
-        const cfg = await fetch(`../configs/0046.json`).then(r=>r.json()).catch(()=>null);
-        if(!cfg){alert("Erro ao carregar layout."); return;}
-        userBlockedSeats = [...sessionStorage.getItem("userSeats")?.split(",")||[]];
-        bl=[]; rb=[];
-        render(cfg.layout);
-        anim(100);
-        setTimeout(()=>q("#progress-bar-container").remove(),600);
-        q("#bus-wrapper").style.display="block";
-        alert("Você já possui reserva. Página em modo somente consulta.");
         return;
     }
 
