@@ -111,7 +111,6 @@ const load=async()=>{
     if(!cfg){alert("Erro layout");return}
     render(cfg.layout);
 
-    // Marcar poltrona perdida se houver tentativa anterior
     const last=sessionStorage.getItem("lastAttempt");
     if(last){
         const lastId=last.toString().padStart(2,"0");
@@ -129,7 +128,6 @@ const load=async()=>{
     q("#bus-wrapper").style.display="block";
 };
 
-// Seleção de poltrona com atualização dinâmica
 q("#confirmarBtn").onclick = async ()=>{
     if(!sel){ alert("Selecione uma poltrona."); return; }
     document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
@@ -155,20 +153,21 @@ q("#confirmarBtn").onclick = async ()=>{
 
         if(r.ok){
             alert("Poltrona selecionada!");
-            // reload opcional após 4s para atualizar mapa final
-            setTimeout(()=>location.reload(true), 4000);
+            setTimeout(()=>location.reload(true), 4000); // reload após seleção correta
         } else {
             // Poltrona já foi selecionada por outro usuário
             sel.classList.remove("selected");
-            sel.classList.add("lost"); // X aparece imediatamente
+            sel.classList.add("lost");
             sel.style.pointerEvents="none";
             alert("Poltrona selecionada por outro usuário.");
+
+            // libera outras poltronas e o botão confirmar
+            sel = null;
+            document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
+            q("#confirmarBtn").disabled = false;
         }
 
-        sel=null;
-        document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-
-        // Atualiza lista de poltronas e bloqueios sem reload
+        // Atualiza lista de reservas e bloqueios sem reload
         const listaAtualizada = await fetchFlow(GET,currentUserCPF);
         if(listaAtualizada.ok && listaAtualizada.json){
             const lista = listaAtualizada.json.poltronas||listaAtualizada.json.lista||[];
