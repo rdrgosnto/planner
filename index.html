@@ -36,13 +36,18 @@ const validarCPF = c => {
     return r==c[10];
 };
 
-// Função que consulta se o CPF existe na base
-const consultarCPF = async (cpf) => {
+// Função que consulta se o CPF existe na base via Power Automate
+const verificarCPFNaBase = async (cpf) => {
     try {
-        const response = await fetch("https://seuservidor.com/verificarCPF?cpf=" + cpf);
+        const response = await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cpf: cpf })
+        });
         const data = await response.json();
-        return data.existe; // deve retornar true ou false
-    } catch (e) {
+        // Supondo que o Power Automate retorna algo como { existe: true } ou { existe: false }
+        return data.existe === true;
+    } catch(e) {
         console.error("Erro ao consultar CPF:", e);
         return false; // assume não encontrado em caso de erro
     }
@@ -62,7 +67,7 @@ q("#entrarBtn").onclick = async () => {
     cpf = cpf.replace(/\D/g,"").padStart(11,"0");
 
     // Consulta CPF na base
-    const existe = await consultarCPF(cpf);
+    const existe = await verificarCPFNaBase(cpf);
     if(!existe){
         alert("CPF não encontrado.");
         q("#cpfInput").value = "";
