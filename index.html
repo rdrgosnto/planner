@@ -36,39 +36,41 @@ const validarCPF = c => {
     return r==c[10];
 };
 
-// Função para verificar CPF na base (simulação)
-const verificarCPFNaBase = async (cpf) => {
-    // Aqui você substituiria pelo fetch real para verificar se o CPF existe
-    // Exemplo:
-    // const res = await fetch(`https://seuservidor/verificar?cpf=${cpf}`);
-    // const json = await res.json();
-    // return json.existe;
-    
-    // Simulação: apenas CPFs terminando em "0" existem
-    return cpf.endsWith("0");
+// Função que consulta se o CPF existe na base
+const consultarCPF = async (cpf) => {
+    try {
+        const response = await fetch("https://seuservidor.com/verificarCPF?cpf=" + cpf);
+        const data = await response.json();
+        return data.existe; // deve retornar true ou false
+    } catch (e) {
+        console.error("Erro ao consultar CPF:", e);
+        return false; // assume não encontrado em caso de erro
+    }
 };
 
 q("#entrarBtn").onclick = async () => {
     let cpf = q("#cpfInput").value.trim();
+
+    // Valida CPF
     if(!validarCPF(cpf)){
-        alert("CPF inválido."); 
-        q("#cpfInput").value = ""; 
+        alert("CPF inválido.");
+        q("#cpfInput").value = "";
         q("#cpfInput").focus();
         return;
     }
-    
+
     cpf = cpf.replace(/\D/g,"").padStart(11,"0");
 
-    // Verifica se o CPF existe na base
-    const existe = await verificarCPFNaBase(cpf);
+    // Consulta CPF na base
+    const existe = await consultarCPF(cpf);
     if(!existe){
-        alert("CPF não encontrado."); 
-        q("#cpfInput").value = ""; 
+        alert("CPF não encontrado.");
+        q("#cpfInput").value = "";
         q("#cpfInput").focus();
-        return; // mantém o usuário na mesma tela para digitar novamente
+        return; // mantém usuário na mesma tela
     }
 
-    // Se tudo OK, armazena na sessão e redireciona para mapa
+    // CPF válido e encontrado → armazena e redireciona
     sessionStorage.setItem("cpf", cpf);
     window.location.href = "mapa/index.html";
 };
