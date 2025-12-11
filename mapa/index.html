@@ -51,9 +51,25 @@ const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s()
 const cSeat=v=>{const e=document.createElement("div");if(v===null)e.className="empty";else if(v=="white")e.className="seat white";else{e.className="seat";e.textContent=v.toString().padStart(2,"0")}return e};
 const selSeat=e=>{if(e.classList.contains("white")||e.classList.contains("lost"))return;if(e.classList.contains("selected"))e.classList.remove("selected"),sel=null;else{if(sel)sel.classList.remove("selected");e.classList.add("selected");sel=e}};
 const getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
-const cpfStored=sessionStorage.getItem("cpf");
-if(!cpfStored){location.href="https://rdrgosnto.github.io/planner"; throw""}
-currentUserCPF=normCPF(cpfStored);
+
+// Função para pedir CPF (igual ao CPF inválido)
+async function pedirCPF(){
+    let cpf = sessionStorage.getItem("cpf");
+    while(!cpf){
+        cpf = prompt("Digite o CPF:");
+        if(cpf){
+            sessionStorage.setItem("cpf", cpf);
+            return normCPF(cpf);
+        }
+    }
+    return normCPF(cpf);
+}
+
+// Inicializa CPF
+(async ()=>{
+    currentUserCPF = await pedirCPF();
+    load();
+})();
 
 const render=l=>{
     const w=q(".bus-container");
@@ -83,7 +99,7 @@ const fetchFlow=async(u,c)=>{
 const load=async()=>{
     anim(20);
     const r=await fetchFlow(GET,currentUserCPF);
-    if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}
+    if(!r.ok||!r.json){alert("Erro ao consultar fluxo."); return;}
     const lista=r.json.poltronas||r.json.lista||[],cod=r.json.codigo||r.json.cursos||[];
     anim(50);
 
@@ -92,7 +108,8 @@ const load=async()=>{
     if(!aluno){
         alert("CPF não encontrado.");
         sessionStorage.removeItem("cpf");
-        location.href="https://rdrgosnto.github.io/planner";
+        currentUserCPF = await pedirCPF(); // mesmo comportamento do CPF inválido
+        load(); // reinicia carregamento
         return;
     }
 
@@ -153,21 +170,18 @@ q("#confirmarBtn").onclick = async ()=>{
 
         if(r.ok){
             alert("Poltrona selecionada!");
-            setTimeout(()=>location.reload(true), 4000); // reload após seleção correta
+            setTimeout(()=>location.reload(true), 4000);
         } else {
-            // Poltrona já foi selecionada por outro usuário
             sel.classList.remove("selected");
             sel.classList.add("lost");
             sel.style.pointerEvents="none";
             alert("Poltrona selecionada por outro usuário.");
 
-            // libera outras poltronas e o botão confirmar
             sel = null;
             document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
             q("#confirmarBtn").disabled = false;
         }
 
-        // Atualiza lista de reservas e bloqueios sem reload
         const listaAtualizada = await fetchFlow(GET,currentUserCPF);
         if(listaAtualizada.ok && listaAtualizada.json){
             const lista = listaAtualizada.json.poltronas||listaAtualizada.json.lista||[];
@@ -184,8 +198,6 @@ q("#confirmarBtn").onclick = async ()=>{
         sel=null;
     }
 };
-
-load();
 </script>
 </body>
 </html>
