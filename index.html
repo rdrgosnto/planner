@@ -11,6 +11,23 @@ label{display:block;font-size:16px;margin-bottom:10px;font-weight:bold;text-alig
 input{padding:12px;font-size:16px;border:2px solid #b0b0b0;border-radius:10px;width:100%;box-sizing:border-box}
 #entrarBtn{margin-top:10px;width:100px;height:45px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:10px;cursor:pointer;float:right}
 #entrarBtn:active{transform:scale(.97)}
+/* Barra de progresso */
+#progress-bar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: #0001;
+  z-index: 9999;
+  display: none;
+}
+#progress-bar {
+  width: 0%;
+  height: 100%;
+  background: #4CAF50;
+  transition: width 0.2s linear;
+}
 </style>
 </head>
 <body>
@@ -20,13 +37,17 @@ input{padding:12px;font-size:16px;border:2px solid #b0b0b0;border-radius:10px;wi
     <button id="entrarBtn">ENTRAR</button>
 </div>
 
+<div id="progress-bar-container">
+  <div id="progress-bar"></div>
+</div>
+
 <script>
 const q = s => document.querySelector(s);
 
-// Normaliza CPF (remove pontos, traços e completa com zeros)
+// Normaliza CPF
 const normCPF = c => c ? c.toString().replace(/\D/g,"").padStart(11,"0") : "";
 
-// Validação simples de CPF
+// Validação de CPF
 const validarCPF = c => {
     c = normCPF(c);
     if(c.length!==11 || /^(\d)\1+$/.test(c)) return false;
@@ -39,7 +60,7 @@ const validarCPF = c => {
     return r==c[10];
 };
 
-// Consulta Power Automate
+// Função para consultar CPF no Power Automate
 const verificarCPFNaBase = async (cpf) => {
     try {
         const response = await fetch(
@@ -51,20 +72,42 @@ const verificarCPFNaBase = async (cpf) => {
             }
         );
         const data = await response.json();
-
-        // Procura o CPF dentro do array codigo
+        // Procura CPF dentro do array codigo
         const aluno = (data.codigo || []).find(x => normCPF(x.CPF2 || x.CPF) === cpf);
-        return aluno || null; // retorna o objeto do aluno ou null
+        return aluno || null;
     } catch(e) {
         console.error("Erro ao consultar CPF:", e);
         return null;
     }
 };
 
+// Barra de progresso
+const animarBarra = (targetWidth) => {
+    const barra = q("#progress-bar");
+    barra.style.width = "0%";
+    const container = barra.parentElement;
+    container.style.display = "block";
+    let w = 0;
+    const step = () => {
+        if(w < targetWidth){
+            w += 1;
+            barra.style.width = w + "%";
+            requestAnimationFrame(step);
+        }
+    };
+    requestAnimationFrame(step);
+};
+
+const resetBarra = () => {
+    const barra = q("#progress-bar");
+    barra.style.width = "0%";
+    barra.parentElement.style.display = "none";
+};
+
 q("#entrarBtn").onclick = async () => {
     let cpf = q("#cpfInput").value.trim();
 
-    // Valida formato CPF
+    // Validação CPF
     if(!validarCPF(cpf)){
         alert("CPF inválido.");
         q("#cpfInput").value = "";
@@ -74,14 +117,20 @@ q("#entrarBtn").onclick = async () => {
 
     cpf = normCPF(cpf);
 
+    // Mostra barra de carregamento
+    animarBarra(80);
+
     // Consulta Power Automate
     const aluno = await verificarCPFNaBase(cpf);
+
+    // Finaliza barra
+    resetBarra();
 
     if(!aluno){
         alert("CPF não encontrado.");
         q("#cpfInput").value = "";
         q("#cpfInput").focus();
-        return; // permanece na mesma tela
+        return; // mantém usuário na mesma tela
     }
 
     // CPF válido e encontrado → armazena e redireciona
