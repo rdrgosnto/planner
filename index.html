@@ -23,9 +23,12 @@ input{padding:12px;font-size:16px;border:2px solid #b0b0b0;border-radius:10px;wi
 <script>
 const q = s => document.querySelector(s);
 
+// Normaliza CPF (remove pontos, traços e completa com zeros)
+const normCPF = c => c ? c.toString().replace(/\D/g,"").padStart(11,"0") : "";
+
 // Validação simples de CPF
 const validarCPF = c => {
-    c = c.replace(/\D/g,"").padStart(11,"0");
+    c = normCPF(c);
     if(c.length!==11 || /^(\d)\1+$/.test(c)) return false;
     let s=0,r;
     for(let i=0;i<9;i++) s+=c[i]*(10-i);
@@ -36,27 +39,32 @@ const validarCPF = c => {
     return r==c[10];
 };
 
-// Função que consulta se o CPF existe na base via Power Automate
+// Consulta Power Automate
 const verificarCPFNaBase = async (cpf) => {
     try {
-        const response = await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cpf: cpf })
-        });
+        const response = await fetch(
+            "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cpf: cpf })
+            }
+        );
         const data = await response.json();
-        // Supondo que o Power Automate retorna algo como { existe: true } ou { existe: false }
-        return data.existe === true;
+
+        // Procura o CPF dentro do array codigo
+        const aluno = (data.codigo || []).find(x => normCPF(x.CPF2 || x.CPF) === cpf);
+        return aluno || null; // retorna o objeto do aluno ou null
     } catch(e) {
         console.error("Erro ao consultar CPF:", e);
-        return false; // assume não encontrado em caso de erro
+        return null;
     }
 };
 
 q("#entrarBtn").onclick = async () => {
     let cpf = q("#cpfInput").value.trim();
 
-    // Valida CPF
+    // Valida formato CPF
     if(!validarCPF(cpf)){
         alert("CPF inválido.");
         q("#cpfInput").value = "";
@@ -64,15 +72,16 @@ q("#entrarBtn").onclick = async () => {
         return;
     }
 
-    cpf = cpf.replace(/\D/g,"").padStart(11,"0");
+    cpf = normCPF(cpf);
 
-    // Consulta CPF na base
-    const existe = await verificarCPFNaBase(cpf);
-    if(!existe){
+    // Consulta Power Automate
+    const aluno = await verificarCPFNaBase(cpf);
+
+    if(!aluno){
         alert("CPF não encontrado.");
         q("#cpfInput").value = "";
         q("#cpfInput").focus();
-        return; // mantém usuário na mesma tela
+        return; // permanece na mesma tela
     }
 
     // CPF válido e encontrado → armazena e redireciona
