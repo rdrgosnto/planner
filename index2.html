@@ -22,9 +22,7 @@ body{
   transition:opacity .4s ease;
 }
 
-#app.fade{
-  opacity:0;
-}
+#app.fade{opacity:0}
 
 /* Planner */
 .container{width:90%;max-width:300px}
@@ -56,14 +54,11 @@ input{padding:12px;font-size:16px;border:2px solid #b0b0b0;border-radius:10px;wi
 <body>
 
 <div id="app">
-
-  <!-- PLANNER -->
   <div class="container" id="planner">
     <label>CPF</label>
     <input id="cpfInput" placeholder="CPF (somente números)">
     <button id="entrarBtn">ENTRAR</button>
   </div>
-
 </div>
 
 <div id="progress-bar-container">
@@ -101,7 +96,7 @@ const verificarCPF = async cpf => {
   }
 };
 
-/* Barra fluida */
+/* Barra */
 const barra = () => {
   const bar = q("#progress-bar");
   const box = bar.parentElement;
@@ -109,12 +104,9 @@ const barra = () => {
   bar.style.width="0%";
 
   const start = performance.now();
-  const max = 1200;
   let anim;
-
   const loop = t => {
-    const p = Math.min(((t-start)/max)*85,85);
-    bar.style.width = p+"%";
+    bar.style.width = Math.min(((t-start)/1200)*85,85)+"%";
     anim = requestAnimationFrame(loop);
   };
   anim = requestAnimationFrame(loop);
@@ -126,22 +118,28 @@ const barra = () => {
   };
 };
 
-/* SPA REAL: carregar mapa inteiro */
+/* 🔥 SPA REAL: carregar mapa inteiro */
 const carregarMapa = async () => {
   const app = q("#app");
   app.classList.add("fade");
 
-  // Buscar HTML completo
+  // Buscar HTML do mapa
   const html = await fetch("mapa/index.html").then(r => r.text());
+  const doc = new DOMParser().parseFromString(html,"text/html");
 
-  // Parsear HTML
-  const doc = new DOMParser().parseFromString(html, "text/html");
+  // 🔑 Corrigir caminhos relativos do mapa
+  let base = document.querySelector("base");
+  if(!base){
+    base = document.createElement("base");
+    document.head.appendChild(base);
+  }
+  base.href = "mapa/";
 
-  // Injetar CSS do mapa
-  doc.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
-    const l = document.createElement("link");
-    l.rel = "stylesheet";
-    l.href = link.href;
+  // Injetar CSS externo do mapa (se houver)
+  doc.querySelectorAll('link[rel="stylesheet"]').forEach(lk=>{
+    const l=document.createElement("link");
+    l.rel="stylesheet";
+    l.href=lk.getAttribute("href");
     document.head.appendChild(l);
   });
 
@@ -149,21 +147,14 @@ const carregarMapa = async () => {
   app.innerHTML = doc.body.innerHTML;
 
   // Executar scripts do mapa
-  doc.querySelectorAll("script").forEach(old => {
-    const s = document.createElement("script");
-    if (old.src) {
-      s.src = old.src;
-      s.defer = true;
-    } else {
-      s.textContent = old.textContent;
-    }
+  doc.querySelectorAll("script").forEach(old=>{
+    const s=document.createElement("script");
+    if(old.src) s.src=old.src;
+    else s.textContent=old.textContent;
     document.body.appendChild(s);
   });
 
-  // Fade-in
-  requestAnimationFrame(() => {
-    app.classList.remove("fade");
-  });
+  requestAnimationFrame(()=>app.classList.remove("fade"));
 };
 
 /* Evento */
@@ -173,7 +164,6 @@ q("#entrarBtn").onclick = async () => {
 
   if(!validarCPF(cpf)){
     alert("CPF inválido.");
-    q("#cpfInput").value="";
     q("#cpfInput").focus();
     return;
   }
@@ -192,8 +182,6 @@ q("#entrarBtn").onclick = async () => {
   }
 
   sessionStorage.setItem("cpf",cpf);
-  sessionStorage.setItem("authMapa","1");
-
   carregarMapa();
 };
 </script>
