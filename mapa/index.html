@@ -1,70 +1,73 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Expires" content="0"/>
-<script>if(location.pathname.endsWith("index.html"))location.replace(location.pathname.replace("index.html",""));</script>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+
+<script>
+if (location.pathname.endsWith("index.html")) {
+  location.replace(location.pathname.replace("index.html",""));
+}
+</script>
+
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.9);transform-origin:top center;display:none}
 .bus-container{padding:20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
-.grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
-.seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
-.seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer}
-.seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
-.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default!important;pointer-events:none!important}
-.seat.white::after{border-color:#8c96b2!important}
-.seat.selected{background:#e74c3c;border-color:#e74c3c}
-.empty{background:0 0}
-.seat.lost{background:#b0b0b0!important;border-color:#b0b0b0!important;color:transparent!important;pointer-events:none!important}
-.seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
-#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
-#confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
-#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 </style>
 </head>
+
 <body>
 
 <div id="bus-wrapper">
   <div class="bus-container">
-    <div id="cursoBox"><div id="cursoText"></div></div>
     <button id="confirmarBtn">CONFIRMAR</button>
   </div>
 </div>
 
-<div id="progress-bar-container"><div id="progress-bar"></div></div>
-
 <script>
-const q=(s,d=document)=>d.querySelector(s);
-const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
+const q = (s,d=document)=>d.querySelector(s);
+const normCPF = c => c ? c.toString().replace(/\D/g,"").padStart(11,"0") : "";
 
-const cpfStored=sessionStorage.getItem("cpf");
+// 🔒 bloqueio acesso direto
+const cpfStored = sessionStorage.getItem("cpf");
 if(!cpfStored){
   location.replace("https://rdrgosnto.github.io/planner");
   throw "";
 }
+
 const currentUserCPF = normCPF(cpfStored);
 
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+const GET = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 
-const fetchFlow=async(u,c)=>{
-  try{
-    const r=await fetch(u,{
+const fetchFlow = async (url, cpf) => {
+  try {
+    const r = await fetch(url,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({cpf:c})
+      body:JSON.stringify({cpf})
     });
     return r.ok ? await r.json() : null;
-  }catch{
+  } catch {
     return null;
   }
 };
 
-const load=async()=>{
+// helper robusto
+const getField = (o,...n)=>{
+  for(const x of n){
+    const k = Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
+    if(k) return o[k];
+  }
+};
+
+const load = async () => {
+
   const data = await fetchFlow(GET,currentUserCPF);
   if(!data){
     alert("Erro ao consultar fluxo.");
@@ -72,7 +75,11 @@ const load=async()=>{
   }
 
   const cod = data.codigo || data.cursos || [];
-  const aluno = cod.find(x => normCPF(x.CPF2 || x.CPF) === currentUserCPF);
+
+  // 🔎 encontra CPF independente do ID
+  const aluno = cod.find(x =>
+    normCPF(getField(x,"CPF","CPF2")) === currentUserCPF
+  );
 
   if(!aluno){
     alert("CPF não encontrado.");
@@ -80,17 +87,18 @@ const load=async()=>{
     return;
   }
 
-  const id = (aluno.ID ?? "").toString().trim();
+  // 🧠 leitura correta do ID
+  const id = (getField(aluno,"ID","Id","id") ?? "").toString().trim();
 
-  // 🔒 REGRA PRINCIPAL
+  // 🔒 regra principal
   if(id !== "#"){
     alert("CPF não autorizado");
     location.replace("https://rdrgosnto.github.io/planner/index.html");
     return;
   }
 
-  // ✔ autorizado → aqui o resto do mapa continuaria
-  q("#bus-wrapper").style.display="block";
+  // ✔ autorizado
+  q("#bus-wrapper").style.display = "block";
 };
 
 load();
