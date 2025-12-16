@@ -126,19 +126,44 @@ const barra = () => {
   };
 };
 
-/* SPA: carregar mapa */
+/* SPA REAL: carregar mapa inteiro */
 const carregarMapa = async () => {
   const app = q("#app");
   app.classList.add("fade");
 
-  const html = await fetch("mapa/index.html").then(r=>r.text());
+  // Buscar HTML completo
+  const html = await fetch("mapa/index.html").then(r => r.text());
 
-  const body = html.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1];
+  // Parsear HTML
+  const doc = new DOMParser().parseFromString(html, "text/html");
 
-  setTimeout(()=>{
-    app.innerHTML = body;
+  // Injetar CSS do mapa
+  doc.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = link.href;
+    document.head.appendChild(l);
+  });
+
+  // Substituir conteúdo
+  app.innerHTML = doc.body.innerHTML;
+
+  // Executar scripts do mapa
+  doc.querySelectorAll("script").forEach(old => {
+    const s = document.createElement("script");
+    if (old.src) {
+      s.src = old.src;
+      s.defer = true;
+    } else {
+      s.textContent = old.textContent;
+    }
+    document.body.appendChild(s);
+  });
+
+  // Fade-in
+  requestAnimationFrame(() => {
     app.classList.remove("fade");
-  },400);
+  });
 };
 
 /* Evento */
