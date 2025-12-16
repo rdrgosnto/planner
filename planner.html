@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Planner | Início</title>
+<style>
+body{margin:0;padding:0;font-family:Arial,sans-serif;background:#fff;display:flex;justify-content:center;align-items:center;height:100vh}
+.container{width:90%;max-width:300px}
+label{display:block;font-size:16px;margin-bottom:10px;font-weight:bold;text-align:left}
+input{padding:12px;font-size:16px;border:2px solid #b0b0b0;border-radius:10px;width:100%;box-sizing:border-box}
+#entrarBtn{margin-top:10px;width:100px;height:45px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:10px;cursor:pointer;float:right}
+#entrarBtn:active{transform:scale(.97)}
+#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999;display:none}
+#progress-bar{width:0;height:100%;background:#4CAF50;transition:width 0.2s linear}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <label for="cpfInput">CPF</label>
+  <input type="text" id="cpfInput" placeholder="CPF (somente números)">
+  <button id="entrarBtn">ENTRAR</button>
+</div>
+
+<div id="progress-bar-container"><div id="progress-bar"></div></div>
+
+<script>
+const q=s=>document.querySelector(s);
+const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
+
+const validarCPF=c=>{
+  c=normCPF(c);
+  if(c.length!==11||/^(\d)\1+$/.test(c))return false;
+  let s=0,r;
+  for(let i=0;i<9;i++)s+=c[i]*(10-i);
+  r=(s*10)%11;if(r==10)r=0;if(r!=c[9])return false;
+  s=0;
+  for(let i=0;i<10;i++)s+=c[i]*(11-i);
+  r=(s*10)%11;if(r==10)r=0;
+  return r==c[10];
+};
+
+const verificarCPFNaBase=async cpf=>{
+  try{
+    const r=await fetch(
+      "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+      {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({cpf})
+      }
+    );
+    const d=await r.json();
+    return (d.codigo||[]).find(x=>normCPF(x.CPF2||x.CPF)===cpf) || null;
+  }catch{
+    return null;
+  }
+};
+
+const animarBarra=()=>{
+  const b=q("#progress-bar"),c=b.parentElement;
+  let w=0;c.style.display="block";
+  const step=()=>{
+    if(w<80){
+      w+=Math.random()*1.5;
+      w=Math.min(w,80);
+      b.style.width=w+"%";
+      requestAnimationFrame(step);
+    }
+  };
+  requestAnimationFrame(step);
+  return ()=>{
+    b.style.width="100%";
+    setTimeout(()=>{
+      b.style.width="0";
+      c.style.display="none";
+    },300);
+  };
+};
+
+q("#entrarBtn").onclick=async()=>{
+  let cpf=q("#cpfInput").value.trim();
+
+  if(!validarCPF(cpf)){
+    alert("CPF inválido.");
+    q("#cpfInput").value="";
+    q("#cpfInput").focus();
+    return;
+  }
+
+  cpf=normCPF(cpf);
+  const reset=animarBarra();
+  const aluno=await verificarCPFNaBase(cpf);
+  reset();
+
+  if(!aluno){
+    alert("CPF não encontrado.");
+    q("#cpfInput").value="";
+    q("#cpfInput").focus();
+    return;
+  }
+
+  const id=(aluno.ID ?? "").toString().trim();
+
+  if(id !== "#"){
+    alert("CPF não autorizado.");
+    q("#cpfInput").value="";
+    q("#cpfInput").focus();
+    return;
+  }
+
+  // ✔ AUTORIZADO
+  sessionStorage.setItem("cpf",cpf);
+  sessionStorage.setItem("authMapa","1");
+
+  window.location.href="mapa/index.html";
+};
+</script>
+</body>
+</html>
