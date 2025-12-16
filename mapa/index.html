@@ -5,12 +5,7 @@
 <title>Planner | Mapa</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Expires" content="0"/>
-<script>
-/* remove index.html da URL */
-if (location.pathname.endsWith("index.html")) {
-  location.replace(location.pathname.replace("index.html",""));
-}
-</script>
+<script>if(location.pathname.endsWith("index.html"))location.replace(location.pathname.replace("index.html",""));</script>
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.9);transform-origin:top center;display:none}
@@ -32,8 +27,8 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 </style>
 </head>
-
 <body>
+
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
@@ -44,74 +39,57 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-/* =========================
-   BLOQUEIO DE ACESSO DIRETO
-========================= */
-const auth = sessionStorage.getItem("authMapa");
-if (auth !== "1") {
-  location.replace("https://rdrgosnto.github.io/planner");
-  throw "";
-}
-sessionStorage.removeItem("authMapa");
-
-/* ========================= */
-
-(()=>{const s=Date.now();if(!sessionStorage.getItem("cacheStamp"))sessionStorage.setItem("cacheStamp",s)})();
 const q=(s,d=document)=>d.querySelector(s);
-let sel=null,bl=[],rb=[],userBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
-
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
-const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
-
-const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
-const fetchJSON=u=>fetch(u+"?v="+Date.now()).then(r=>r.json());
-const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){if(w<t){w++;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s)}})()};
-
-const getField=(o,...n)=>{
-  for(const x of n){
-    const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
-    if(k)return o[k];
-  }
-};
 
 const cpfStored=sessionStorage.getItem("cpf");
 if(!cpfStored){
   location.replace("https://rdrgosnto.github.io/planner");
   throw "";
 }
-currentUserCPF=normCPF(cpfStored);
+const currentUserCPF = normCPF(cpfStored);
+
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+
+const fetchFlow=async(u,c)=>{
+  try{
+    const r=await fetch(u,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cpf:c})
+    });
+    return r.ok ? await r.json() : null;
+  }catch{
+    return null;
+  }
+};
 
 const load=async()=>{
-  anim(20);
-  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentUserCPF})});
-  if(!r.ok){alert("Erro ao consultar fluxo.");return}
-  const json=await r.json();
+  const data = await fetchFlow(GET,currentUserCPF);
+  if(!data){
+    alert("Erro ao consultar fluxo.");
+    return;
+  }
 
-  const lista=json.poltronas||json.lista||[];
-  const cod=json.codigo||json.cursos||[];
+  const cod = data.codigo || data.cursos || [];
+  const aluno = cod.find(x => normCPF(x.CPF2 || x.CPF) === currentUserCPF);
 
-  const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
-  if(!aluno){alert("CPF não encontrado.");location.replace("https://rdrgosnto.github.io/planner");return}
+  if(!aluno){
+    alert("CPF não encontrado.");
+    location.replace("https://rdrgosnto.github.io/planner/index.html");
+    return;
+  }
 
-  currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
-  currentBus=map[currentCurso]||"0046";
-  q("#cursoText").textContent=currentCurso;
+  const id = (aluno.ID ?? "").toString().trim();
 
-  const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
-
-  /* =========================
-     CPF EXISTE MAS NÃO AUTORIZADO
-  ========================= */
-  const rowUser = cursoRows.find(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF);
-  if(!rowUser || getField(rowUser,"ID","Id","id") !== "#"){
+  // 🔒 REGRA PRINCIPAL
+  if(id !== "#"){
     alert("CPF não autorizado");
     location.replace("https://rdrgosnto.github.io/planner/index.html");
     return;
   }
 
-  anim(100);
-  q("#progress-bar-container").remove();
+  // ✔ autorizado → aqui o resto do mapa continuaria
   q("#bus-wrapper").style.display="block";
 };
 
