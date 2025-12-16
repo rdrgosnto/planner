@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Planner | Início</title>
+<title>Planner | Início (TESTE)</title>
 
 <style>
 body{
@@ -13,7 +13,6 @@ body{
   background:#fff;
   height:100vh;
 }
-
 #app{
   height:100%;
   display:flex;
@@ -21,7 +20,6 @@ body{
   align-items:center;
   transition:opacity .4s ease;
 }
-
 #app.fade{opacity:0}
 
 /* Planner */
@@ -118,43 +116,44 @@ const barra = () => {
   };
 };
 
-/* 🔥 SPA REAL: carregar mapa inteiro */
+/* 🚀 TESTE SPA COM FALLBACK */
 const carregarMapa = async () => {
   const app = q("#app");
   app.classList.add("fade");
 
-  // Buscar HTML do mapa
-  const html = await fetch("mapa/index.html").then(r => r.text());
-  const doc = new DOMParser().parseFromString(html,"text/html");
+  try{
+    const html = await fetch("mapa/index2.html",{cache:"no-store"}).then(r=>{
+      if(!r.ok) throw "fetch";
+      return r.text();
+    });
 
-  // 🔑 Corrigir caminhos relativos do mapa
-  let base = document.querySelector("base");
-  if(!base){
-    base = document.createElement("base");
-    document.head.appendChild(base);
+    const doc = new DOMParser().parseFromString(html,"text/html");
+
+    /* base para caminhos relativos */
+    let base = document.querySelector("base");
+    if(!base){
+      base = document.createElement("base");
+      document.head.appendChild(base);
+    }
+    base.href = "mapa/";
+
+    /* limpa app */
+    app.innerHTML = doc.body.innerHTML;
+
+    /* executa scripts do mapa */
+    doc.querySelectorAll("script").forEach(old=>{
+      const s=document.createElement("script");
+      if(old.src) s.src=old.src;
+      else s.textContent=old.textContent;
+      document.body.appendChild(s);
+    });
+
+    requestAnimationFrame(()=>app.classList.remove("fade"));
+
+  }catch(e){
+    /* 🔁 fallback seguro */
+    location.href = "mapa/index2.html";
   }
-  base.href = "mapa/";
-
-  // Injetar CSS externo do mapa (se houver)
-  doc.querySelectorAll('link[rel="stylesheet"]').forEach(lk=>{
-    const l=document.createElement("link");
-    l.rel="stylesheet";
-    l.href=lk.getAttribute("href");
-    document.head.appendChild(l);
-  });
-
-  // Substituir conteúdo
-  app.innerHTML = doc.body.innerHTML;
-
-  // Executar scripts do mapa
-  doc.querySelectorAll("script").forEach(old=>{
-    const s=document.createElement("script");
-    if(old.src) s.src=old.src;
-    else s.textContent=old.textContent;
-    document.body.appendChild(s);
-  });
-
-  requestAnimationFrame(()=>app.classList.remove("fade"));
 };
 
 /* Evento */
