@@ -8,7 +8,6 @@
 <style>
 body{
   margin:0;
-  padding:0;
   font-family:Arial,sans-serif;
   background:#fff;
   display:flex;
@@ -17,9 +16,51 @@ body{
   height:100vh;
 }
 
+/* Splash */
+#splash{
+  position:fixed;
+  inset:0;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+#splashLogo{
+  font-size:36px;
+  font-weight:bold;
+  color:#4CAF50;
+  margin-bottom:10px;
+}
+
+#splashLine{
+  width:120px;
+  height:2px;
+  background:#e0e0e0;
+  overflow:hidden;
+}
+
+#splashLine::after{
+  content:"";
+  display:block;
+  width:40px;
+  height:100%;
+  background:#4CAF50;
+  animation:lineMove .9s infinite ease-in-out;
+}
+
+@keyframes lineMove{
+  from{transform:translateX(-40px)}
+  to{transform:translateX(120px)}
+}
+
+/* App */
 .container{
   width:90%;
   max-width:300px;
+  visibility:hidden;
 }
 
 label{
@@ -27,7 +68,6 @@ label{
   font-size:16px;
   margin-bottom:10px;
   font-weight:bold;
-  text-align:left;
 }
 
 input{
@@ -53,15 +93,10 @@ input{
   float:right;
 }
 
-#entrarBtn:active{
-  transform:scale(.97);
-}
+#entrarBtn:active{transform:scale(.97)}
+#entrarBtn:disabled{opacity:.6;cursor:default}
 
-#entrarBtn:disabled{
-  opacity:.6;
-  cursor:default;
-}
-
+/* Barra */
 #progress-bar-container{
   position:fixed;
   bottom:0;
@@ -69,7 +104,6 @@ input{
   width:100%;
   height:8px;
   background:#0001;
-  z-index:9999;
   display:none;
 }
 
@@ -84,6 +118,11 @@ input{
 
 <body>
 
+<div id="splash">
+  <div id="splashLogo">Planner</div>
+  <div id="splashLine"></div>
+</div>
+
 <div class="container">
   <label>CPF</label>
   <input id="cpfInput" placeholder="CPF (somente números)">
@@ -95,118 +134,71 @@ input{
 </div>
 
 <script>
-const q = s => document.querySelector(s);
+setTimeout(()=>{
+  splash.remove();
+  document.querySelector(".container").style.visibility="visible";
+},1600);
 
-const normCPF = c =>
-  c ? c.replace(/\D/g,"").padStart(11,"0") : "";
+const q=s=>document.querySelector(s);
+const normCPF=c=>c?c.replace(/\D/g,"").padStart(11,"0"):"";
 
-const validarCPF = c => {
-  c = normCPF(c);
-  if (c.length != 11 || /^(\d)\1+$/.test(c)) return false;
-
-  let s = 0, r;
-  for (let i = 0; i < 9; i++) s += c[i] * (10 - i);
-  r = (s * 10) % 11;
-  if (r == 10) r = 0;
-  if (r != c[9]) return false;
-
-  s = 0;
-  for (let i = 0; i < 10; i++) s += c[i] * (11 - i);
-  r = (s * 10) % 11;
-  if (r == 10) r = 0;
-
-  return r == c[10];
+const validarCPF=c=>{
+  c=normCPF(c);
+  if(c.length!=11||/^(\d)\1+$/.test(c))return false;
+  let s=0,r;
+  for(let i=0;i<9;i++)s+=c[i]*(10-i);
+  r=(s*10)%11; if(r==10)r=0;
+  if(r!=c[9])return false;
+  s=0;
+  for(let i=0;i<10;i++)s+=c[i]*(11-i);
+  r=(s*10)%11; if(r==10)r=0;
+  return r==c[10];
 };
 
-const verificarCPF = async cpf => {
+const verificarCPF=async cpf=>{
   try{
-    const r = await fetch(
+    const r=await fetch(
       "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-      {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({ cpf })
-      }
+      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}
     );
-    const d = await r.json();
-    return (d.codigo || []).find(
-      x => normCPF(x.CPF2 || x.CPF) === cpf
-    ) || null;
-  }catch{
-    return null;
-  }
+    const d=await r.json();
+    return(d.codigo||[]).find(x=>normCPF(x.CPF2||x.CPF)===cpf)||null;
+  }catch{return null}
 };
 
-/* Barra de progresso fluida (baseada em tempo) */
-const barra = () => {
-  const bar = q("#progress-bar");
-  const container = bar.parentElement;
-
-  container.style.display = "block";
-  bar.style.width = "0%";
-
-  const start = performance.now();
-  const maxTime = 1200; // ms até ~85%
-  let anim;
-
-  const loop = now => {
-    const elapsed = now - start;
-    const progress = Math.min((elapsed / maxTime) * 85, 85);
-    bar.style.width = progress + "%";
-    anim = requestAnimationFrame(loop);
+const barra=()=>{
+  const bar=q("#progress-bar"),c=bar.parentElement;
+  c.style.display="block"; bar.style.width="0%";
+  const start=performance.now(); let anim;
+  const loop=now=>{
+    bar.style.width=Math.min(((now-start)/1200)*85,85)+"%";
+    anim=requestAnimationFrame(loop);
   };
-
-  anim = requestAnimationFrame(loop);
-
-  return () => {
+  anim=requestAnimationFrame(loop);
+  return()=>{
     cancelAnimationFrame(anim);
-    bar.style.width = "100%";
-    setTimeout(() => {
-      container.style.display = "none";
-      bar.style.width = "0%";
-    }, 300);
+    bar.style.width="100%";
+    setTimeout(()=>{c.style.display="none";bar.style.width="0%"},300);
   };
 };
 
-q("#entrarBtn").onclick = async () => {
-  const btn = q("#entrarBtn");
-  let cpf = q("#cpfInput").value.trim();
-
-  if (!validarCPF(cpf)){
-    alert("CPF inválido.");
-    q("#cpfInput").value = "";
-    q("#cpfInput").focus();
-    return;
+q("#entrarBtn").onclick=async()=>{
+  const btn=q("#entrarBtn");
+  let cpf=q("#cpfInput").value.trim();
+  if(!validarCPF(cpf)){
+    alert("CPF inválido."); q("#cpfInput").value=""; q("#cpfInput").focus(); return;
   }
-
-  cpf = normCPF(cpf);
-
-  btn.disabled = true;
-
-  const stop = barra();
-  const aluno = await verificarCPF(cpf);
+  cpf=normCPF(cpf); btn.disabled=true;
+  const stop=barra();
+  const aluno=await verificarCPF(cpf);
   stop();
-
-  if (!aluno){
-    alert("CPF não encontrado.");
-    btn.disabled = false;
-    q("#cpfInput").value = "";
-    q("#cpfInput").focus();
-    return;
-  }
-
-  if ((aluno.ID ?? "").toString().trim() !== "#"){
+  if(!aluno||(aluno.ID??"").toString().trim()!=="#"){
     alert("CPF não autorizado.");
-    btn.disabled = false;
-    q("#cpfInput").value = "";
-    q("#cpfInput").focus();
-    return;
+    btn.disabled=false; q("#cpfInput").value=""; q("#cpfInput").focus(); return;
   }
-
-  sessionStorage.setItem("cpf", cpf);
-  sessionStorage.setItem("authMapa", "1");
-
-  location.href = "mapa/index.html";
+  sessionStorage.setItem("cpf",cpf);
+  sessionStorage.setItem("authMapa","1");
+  location.href="mapa/index.html";
 };
 </script>
 
