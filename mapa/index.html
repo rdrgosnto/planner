@@ -49,7 +49,6 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   background:#fff!important;
   border:3px solid #8c96b2!important;
   color:transparent!important;
-  cursor:default!important;
   pointer-events:none!important
 }
 
@@ -63,25 +62,20 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 #confirmarBtn{
   width:112px;height:54px;
   background:#4CAF50;color:#fff;
-  border:none;font-size:16px;
-  font-weight:bold;border-radius:12px;
-  cursor:pointer;
+  border:none;font-size:16px;font-weight:bold;
+  border-radius:12px;cursor:pointer;
   position:absolute;bottom:-64px;right:20px
 }
 
 #cursoBox{
-  position:absolute;
-  top:60px;left:100%;
+  position:absolute;top:60px;left:100%;
   width:40px;height:122px;
   background:#4CAF50;color:#fff;
   font-weight:bold;
   display:flex;align-items:center;justify-content:center
 }
 
-#cursoText{
-  transform:rotate(-90deg);
-  font-size:18px;white-space:nowrap
-}
+#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 </style>
 </head>
 
@@ -95,27 +89,34 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 </div>
 
 <script>
-/* ================= HELPERS ================= */
+/* =========================
+   HELPERS
+========================= */
 const q=(s,d=document)=>d.querySelector(s);
 const normCPF=c=>c?c.replace(/\D/g,"").padStart(11,"0"):"";
 const fetchJSON=u=>fetch(u+"?v="+Date.now()).then(r=>r.json());
 
-let sel=null;
-let bl=[], userBlockedSeats=[], fakeBlockedSeats=[];
+let sel=null, bl=[], userBlockedSeats=[], fakeBlockedSeats=[];
 let currentUserCPF="", currentCurso="", currentBus="";
 
-/* =============== FEATURE FLAG =============== */
+/* =========================
+   FEATURE FLAG
+========================= */
 const FAKE_BLOCKING_FEATURE={
   enabled:true,
   courses:["AAL"],
-  ttlMs:(2*60+59)*1000 // 2:59
+  ttlMs:(2*60+59)*1000
 };
 
-/* ================= API ===================== */
+/* =========================
+   API
+========================= */
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-/* ============ FAKE BLOCKING ================ */
+/* =========================
+   FAKE BLOCKING (SEM SOBRA)
+========================= */
 const fakeKey=()=>`fake:${currentUserCPF}:${currentCurso}:${currentBus}`;
 
 const applyFakeBlocking=layout=>{
@@ -132,48 +133,48 @@ const applyFakeBlocking=layout=>{
     sessionStorage.removeItem(key);
   }
 
-  const seats=layout.flat()
-    .filter(v=>typeof v==="number")
-    .map(v=>v.toString().padStart(2,"0"));
+  const rows=layout.map(r=>r.filter(v=>typeof v==="number"));
+  const freePairs=[];
 
-  const free=seats.filter(s=>!bl.includes(s)&&!userBlockedSeats.includes(s));
-  const shuffled=[...free].sort(()=>Math.random()-0.5);
+  rows.forEach(row=>{
+    for(let i=0;i<row.length-1;i++){
+      const a=row[i].toString().padStart(2,"0");
+      const b=row[i+1].toString().padStart(2,"0");
 
-  let pairs=Math.floor(free.length/10);
-  const blocked=new Set();
-
-  for(let i=0;i<shuffled.length-1 && pairs>0;i++){
-    const a=shuffled[i];
-    const b=(+a+1).toString().padStart(2,"0");
-
-    if(
-      shuffled.includes(b) &&
-      !blocked.has(a) &&
-      !blocked.has(b)
-    ){
-      blocked.add(a);
-      blocked.add(b);
-      pairs--;
+      if(
+        !bl.includes(a) &&
+        !bl.includes(b) &&
+        !userBlockedSeats.includes(a) &&
+        !userBlockedSeats.includes(b)
+      ){
+        freePairs.push([a,b]);
+      }
     }
-  }
+  });
 
-  const result=[...blocked];
+  if(!freePairs.length) return [];
+
+  const shuffled=[...freePairs].sort(()=>Math.random()-0.5);
+  const maxPairs=freePairs.length>6?3:2;
+
+  const chosen=shuffled.slice(0,maxPairs).flat();
+
   sessionStorage.setItem(key,JSON.stringify({
-    seats:result,
+    seats:chosen,
     expiresAt:now+FAKE_BLOCKING_FEATURE.ttlMs
   }));
 
-  return result;
+  return chosen;
 };
 
-/* ================= RENDER ================== */
+/* =========================
+   RENDER
+========================= */
 const cSeat=v=>{
   const e=document.createElement("div");
-  if(v===null){
-    e.className="empty";
-  }else if(v==="white"){
-    e.className="seat white";
-  }else{
+  if(v===null) e.className="empty";
+  else if(v==="white") e.className="seat white";
+  else{
     e.className="seat";
     e.textContent=v.toString().padStart(2,"0");
   }
@@ -197,7 +198,7 @@ const render=layout=>{
         e.textContent="";
       }else{
         e.onclick=()=>{
-          if(sel===e){
+          if(e.classList.contains("selected")){
             e.classList.remove("selected");
             sel=null;
           }else{
@@ -213,7 +214,9 @@ const render=layout=>{
   w.appendChild(g);
 };
 
-/* ================= LOAD =================== */
+/* =========================
+   LOAD
+========================= */
 (async()=>{
   const cpfStored=sessionStorage.getItem("cpf");
   if(!cpfStored){
@@ -242,8 +245,8 @@ const render=layout=>{
 
   const cfg=await fetchJSON(`../configs/${currentBus}.json`);
   fakeBlockedSeats=applyFakeBlocking(cfg.layout);
-
   render(cfg.layout);
+
   q("#bus-wrapper").style.display="block";
 })();
 </script>
