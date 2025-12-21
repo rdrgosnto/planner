@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Expires" content="0"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+
 <script>
 if(location.pathname.endsWith("index.html")){
   location.replace(location.pathname.replace("index.html",""));
@@ -49,7 +52,7 @@ const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 const normCPF=c=>c?c.replace(/\D/g,"").padStart(11,"0"):"";
 const fetchJSON=u=>fetch(u+"?v="+Date.now()).then(r=>r.json());
 
-/* ===== FAKE BLOCKING CONFIG ===== */
+/* ===== FAKE BLOCKING ===== */
 const FAKE_BLOCKING={
   enabled:true,
   courses:["AAL"],
@@ -57,60 +60,49 @@ const FAKE_BLOCKING={
 };
 const fakeKey=()=>`fake:${currentUserCPF}:${currentCurso}:${currentBus}`;
 
-/* ===== FAKE BLOCKING STRONG (APENAS PARES REAIS) ===== */
 const applyFakeBlocking=(layout)=>{
   if(!FAKE_BLOCKING.enabled) return [];
   if(!FAKE_BLOCKING.courses.includes(currentCurso)) return [];
 
-  const key=fakeKey();
   const now=Date.now();
-  const cached=sessionStorage.getItem(key);
+  const cached=sessionStorage.getItem(fakeKey());
   if(cached){
     const d=JSON.parse(cached);
     if(d.expiresAt>now) return d.seats;
-    sessionStorage.removeItem(key);
   }
 
-  const blocked=new Set();
-  let pairs=Math.floor(layout.flat().filter(v=>typeof v==="number").length/10);
+  const pairs=[];
 
-  for(const row of layout){
-    if(pairs<=0) break;
+  layout.forEach(row=>{
     for(let i=0;i<row.length-1;i++){
       const a=row[i], b=row[i+1];
       if(typeof a==="number" && typeof b==="number"){
         const sa=a.toString().padStart(2,"0");
         const sb=b.toString().padStart(2,"0");
-        if(
-          !bl.includes(sa) &&
-          !bl.includes(sb) &&
-          !userBlockedSeats.includes(sa) &&
-          !userBlockedSeats.includes(sb) &&
-          !blocked.has(sa) &&
-          !blocked.has(sb)
-        ){
-          blocked.add(sa);
-          blocked.add(sb);
-          pairs--;
-          break;
+        if(!bl.includes(sa)&&!bl.includes(sb)&&
+           !userBlockedSeats.includes(sa)&&!userBlockedSeats.includes(sb)){
+          pairs.push([sa,sb]);
         }
       }
     }
-  }
+  });
 
-  const result=[...blocked];
-  sessionStorage.setItem(key,JSON.stringify({
-    seats:result,
+  const qty=Math.max(1,Math.floor(pairs.length/4));
+  const chosen=pairs.sort(()=>Math.random()-0.5).slice(0,qty).flat();
+
+  sessionStorage.setItem(fakeKey(),JSON.stringify({
+    seats:chosen,
     expiresAt:now+FAKE_BLOCKING.ttlMs
   }));
-  return result;
+
+  return chosen;
 };
 
 /* ===== RENDER ===== */
 const cSeat=v=>{
   const e=document.createElement("div");
-  if(v===null || typeof v!=="number"){
-    e.className="seat white";
+  if(v===null){
+    e.className="empty";
   }else{
     e.className="seat";
     e.textContent=v.toString().padStart(2,"0");
@@ -139,7 +131,8 @@ const render=l=>{
     if(typeof v==="number"){
       const id=v.toString().padStart(2,"0");
       if(bl.includes(id)||userBlockedSeats.includes(id)||fakeBlockedSeats.includes(id)){
-        e.classList.add("white"); e.textContent="";
+        e.classList.add("white");
+        e.textContent="";
       }else{
         e.onclick=()=>selSeat(e);
       }
@@ -151,16 +144,16 @@ const render=l=>{
 
 /* ===== LOAD ===== */
 (async()=>{
-  const cpfStored=sessionStorage.getItem("cpf");
-  if(!cpfStored){location.href="https://rdrgosnto.github.io/planner";return;}
-  currentUserCPF=normCPF(cpfStored);
+  const cpf=sessionStorage.getItem("cpf");
+  if(!cpf){location.href="https://rdrgosnto.github.io/planner";return;}
+  currentUserCPF=normCPF(cpf);
 
   const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentUserCPF})});
   const data=await r.json();
 
   const aluno=data.codigo.find(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF);
   currentCurso=aluno.CODIGO.trim().toUpperCase();
-  currentBus=map[currentCurso]||"0046";
+  currentBus=map[currentCurso];
   q("#cursoText").textContent=currentCurso;
 
   const rows=data.poltronas.filter(x=>x.CURSO.trim().toUpperCase()===currentCurso);
@@ -171,8 +164,8 @@ const render=l=>{
 
   const cfg=await fetchJSON(`../configs/${currentBus}.json`);
   fakeBlockedSeats=applyFakeBlocking(cfg.layout);
-
   render(cfg.layout);
+
   q("#bus-wrapper").style.display="block";
 })();
 
@@ -180,15 +173,10 @@ const render=l=>{
 q("#confirmarBtn").onclick=async()=>{
   if(!sel){alert("Selecione uma poltrona.");return;}
   if(rb.includes(currentUserCPF)){alert("Usuário já possui reserva.");return;}
-  try{
-    const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})
-    });
-    alert(r.ok?"Poltrona selecionada!":"Poltrona ocupada.");
-    setTimeout(()=>location.reload(true),2000);
-  }catch{
-    alert("Erro de comunicação.");
-  }
+  await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})
+  });
+  location.reload(true);
 };
 </script>
 </body>
