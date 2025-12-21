@@ -57,8 +57,8 @@ let currentUserCPF="", currentCurso="", currentBus="";
 ========================= */
 const FAKE_BLOCKING_FEATURE={
   enabled:true,
-  courses:["AAL"],        // só AAL
-  ttlMs:(9*60+59)*1000    // 9:59
+  courses:["AAL"],
+  ttlMs:(2*60+59)*1000
 };
 
 /* =========================
@@ -68,7 +68,7 @@ const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powe
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
 /* =========================
-   FAKE BLOCKING
+   FAKE BLOCKING (POR PARTES)
 ========================= */
 const fakeKey=()=>`fake:${currentUserCPF}:${currentCurso}:${currentBus}`;
 
@@ -86,14 +86,15 @@ const applyFakeBlocking=layout=>{
     sessionStorage.removeItem(key);
   }
 
-  const seats=layout.flat().filter(v=>typeof v==="number")
+  const seats=layout.flat()
+    .filter(v=>typeof v==="number")
     .map(v=>v.toString().padStart(2,"0"));
 
   const free=seats.filter(s=>!bl.includes(s)&&!userBlockedSeats.includes(s));
   const shuffled=[...free].sort(()=>Math.random()-0.5);
 
+  let pairs = free.length>40?4 : free.length>25?3 : free.length>15?2 : 1;
   const blocked=new Set();
-  let pairs=free.length>30?4:free.length>20?2:1;
 
   for(let i=0;i<shuffled.length-1 && pairs>0;i++){
     const a=shuffled[i];
@@ -137,9 +138,14 @@ const render=layout=>{
         e.textContent="";
       }else{
         e.onclick=()=>{
-          sel?.classList.remove("selected");
-          sel=e;
-          e.classList.add("selected");
+          if(sel===e){
+            e.classList.remove("selected");
+            sel=null;
+          }else{
+            sel?.classList.remove("selected");
+            sel=e;
+            e.classList.add("selected");
+          }
         };
       }
     }
@@ -173,8 +179,7 @@ const render=layout=>{
 
   const rows=data.poltronas.filter(x=>x.CURSO.trim().toUpperCase()===currentCurso);
   bl=[...new Set(rows.map(x=>x.ID.toString().padStart(2,"0")))];
-  userBlockedSeats=rows
-    .filter(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF)
+  userBlockedSeats=rows.filter(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF)
     .map(x=>x.ID.toString().padStart(2,"0"));
 
   const cfg=await fetchJSON(`../configs/${currentBus}.json`);
