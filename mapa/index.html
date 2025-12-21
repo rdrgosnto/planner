@@ -1,11 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/><meta http-equiv="Expires" content="0"/>
-<script>if(location.pathname.endsWith("index.html"))location.replace(location.pathname.replace("index.html",""));</script>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+
+<script>
+if (location.pathname.endsWith("index.html")) {
+  location.replace(location.pathname.replace("index.html",""));
+}
+</script>
+
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.9);transform-origin:top center;display:none}
@@ -14,17 +23,17 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer}
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
-.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default!important;pointer-events:none!important}
-.seat.white::after{border-color:#8c96b2!important}
+.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;pointer-events:none!important}
 .seat.selected{background:#e74c3c;border-color:#e74c3c}
-.empty{background:0 0}
+.empty{background:none}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999}
-#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center}
+#cursoText{transform:rotate(-90deg);font-size:18px}
 </style>
 </head>
 
 <body>
+
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
@@ -33,84 +42,84 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 </div>
 
 <script>
-(()=>{const s=Date.now();if(!sessionStorage.getItem("cacheStamp"))sessionStorage.setItem("cacheStamp",s)})();
-
-const q=(s,d=document)=>d.querySelector(s);
+const q = (s,d=document)=>d.querySelector(s);
 let sel=null, bl=[], userBlockedSeats=[], fakeBlockedSeats=[];
-let currentUserCPF=null, currentCurso="", currentBus="";
+let currentUserCPF="", currentCurso="", currentBus="";
 
 /* =====================
-   🔧 FLAG DE CONTROLE
+   🔧 FEATURE FLAG
 ===================== */
 const FAKE_BLOCKING_FEATURE = {
-  enabled: true,      // false = desliga tudo
-  courses: ["AAL"]    // apenas AAL ativo
+  enabled: true,
+  courses: ["AAL"],
+  ttlMs: (2*60+59)*1000 // 2:59
 };
-/* ===================== */
 
+/* =====================
+   API
+===================== */
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1";
-const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1";
-
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-const normCPF=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"";
+const normCPF=c=>c?c.replace(/\D/g,"").padStart(11,"0"):"";
 const fetchJSON=u=>fetch(u+"?v="+Date.now()).then(r=>r.json());
 
+/* =====================
+   FAKE BLOCKING
+===================== */
+const fakeKey = () => `fakeBlock:${currentUserCPF}:${currentCurso}:${currentBus}`;
+
+const applyFakeBlocking = (layout) => {
+  if(!FAKE_BLOCKING_FEATURE.enabled) return [];
+  if(!FAKE_BLOCKING_FEATURE.courses.includes(currentCurso)) return [];
+
+  const key=fakeKey();
+  const now=Date.now();
+  const cached=sessionStorage.getItem(key);
+
+  if(cached){
+    const data=JSON.parse(cached);
+    if(data.expiresAt>now) return data.seats;
+    sessionStorage.removeItem(key);
+  }
+
+  const seats=layout.flat().filter(v=>typeof v==="number").map(v=>v.toString().padStart(2,"0"));
+  const free=seats.filter(id=>!bl.includes(id)&&!userBlockedSeats.includes(id));
+  let pairs=0;
+
+  if(free.length>40)pairs=6;
+  else if(free.length>30)pairs=4;
+  else if(free.length>20)pairs=2;
+  else if(free.length>10)pairs=1;
+
+  const blocked=new Set();
+  const shuffled=[...free].sort(()=>Math.random()-0.5);
+
+  for(let i=0;i<shuffled.length-1&&pairs>0;i++){
+    const a=shuffled[i];
+    const b=(parseInt(a)+1).toString().padStart(2,"0");
+    if(shuffled.includes(b)&&!blocked.has(a)&&!blocked.has(b)){
+      blocked.add(a);blocked.add(b);pairs--;
+    }
+  }
+
+  const result=[...blocked];
+  sessionStorage.setItem(key,JSON.stringify({
+    seats:result,
+    expiresAt:now+FAKE_BLOCKING_FEATURE.ttlMs
+  }));
+
+  return result;
+};
+
+/* =====================
+   RENDER
+===================== */
 const cSeat=v=>{
   const e=document.createElement("div");
   if(v===null)e.className="empty";
   else{e.className="seat";e.textContent=v.toString().padStart(2,"0")}
   return e;
-};
-
-const selSeat=e=>{
-  if(e.classList.contains("white"))return;
-  if(e.classList.contains("selected")){e.classList.remove("selected");sel=null;}
-  else{if(sel)sel.classList.remove("selected");e.classList.add("selected");sel=e;}
-};
-
-const getField=(o,...n)=>{
-  for(const x of n){
-    const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());
-    if(k)return o[k];
-  }
-};
-
-/* =========================
-   🧠 BLOQUEIO FAKE EM PARES
-========================= */
-const applyFakeBlocking = (layout) => {
-
-  if (
-    !FAKE_BLOCKING_FEATURE.enabled ||
-    !FAKE_BLOCKING_FEATURE.courses.includes(currentCurso)
-  ) return [];
-
-  const seats = layout.flat().filter(v=>typeof v==="number").map(v=>v.toString().padStart(2,"0"));
-  const freeSeats = seats.filter(id=>!bl.includes(id)&&!userBlockedSeats.includes(id));
-  const freeCount = freeSeats.length;
-
-  let pairs=0;
-  if(freeCount>40)pairs=6;
-  else if(freeCount>30)pairs=4;
-  else if(freeCount>20)pairs=2;
-  else if(freeCount>10)pairs=1;
-
-  const blocked=new Set();
-  const shuffled=[...freeSeats].sort(()=>Math.random()-0.5);
-
-  for(let i=0;i<shuffled.length-1&&pairs>0;i++){
-    const a=parseInt(shuffled[i]);
-    const b=(a+1).toString().padStart(2,"0");
-    const aId=a.toString().padStart(2,"0");
-
-    if(shuffled.includes(b)&&!blocked.has(aId)&&!blocked.has(b)){
-      blocked.add(aId);
-      blocked.add(b);
-      pairs--;
-    }
-  }
-  return [...blocked];
 };
 
 const render=l=>{
@@ -123,46 +132,42 @@ const render=l=>{
     const e=cSeat(v);
     if(v!==null){
       const id=v.toString().padStart(2,"0");
-      e.dataset.seat=id;
-
       if(bl.includes(id)||userBlockedSeats.includes(id)||fakeBlockedSeats.includes(id)){
-        e.classList.add("white");
-        e.textContent="";
-      } else {
-        e.onclick=()=>selSeat(e);
-      }
+        e.classList.add("white");e.textContent="";
+      } else e.onclick=()=>{sel?.classList.remove("selected");sel=e;e.classList.add("selected")}
     }
     g.appendChild(e);
   });
   w.appendChild(g);
 };
 
-const cpfStored=sessionStorage.getItem("cpf");
-if(!cpfStored){location.href="https://rdrgosnto.github.io/planner";throw""}
-currentUserCPF=normCPF(cpfStored);
+/* =====================
+   LOAD
+===================== */
+(async()=>{
+  const cpfStored=sessionStorage.getItem("cpf");
+  if(!cpfStored){location.href="https://rdrgosnto.github.io/planner";return}
+  currentUserCPF=normCPF(cpfStored);
 
-const load=async()=>{
   const r=await fetch(GET,{method:"POST",body:JSON.stringify({cpf:currentUserCPF})});
   const data=await r.json();
 
-  const aluno=data.codigo.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
-  currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toUpperCase();
+  const aluno=data.codigo.find(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF);
+  currentCurso=aluno.CODIGO.trim().toUpperCase();
   currentBus=map[currentCurso]||"0046";
   q("#cursoText").textContent=currentCurso;
 
-  const cursoRows=data.poltronas.filter(x=>getField(x,"CURSO","Curso","curso")?.toUpperCase()===currentCurso);
-  bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id").padStart(2,"0")))];
-  userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF)
-    .map(x=>getField(x,"ID","Id","id").padStart(2,"0"));
+  const rows=data.poltronas.filter(x=>x.CURSO.trim().toUpperCase()===currentCurso);
+  bl=[...new Set(rows.map(x=>x.ID.toString().padStart(2,"0")))];
+  userBlockedSeats=rows.filter(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF).map(x=>x.ID.toString().padStart(2,"0"));
 
   const cfg=await fetchJSON(`../configs/${currentBus}.json`);
   fakeBlockedSeats=applyFakeBlocking(cfg.layout);
-
   render(cfg.layout);
-  q("#bus-wrapper").style.display="block";
-};
 
-load();
+  q("#bus-wrapper").style.display="block";
+})();
 </script>
+
 </body>
 </html>
