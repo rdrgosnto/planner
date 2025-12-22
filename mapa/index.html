@@ -12,7 +12,6 @@ if(location.pathname.endsWith("index.html")){
   location.replace(location.pathname.replace("index.html",""));
 }
 </script>
-
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.9);transform-origin:top center;display:none}
@@ -40,27 +39,21 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 </div>
 
 <script>
-// ======================================================
-// 1. UTILITÁRIOS
-// ======================================================
-const q = (s,d=document)=>d.querySelector(s);
-const normCPF = c=>c?c.replace(/\D/g,"").padStart(11,"0"):"";
-const fetchJSON = u=>fetch(u+"?v="+Date.now()).then(r=>r.json());
+// UTILITÁRIOS
+const q=(s,d=document)=>d.querySelector(s);
+const normCPF=c=>c?c.replace(/\D/g,"").padStart(11,"0"):"";
+const fetchJSON=u=>fetch(u+"?v="+Date.now()).then(r=>r.json());
 
-// ======================================================
-// 2. VARIÁVEIS GLOBAIS
-// ======================================================
+// VARIÁVEIS
 let sel=null, bl=[], rb=[], userBlockedSeats=[], fakeBlockedSeats=[];
 let currentUserCPF="", currentCurso="", currentBus="";
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
-const FAKE_BLOCKING={enabled:true, courses:["AAL"], ttlMs:(2*60+59)*1000};
+const FAKE_BLOCKING={enabled:true,courses:["AAL"],ttlMs:(2*60+59)*1000};
 const fakeKey=()=>`fake:${currentUserCPF}:${currentCurso}:${currentBus}`;
 
-// ======================================================
-// 3. BLOQUEIO FAKE
-// ======================================================
+// BLOQUEIO FAKE
 const applyFakeBlocking=layout=>{
   if(!FAKE_BLOCKING.enabled||!FAKE_BLOCKING.courses.includes(currentCurso)) return [];
   const now=Date.now();
@@ -90,14 +83,12 @@ const applyFakeBlocking=layout=>{
   return chosen;
 };
 
-// ======================================================
-// 4. RENDERIZAÇÃO DE POLTRONAS
-// ======================================================
+// RENDERIZAÇÃO
 const cSeat=(v,rowIndex,lastRowIndex)=>{
   const e=document.createElement("div");
-  if(rowIndex===lastRowIndex && (v===null||typeof v!=="number")){e.className="seat white"; return e;}
+  if(rowIndex===lastRowIndex&&(v===null||typeof v!=="number")){e.className="seat white"; return e;}
   if(v===null) e.className="empty";
-  else if(typeof v==="number"){e.className="seat"; e.textContent=v.toString().padStart(2,"0");}
+  else if(typeof v==="number"){e.className="seat"; e.textContent=v.toString().padStart(2,"0"); e.dataset.id=e.textContent;}
   return e;
 };
 
@@ -126,9 +117,7 @@ const render=layout=>{
   w.appendChild(g);
 };
 
-// ======================================================
-// 5. CARREGAMENTO DE DADOS
-// ======================================================
+// CARREGAMENTO
 const loadData=async()=>{
   const cpf=sessionStorage.getItem("cpf"); if(!cpf){location.href="https://rdrgosnto.github.io/planner"; return;}
   currentUserCPF=normCPF(cpf);
@@ -148,20 +137,18 @@ const loadData=async()=>{
   q("#bus-wrapper").style.display="block";
 };
 
-// ======================================================
-// 6. CONFIRMAR RESERVA
-// ======================================================
+// CONFIRMAR
 const confirmar=async()=>{
   if(!sel){alert("Selecione uma poltrona."); return;}
   if(rb.includes(currentUserCPF)){alert("Usuário já possui reserva."); return;}
+  const id=sel.textContent.padStart(2,"0");
+  sel.classList.add("white"); sel.textContent=""; sel=null;
+  userBlockedSeats.push(id);
+  document.querySelectorAll(".seat").forEach(e=>e.onclick=null);
   try{
-    const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
-    if(r.ok){
-      alert("Poltrona selecionada com sucesso!");
-      const id=sel.textContent.padStart(2,"0");
-      sel.classList.add("white"); sel.textContent=""; sel=null;
-      userBlockedSeats.push(id);
-    } else alert("Poltrona ocupada ou erro ao reservar.");
+    const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:id,CURSO:currentCurso,cpf:currentUserCPF})});
+    if(r.ok) alert("Poltrona selecionada com sucesso!");
+    else alert("Poltrona ocupada ou erro ao reservar.");
   } catch(e){alert("Erro de comunicação.");}
 };
 
