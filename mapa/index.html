@@ -72,6 +72,7 @@ const applyFakeBlocking=(layout)=>{
   }
 
   const pairs=[];
+
   layout.forEach(row=>{
     for(let i=0;i<row.length-1;i++){
       const a=row[i], b=row[i+1];
@@ -86,8 +87,14 @@ const applyFakeBlocking=(layout)=>{
     }
   });
 
-  const qty=Math.max(1,Math.floor(pairs.length/4));
-  const chosen=pairs.sort(()=>Math.random()-0.5).slice(0,qty).flat();
+  // === REGRA NOVA APLICADA ===
+  let qty = Math.floor((pairs.length - 1) / 2) - 1;
+  qty = Math.max(0, qty);
+
+  const chosen = pairs
+    .sort(()=>Math.random()-0.5)
+    .slice(0, qty)
+    .flat();
 
   sessionStorage.setItem(fakeKey(),JSON.stringify({
     seats:chosen,
@@ -100,19 +107,12 @@ const applyFakeBlocking=(layout)=>{
 /* ===== RENDER ===== */
 const cSeat=v=>{
   const e=document.createElement("div");
-
-  if(v === null){
-    e.className="empty";               // corredor
-    return e;
+  if(v===null){
+    e.className="empty";
+  }else{
+    e.className="seat";
+    e.textContent=v.toString().padStart(2,"0");
   }
-
-  if(v === "white"){
-    e.className="seat white";          // COMPLEMENTO DA ÚLTIMA FILEIRA
-    return e;
-  }
-
-  e.className="seat";
-  e.textContent=v.toString().padStart(2,"0");
   return e;
 };
 
@@ -134,7 +134,6 @@ const render=l=>{
 
   l.flat().forEach(v=>{
     const e=cSeat(v);
-
     if(typeof v==="number"){
       const id=v.toString().padStart(2,"0");
       if(bl.includes(id)||userBlockedSeats.includes(id)||fakeBlockedSeats.includes(id)){
@@ -144,10 +143,8 @@ const render=l=>{
         e.onclick=()=>selSeat(e);
       }
     }
-
     g.appendChild(e);
   });
-
   w.appendChild(g);
 };
 
@@ -173,8 +170,8 @@ const render=l=>{
 
   const cfg=await fetchJSON(`../configs/${currentBus}.json`);
   fakeBlockedSeats=applyFakeBlocking(cfg.layout);
-
   render(cfg.layout);
+
   q("#bus-wrapper").style.display="block";
 })();
 
