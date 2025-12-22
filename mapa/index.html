@@ -38,7 +38,7 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 <script>
 (()=>{const s=Date.now();if(!sessionStorage.getItem("cacheStamp"))sessionStorage.setItem("cacheStamp",s)})();
 const q=(s,d=document)=>d.querySelector(s);
-let sel=null,bl=[],rb=[],userBlockedSeats=[],fakeBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
+let sel=null,bl=[],rb=[],userBlockedSeats=[],fakeBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="",layout=[];
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
@@ -52,32 +52,39 @@ const cpfStored=sessionStorage.getItem("cpf");if(!cpfStored){location.href="http
 
 // ================= BLOQUEIO FAKE INTELIGENTE =================
 const FAKE_BLOCKING={enabled:true,courses:["AAL"],ttlMs:(2*60+59)*1000};
-const fakeKey=()=>`fake:${currentCurso}:${currentBus}`;
-
-const applyFakeBlocking=(layout)=>{
+const fakeKey=()=>`fake:${currentUserCPF}:${currentCurso}:${currentBus}`;
+const applyFakeBlocking=(l)=>{
+  layout=l;
   if(!FAKE_BLOCKING.enabled || !FAKE_BLOCKING.courses.includes(currentCurso)) return [];
   const now=Date.now();
-  const cached=JSON.parse(localStorage.getItem(fakeKey())||"{}");
-  let seats=[];
-  if(cached.expiresAt && cached.expiresAt>now) seats=cached.seats;
-  else {
-    const availableSeats=[];
-    layout.flat().forEach(v=>{
-      if(typeof v==="number"){
-        const id=v.toString().padStart(2,"0");
-        if(!bl.includes(id) && !userBlockedSeats.includes(id)) availableSeats.push(id);
-      }
-    });
-    const realOccupied = bl.length + userBlockedSeats.length;
-    const occupancyRate = realOccupied / availableSeats.length;
-    let maxFake=0;
-    if(occupancyRate<0.5) maxFake = Math.min(8, Math.floor((1-occupancyRate)*8)); // mais fakes se ônibus vazio
-    else maxFake = Math.max(0, 8 - Math.floor(realOccupied/4)); // menos fakes conforme ocupação
-    seats=availableSeats.sort(()=>Math.random()-0.5).slice(0,maxFake);
-    localStorage.setItem(fakeKey(),JSON.stringify({seats,seatsCreatedAt:now,expiresAt:now+FAKE_BLOCKING.ttlMs}));
+  const cached=localStorage.getItem(fakeKey());
+  if(cached){
+    const d=JSON.parse(cached);
+    if(d.expiresAt>now) return d.seats;
   }
-  return seats;
+  const pairs=[];
+  l.forEach(row=>{
+    for(let i=0;i<row.length-1;i++){
+      if(typeof row[i]==="number" && typeof row[i+1]==="number"){
+        const a=row[i].toString().padStart(2,"0"), b=row[i+1].toString().padStart(2,"0");
+        if(!bl.includes(a)&&!bl.includes(b)&&!userBlockedSeats.includes(a)&&!userBlockedSeats.includes(b))
+          pairs.push([a,b]);
+      }
+    }
+  });
+  const realOccupied = bl.length + userBlockedSeats.length;
+  const maxFake = Math.max(1, 6 - Math.floor(realOccupied/5));
+  const chosen=pairs.sort(()=>Math.random()-0.5).slice(0,maxFake).flat();
+  localStorage.setItem(fakeKey(), JSON.stringify({seats:chosen, expiresAt: now + FAKE_BLOCKING.ttlMs}));
+  return chosen;
 };
+window.addEventListener("storage",(e)=>{
+  if(e.key && e.key.startsWith("fake:")){
+    const d = JSON.parse(e.newValue||'{}');
+    fakeBlockedSeats=d.seats||[];
+    if(layout.length) render(layout);
+  }
+});
 // =====================================================
 
 const render=l=>{
@@ -129,8 +136,6 @@ const load=async()=>{
   }
   anim(100); setTimeout(()=>q("#progress-bar-container").remove(),600); q("#bus-wrapper").style.display="block";
 };
-
-window.addEventListener("storage", e=>{ if(e.key===fakeKey()) { fakeBlockedSeats=JSON.parse(e.newValue||"{}").seats||[]; load(); }});
 
 q("#confirmarBtn").onclick=async()=>{
   if(!sel){alert("Selecione uma poltrona.");return}
