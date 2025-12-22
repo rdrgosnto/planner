@@ -72,7 +72,6 @@ const applyFakeBlocking=(layout)=>{
   }
 
   const pairs=[];
-
   layout.forEach(row=>{
     for(let i=0;i<row.length-1;i++){
       const a=row[i], b=row[i+1];
@@ -87,14 +86,16 @@ const applyFakeBlocking=(layout)=>{
     }
   });
 
-  // === REGRA NOVA APLICADA ===
-  let qty = Math.floor((pairs.length - 1) / 2) - 1;
-  qty = Math.max(0, qty);
+  // Ajuste de quantidade de pares bloqueados
+  let qty=0;
+  if(pairs.length>=3 && pairs.length<=4) qty=1;
+  else if(pairs.length>=5 && pairs.length<=7) qty=2;
+  else if(pairs.length>=8 && pairs.length<=11) qty=3;
+  else if(pairs.length>=12 && pairs.length<=15) qty=4;
+  else if(pairs.length>=16 && pairs.length<=19) qty=5;
+  else if(pairs.length>=20) qty=6;
 
-  const chosen = pairs
-    .sort(()=>Math.random()-0.5)
-    .slice(0, qty)
-    .flat();
+  const chosen=pairs.sort(()=>Math.random()-0.5).slice(0,qty).flat();
 
   sessionStorage.setItem(fakeKey(),JSON.stringify({
     seats:chosen,
@@ -107,8 +108,8 @@ const applyFakeBlocking=(layout)=>{
 /* ===== RENDER ===== */
 const cSeat=v=>{
   const e=document.createElement("div");
-  if(v===null){
-    e.className="empty";
+  if(v===null || typeof v!=="number"){ // Poltrona fora do layout -> branca e bloqueada
+    e.className="seat white";
   }else{
     e.className="seat";
     e.textContent=v.toString().padStart(2,"0");
