@@ -65,7 +65,7 @@ const applyFakeBlocking=l=>{
   if(cached){const d=JSON.parse(cached); if(d.expiresAt>now) return d.seats}
   const pairs=[];
   l.forEach(row=>{for(let i=0;i<row.length-1;i++){if(typeof row[i]==="number"&&typeof row[i+1]==="number"){const a=row[i].toString().padStart(2,"0"),b=row[i+1].toString().padStart(2,"0"); if(!bl.includes(a)&&!bl.includes(b)&&!userBlockedSeats.includes(a)&&!userBlockedSeats.includes(b)) pairs.push([a,b])}}});
-  const maxFake=Math.max(1,6-Math.floor((bl.length+userBlockedSeats.length)/5));
+  const maxFake=Math.max(0,6-Math.floor((bl.length+userBlockedSeats.length)/5));
   const chosen=pairs.sort(()=>Math.random()-0.5).slice(0,maxFake).flat();
   localStorage.setItem(fakeKey(),JSON.stringify({seats:chosen,expiresAt:now+FAKE_BLOCKING.ttlMs}));
   return chosen;
