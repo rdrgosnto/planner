@@ -38,7 +38,7 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 <script>
 (()=>{const s=Date.now();if(!sessionStorage.getItem("cacheStamp"))sessionStorage.setItem("cacheStamp",s)})();
 const q=(s,d=document)=>d.querySelector(s);
-let sel=null,bl=[],rb=[],userBlockedSeats=[],fakeBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="";
+let sel=null,bl=[],rb=[],userBlockedSeats=[],fakeBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="",layout=[];
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
@@ -50,19 +50,20 @@ const selSeat=e=>{if(e.classList.contains("white")||e.classList.contains("lost")
 const getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 const cpfStored=sessionStorage.getItem("cpf");if(!cpfStored){location.href="https://rdrgosnto.github.io/planner";throw""}currentUserCPF=normCPF(cpfStored);
 
-// ================= BLOQUEIO FAKE COM TTL =================
-const FAKE_BLOCKING={enabled:true,courses:["AAL"],ttlMs:(2*60+59)*1000}; // 2min 59seg
+// ================= BLOQUEIO FAKE INTELIGENTE =================
+const FAKE_BLOCKING={enabled:true,courses:["AAL"],ttlMs:(2*60+59)*1000};
 const fakeKey=()=>`fake:${currentUserCPF}:${currentCurso}:${currentBus}`;
-const applyFakeBlocking=(layout)=>{
+const applyFakeBlocking=(l)=>{
+  layout=l;
   if(!FAKE_BLOCKING.enabled || !FAKE_BLOCKING.courses.includes(currentCurso)) return [];
   const now=Date.now();
-  const cached=sessionStorage.getItem(fakeKey());
+  const cached=localStorage.getItem(fakeKey());
   if(cached){
     const d=JSON.parse(cached);
     if(d.expiresAt>now) return d.seats;
   }
   const pairs=[];
-  layout.forEach(row=>{
+  l.forEach(row=>{
     for(let i=0;i<row.length-1;i++){
       if(typeof row[i]==="number" && typeof row[i+1]==="number"){
         const a=row[i].toString().padStart(2,"0"), b=row[i+1].toString().padStart(2,"0");
@@ -71,16 +72,19 @@ const applyFakeBlocking=(layout)=>{
       }
     }
   });
-  let qty=0;
-  if(pairs.length>=3 && pairs.length<=4) qty=1;
-  else if(pairs.length>=5 && pairs.length<=7) qty=2;
-  else if(pairs.length>=8 && pairs.length<=11) qty=3;
-  else if(pairs.length>=12 && pairs.length<=15) qty=4;
-  else if(pairs.length>=16) qty=5;
-  const chosen=pairs.sort(()=>Math.random()-0.5).slice(0,qty).flat();
-  sessionStorage.setItem(fakeKey(),JSON.stringify({seats:chosen,expiresAt:now+FAKE_BLOCKING.ttlMs}));
+  const realOccupied = bl.length + userBlockedSeats.length;
+  const maxFake = Math.max(1, 6 - Math.floor(realOccupied/5));
+  const chosen=pairs.sort(()=>Math.random()-0.5).slice(0,maxFake).flat();
+  localStorage.setItem(fakeKey(), JSON.stringify({seats:chosen, expiresAt: now + FAKE_BLOCKING.ttlMs}));
   return chosen;
 };
+window.addEventListener("storage",(e)=>{
+  if(e.key && e.key.startsWith("fake:")){
+    const d = JSON.parse(e.newValue||'{}');
+    fakeBlockedSeats=d.seats||[];
+    if(layout.length) render(layout);
+  }
+});
 // =====================================================
 
 const render=l=>{
