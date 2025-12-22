@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
@@ -78,23 +79,15 @@ const applyFakeBlocking=(layout)=>{
       if(typeof a==="number" && typeof b==="number"){
         const sa=a.toString().padStart(2,"0");
         const sb=b.toString().padStart(2,"0");
-        if(!bl.includes(sa)&&!bl.includes(sb)&&
-           !userBlockedSeats.includes(sa)&&!userBlockedSeats.includes(sb)){
+        if(!bl.includes(sa)&&!bl.includes(sb)&&!userBlockedSeats.includes(sa)&&!userBlockedSeats.includes(sb)){
           pairs.push([sa,sb]);
         }
       }
     }
   });
 
-  // Ajuste de quantidade de pares bloqueados
-  let qty=0;
-  if(pairs.length>=3 && pairs.length<=4) qty=1;
-  else if(pairs.length>=5 && pairs.length<=7) qty=2;
-  else if(pairs.length>=8 && pairs.length<=11) qty=3;
-  else if(pairs.length>=12 && pairs.length<=15) qty=4;
-  else if(pairs.length>=16 && pairs.length<=19) qty=5;
-  else if(pairs.length>=20) qty=6;
-
+  // Se tiver menos de 2 pares disponíveis, não aplica bloqueio fake
+  const qty=(pairs.length<2)?0:Math.max(1,Math.floor(pairs.length/4));
   const chosen=pairs.sort(()=>Math.random()-0.5).slice(0,qty).flat();
 
   sessionStorage.setItem(fakeKey(),JSON.stringify({
@@ -106,13 +99,20 @@ const applyFakeBlocking=(layout)=>{
 };
 
 /* ===== RENDER ===== */
-const cSeat=v=>{
+const cSeat=(v,rowIndex,colIndex,lastRowIndex,lastColIndex)=>{
   const e=document.createElement("div");
-  if(v===null || typeof v!=="number"){ // Poltrona fora do layout -> branca e bloqueada
-    e.className="seat white";
-  }else{
+  // corredor
+  if(v===null){
+    e.className="empty";
+  }
+  // poltrona real
+  else if(typeof v==="number"){
     e.className="seat";
     e.textContent=v.toString().padStart(2,"0");
+  }
+  // poltrona para completar última fileira
+  else if(rowIndex===lastRowIndex && colIndex===lastColIndex){
+    e.className="seat white";
   }
   return e;
 };
@@ -132,19 +132,22 @@ const render=l=>{
   w.querySelector(".grid")?.remove();
   const g=document.createElement("div");
   g.className="grid";
+  const lastRow=l.length-1;
+  const lastCol=l[0].length-1;
 
-  l.flat().forEach(v=>{
-    const e=cSeat(v);
-    if(typeof v==="number"){
-      const id=v.toString().padStart(2,"0");
-      if(bl.includes(id)||userBlockedSeats.includes(id)||fakeBlockedSeats.includes(id)){
-        e.classList.add("white");
-        e.textContent="";
-      }else{
-        e.onclick=()=>selSeat(e);
+  l.forEach((row,rowIndex)=>{
+    row.forEach((v,colIndex)=>{
+      const e=cSeat(v,rowIndex,colIndex,lastRow,lastCol);
+      if(typeof v==="number"){
+        const id=v.toString().padStart(2,"0");
+        if(bl.includes(id)||userBlockedSeats.includes(id)||fakeBlockedSeats.includes(id)){
+          e.classList.add("white"); e.textContent="";
+        }else{
+          e.onclick=()=>selSeat(e);
+        }
       }
-    }
-    g.appendChild(e);
+      g.appendChild(e);
+    });
   });
   w.appendChild(g);
 };
