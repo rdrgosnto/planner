@@ -10,36 +10,43 @@
     padding: 0;
     height: 100%;
     width: 100%;
-    background: #fff; /* fundo branco */
+    background: #fff;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     font-family: Arial, sans-serif;
-    flex-direction: column;
   }
 
-  img {
-    width: 95%;
+  #imgIngresso {
+    width: 90%;
     max-width: 400px;
     height: auto;
     display: block;
+    margin-bottom: 80px; /* espaço para o botão */
   }
 
   .btn-download {
-    margin-top: 16px;
-    padding: 12px 24px;
-    background: rgba(0,0,0,0.9);
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px;
+    width: 90%;
+    max-width: 400px;
     border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    cursor: pointer;
-    font-weight: bold;
+    border-radius: 0; /* bordas quadradas */
+    background: #111;
     color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
   }
 
   .btn-download:active {
-    transform: scale(0.98);
+    transform: translateX(-50%) scale(0.98);
   }
+
 </style>
 </head>
 <body>
