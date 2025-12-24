@@ -119,7 +119,7 @@ norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 
 const DEBOUNCE = 400;
 let timer = null;
-let ultimoCPF = "";
+let ultimoCPF = null;
 
 const valido=c=>{
   if(/^(\d)\1+$/.test(c))return 0;
@@ -156,9 +156,6 @@ cpf.oninput=()=>{
   err.style.display="none";
 
   timer=setTimeout(async()=>{
-    if(v===ultimoCPF) return;
-    ultimoCPF=v;
-
     try{
       const r=await fetch(
         "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
@@ -175,6 +172,9 @@ cpf.oninput=()=>{
       );
 
       if(!autorizado) throw 0;
+
+      // ✅ memoriza SOMENTE após autorização
+      ultimoCPF = v;
 
       btn.disabled=0;
       btn.classList.add("ready");
