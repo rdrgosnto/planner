@@ -46,7 +46,6 @@
   .btn-download:active {
     transform: translateX(-50%) scale(0.98);
   }
-
 </style>
 </head>
 <body>
@@ -75,6 +74,11 @@
       a.click();
       document.body.removeChild(a);
     }
+
+    // Remove o ?id= da barra de endereços depois que a página carrega
+    window.addEventListener('load', () => {
+      history.replaceState(null, '', '/planner/pina/');
+    });
   }
 </script>
 
