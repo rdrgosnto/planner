@@ -15,21 +15,22 @@ body{
   background:#fff;
 }
 
-/* 🚌 Container */
+/* 🚌 Container COMPACTO */
 .bus-container{
-  margin:20px auto;
-  padding:18px;
-  border:3px solid #b0b0b0;
-  border-radius:18px;
+  margin:16px auto;
+  padding:14px;
+  border:2px solid #b0b0b0;
+  border-radius:14px;
   width:fit-content;
-  position:relative;
+  transform:scale(.8);
+  transform-origin:top center;
 }
 
-/* 🪑 GRID FIXO — 5 COLUNAS */
+/* 🪑 GRID FIXO */
 .grid{
   display:grid;
   grid-template-columns:repeat(5,54px);
-  gap:14px 10px;
+  gap:12px 8px;
   justify-content:center;
   justify-items:center;
 }
@@ -41,33 +42,34 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  border-radius:14px;
+  border-radius:10px;
   position:relative;
   font-weight:bold;
+  font-size:14px;
 }
 
-/* Poltrona normal */
+/* Normal */
 .seat{
   background:#4CAF50;
-  border:3px solid #4CAF50;
+  border:2px solid #4CAF50;
   color:#fff;
   cursor:pointer;
-  box-shadow:0 2px 4px #0002;
-  transition:.15s;
+  box-shadow:0 1px 3px #0002;
+  transition:.12s;
 }
 
 /* Encosto */
 .seat::after{
   content:"";
   position:absolute;
-  bottom:-8px;
+  bottom:-7px;
   left:50%;
   transform:translateX(-50%);
-  width:32px;
-  height:14px;
-  border-radius:8px;
+  width:28px;
+  height:12px;
+  border-radius:6px;
   background:#fff;
-  border:3px solid #8c96b2;
+  border:2px solid #8c96b2;
 }
 
 /* Corredor */
@@ -79,14 +81,14 @@ body{
 .seat.selected{
   background:#e74c3c;
   border-color:#e74c3c;
-  transform:scale(1.05);
-  box-shadow:0 6px 12px #e74c3c55;
+  transform:scale(1.04);
+  box-shadow:0 4px 8px #e74c3c44;
 }
 
 /* Última fileira branca */
 .seat.white{
   background:#fff!important;
-  border:3px solid #8c96b2!important;
+  border:2px solid #8c96b2!important;
   color:transparent!important;
   cursor:default!important;
   box-shadow:none!important;
@@ -99,7 +101,7 @@ body{
 
 /* Toque mobile */
 .seat:active{
-  transform:scale(.95);
+  transform:scale(.96);
 }
 </style>
 </head>
@@ -113,14 +115,7 @@ body{
 <script>
 const grid = document.getElementById("grid");
 
-/*
-🧠 Layout fiel:
-- 5 colunas
-- Coluna 3 = corredor (null)
-- 46 poltronas
-- Última fileira branca
-*/
-
+/* Layout FIXO */
 const layout = [
  [ 1,  2, null,  3,  4],
  [ 5,  6, null,  7,  8],
@@ -148,7 +143,9 @@ layout.forEach(row=>{
     }else{
       el = document.createElement("div");
       el.className = "seat";
-      el.textContent = typeof v === "number" ? v.toString().padStart(2,"0") : "";
+      el.textContent = typeof v === "number"
+        ? v.toString().padStart(2,"0")
+        : "";
 
       if(v === "white"){
         el.classList.add("white");
