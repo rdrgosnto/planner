@@ -1,90 +1,93 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Ingresso Digital</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ingresso Digital</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background: #111; /* fundo uniforme, cor de app */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+  }
 
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: #e9e9e9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: Arial, sans-serif;
-    }
+  .card {
+    position: relative;
+    width: 95%;
+    max-width: 400px;
+    height: 95%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    background: #000; /* cor de fundo do card */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-    .card {
-      background: #fff;
-      padding: 14px;
-      border-radius: 16px;
-      box-shadow: 0 12px 30px rgba(0,0,0,.18);
-      max-width: 380px;
-      width: 100%;
-    }
+  .card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* mantém proporção */
+    display: block;
+  }
 
-    .card img {
-      width: 100%;
-      border-radius: 12px;
-      display: block;
-    }
+  .btn-download {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #000;
+  }
 
-    .acoes {
-      margin-top: 14px;
-      text-align: center;
-    }
-
-    .acoes button {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      background: #111;
-      color: #fff;
-      font-size: 15px;
-      cursor: pointer;
-    }
-
-    .acoes button:active {
-      transform: scale(0.98);
-    }
-  </style>
+  .btn-download:active {
+    transform: translateX(-50%) scale(0.98);
+  }
+</style>
 </head>
 <body>
 
-  <div class="card">
-    <img id="imgIngresso" alt="Ingresso digital">
+<div class="card">
+  <img id="imgIngresso" alt="Ingresso Digital">
+  <button class="btn-download" onclick="baixar()">Baixar ingresso</button>
+</div>
 
-    <div class="acoes">
-      <button onclick="baixar()">Baixar ingresso</button>
-    </div>
-  </div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
+  if (!id) {
+    document.body.innerHTML = '<p style="color:white;text-align:center;">ID do ingresso não informado</p>';
+  } else {
+    const imgUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
 
-    if (!id) {
-      document.body.innerHTML = '<p>ID do ingresso não informado</p>';
-    } else {
-      const imgUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
-      const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
+    const img = document.getElementById('imgIngresso');
+    img.src = imgUrl;
 
-      const img = document.getElementById('imgIngresso');
-      img.src = imgUrl;
-
-      window.baixar = function () {
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = 'ingresso.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+    window.baixar = function() {
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = 'ingresso.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
-  </script>
+  }
+</script>
 
 </body>
 </html>
