@@ -63,38 +63,87 @@ body{
   visibility:hidden;
 }
 
+/* Label CPF */
 label{
   display:block;
-  font-size:16px;
-  margin-bottom:10px;
-  font-weight:bold;
+  font-size:16px;    /* aumentado */
+  font-weight:500;   /* mais fino que bold */
+  color:#333;        /* um pouco mais escuro */
+  margin-bottom:6px;
+  padding-left:2px;
 }
 
+/* Linha CPF + botão */
+.input-row{
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  border-bottom:1px solid #ccc;
+  padding-bottom:2px;
+}
+
+.input-row:focus-within{
+  border-bottom-color:#4CAF50;
+}
+
+.input-row.error{
+  border-bottom-color:#e53935;
+}
+
+/* Input ultra clean */
 input{
-  padding:12px;
+  flex:1;
+  border:0;
+  padding:10px 2px;
   font-size:16px;
-  border:2px solid #b0b0b0;
-  border-radius:10px;
-  width:100%;
-  box-sizing:border-box;
+  outline:none;
+  background:transparent;
 }
 
+input::placeholder{
+  font-weight:300;
+  color:#999;
+}
+
+/* Botão Entrar */
 #entrarBtn{
-  margin-top:10px;
-  width:100px;
-  height:45px;
+  background:none;
+  color:#aaa;
+  border:1px solid #aaa;
+  border-radius:20px;
+  padding:6px 14px;
+  font-size:14px;
+  font-weight:bold;
+  cursor:default;
+  white-space:nowrap;
+  transform:translateY(-6px);
+}
+
+#entrarBtn.ready{
+  color:#4CAF50;
+  border-color:#4CAF50;
+  cursor:pointer;
+}
+
+#entrarBtn.ready:active{
   background:#4CAF50;
   color:#fff;
-  border:0;
-  font-size:16px;
-  font-weight:bold;
-  border-radius:10px;
-  cursor:pointer;
-  float:right;
+  transform:translateY(-6px) scale(.97);
 }
 
-#entrarBtn:active{transform:scale(.97)}
-#entrarBtn:disabled{opacity:.6;cursor:default}
+#entrarBtn:disabled{
+  opacity:.6;
+  cursor:default;
+}
+
+/* Mensagem erro CPF */
+#cpfError{
+  font-size:12px;
+  color:#e53935;
+  margin-top:14px;
+  margin-left:2px;
+  display:none;
+}
 
 /* Barra */
 #progress-bar-container{
@@ -125,8 +174,13 @@ input{
 
 <div class="container">
   <label>CPF</label>
-  <input id="cpfInput" placeholder="CPF (somente números)">
-  <button id="entrarBtn">ENTRAR</button>
+
+  <div class="input-row">
+    <input id="cpfInput" placeholder="CPF (somente números)">
+    <button id="entrarBtn" disabled>ENTRAR</button>
+  </div>
+
+  <div id="cpfError">CPF inválido</div>
 </div>
 
 <div id="progress-bar-container">
@@ -140,6 +194,11 @@ setTimeout(()=>{
 },1600);
 
 const q=s=>document.querySelector(s);
+const inputCPF=q("#cpfInput");
+const btnEntrar=q("#entrarBtn");
+const errorMsg=q("#cpfError");
+const inputRow=q(".input-row");
+
 const normCPF=c=>c?c.replace(/\D/g,"").padStart(11,"0"):"";
 
 const validarCPF=c=>{
@@ -155,17 +214,36 @@ const validarCPF=c=>{
   return r==c[10];
 };
 
-const verificarCPF=async cpf=>{
-  try{
-    const r=await fetch(
-      "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}
-    );
-    const d=await r.json();
-    return(d.codigo||[]).find(x=>normCPF(x.CPF2||x.CPF)===cpf)||null;
-  }catch{return null}
+/* Validação em tempo real */
+const atualizarEstado=()=>{
+  const cpf=normCPF(inputCPF.value);
+
+  if(cpf.length<11){
+    btnEntrar.disabled=true;
+    btnEntrar.classList.remove("ready");
+    errorMsg.style.display="none";
+    inputRow.classList.remove("error");
+    return;
+  }
+
+  if(!validarCPF(cpf)){
+    btnEntrar.disabled=true;
+    btnEntrar.classList.remove("ready");
+    errorMsg.textContent="CPF inválido";
+    errorMsg.style.display="block";
+    inputRow.classList.add("error");
+    return;
+  }
+
+  errorMsg.style.display="none";
+  inputRow.classList.remove("error");
+  btnEntrar.disabled=false;
+  btnEntrar.classList.add("ready");
 };
 
+inputCPF.addEventListener("input", atualizarEstado);
+
+/* Barra de progresso */
 const barra=()=>{
   const bar=q("#progress-bar"),c=bar.parentElement;
   c.style.display="block"; bar.style.width="0%";
@@ -175,27 +253,42 @@ const barra=()=>{
     anim=requestAnimationFrame(loop);
   };
   anim=requestAnimationFrame(loop);
-  return()=>{
+  return ()=>{
     cancelAnimationFrame(anim);
     bar.style.width="100%";
     setTimeout(()=>{c.style.display="none";bar.style.width="0%"},300);
   };
 };
 
-q("#entrarBtn").onclick=async()=>{
-  const btn=q("#entrarBtn");
-  let cpf=q("#cpfInput").value.trim();
-  if(!validarCPF(cpf)){
-    alert("CPF inválido."); q("#cpfInput").value=""; q("#cpfInput").focus(); return;
-  }
-  cpf=normCPF(cpf); btn.disabled=true;
+/* Clique Entrar */
+btnEntrar.onclick=async()=>{
+  if(btnEntrar.disabled)return;
+
+  btnEntrar.disabled=true;
+  const cpf=normCPF(inputCPF.value);
   const stop=barra();
-  const aluno=await verificarCPF(cpf);
+
+  const aluno=await (async()=>{
+    try{
+      const r=await fetch(
+        "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}
+      );
+      const d=await r.json();
+      return(d.codigo||[]).find(x=>normCPF(x.CPF2||x.CPF)===cpf)||null;
+    }catch{return null}
+  })();
+
   stop();
+
   if(!aluno||(aluno.ID??"").toString().trim()!=="#"){
-    alert("CPF não autorizado.");
-    btn.disabled=false; q("#cpfInput").value=""; q("#cpfInput").focus(); return;
+    errorMsg.textContent="CPF não autorizado";
+    errorMsg.style.display="block";
+    inputRow.classList.add("error");
+    btnEntrar.disabled=false;
+    return;
   }
+
   sessionStorage.setItem("cpf",cpf);
   sessionStorage.setItem("authMapa","1");
   location.href="mapa/index.html";
