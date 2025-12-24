@@ -1,303 +1,166 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Planner | Início</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planner</title>
 
 <style>
+*{box-sizing:border-box}
 body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+  margin:0;font-family:Arial,sans-serif;
+  display:flex;justify-content:center;align-items:center;
+  height:100vh;background:#fff
 }
-
-/* Splash */
 #splash{
-  position:fixed;
-  inset:0;
-  background:#fff;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  z-index:9999;
+  position:fixed;inset:0;z-index:9;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center
 }
-
-#splashLogo{
-  font-size:36px;
-  font-weight:bold;
-  color:#4CAF50;
-  margin-bottom:10px;
+#splash b{font-size:36px;color:#4CAF50;margin-bottom:10px}
+#splash i{
+  width:120px;height:2px;background:#e0e0e0;overflow:hidden
 }
-
-#splashLine{
-  width:120px;
-  height:2px;
-  background:#e0e0e0;
-  overflow:hidden;
+#splash i:after{
+  content:"";display:block;width:40px;height:100%;
+  background:#4CAF50;animation:l .9s infinite
 }
+@keyframes l{from{transform:translateX(-40px)}to{transform:translateX(120px)}}
 
-#splashLine::after{
-  content:"";
-  display:block;
-  width:40px;
-  height:100%;
-  background:#4CAF50;
-  animation:lineMove .9s infinite ease-in-out;
+.app{width:90%;max-width:300px;visibility:hidden}
+label{font-size:16px;color:#333;margin:0 0 6px 2px}
+.row{
+  display:flex;gap:8px;
+  border-bottom:1px solid #ccc
 }
+.row:focus-within{border-color:#4CAF50}
+.row.err{border-color:#e53935}
 
-@keyframes lineMove{
-  from{transform:translateX(-40px)}
-  to{transform:translateX(120px)}
-}
-
-/* App */
-.container{
-  width:90%;
-  max-width:300px;
-  visibility:hidden;
-}
-
-/* Label CPF */
-label{
-  display:block;
-  font-size:16px;
-  font-weight:500;
-  color:#333;
-  margin-bottom:6px;
-  padding-left:2px;
-}
-
-/* Linha CPF + botão */
-.input-row{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  border-bottom:1px solid #ccc;
-  padding-bottom:2px;
-  width:100%;
-  box-sizing:border-box;
-}
-
-.input-row:focus-within{
-  border-bottom-color:#4CAF50;
-}
-
-.input-row.error{
-  border-bottom-color:#e53935;
-}
-
-/* Input ultra clean */
 input{
-  flex:1 1 auto;       /* ocupa o máximo possível */
-  min-width:0;          /* permite encolher se necessário */
-  border:0;
-  padding:10px 2px;
-  font-size:18px;
-  outline:none;
-  background:transparent;
+  flex:1;border:0;padding:10px 2px;
+  font-size:18px;background:0;outline:0
 }
+input::placeholder{font-size:16px;color:#999}
 
-input::placeholder{
-  font-size:16px;
-  font-weight:500;
-  color:#999;
-}
-
-/* Botão Entrar */
-#entrarBtn{
-  flex:0 0 auto;       /* não encolhe nem cresce */
-  max-width:35%;        /* nunca ultrapassa 35% da linha */
+button{
   padding:6px 12px;
-  background:none;
-  color:#aaa;
   border:1px solid #aaa;
   border-radius:20px;
-  font-size:14px;
-  font-weight:bold;
-  cursor:default;
-  white-space:nowrap;
-  box-sizing:border-box;
+  background:0;color:#aaa;
+  font-size:14px;font-weight:bold;
+  white-space:nowrap
+}
+button.ready{
+  color:#4CAF50;border-color:#4CAF50;
+  cursor:pointer
+}
+button.ready:active{
+  background:#4CAF50;color:#fff;transform:scale(.97)
+}
+.errmsg{
+  font-size:13px;color:#e53935;
+  margin:14px 0 0 2px;display:none
 }
 
-#entrarBtn.ready{
-  color:#4CAF50;
-  border-color:#4CAF50;
-  cursor:pointer;
+.bar{
+  position:fixed;bottom:0;left:0;
+  width:100%;height:8px;background:#0001;display:none
 }
-
-#entrarBtn.ready:active{
-  background:#4CAF50;
-  color:#fff;
-  transform:scale(.97);
-}
-
-#entrarBtn:disabled{
-  opacity:.6;
-  cursor:default;
-}
-
-/* Mensagem erro CPF */
-#cpfError{
-  font-size:13px;
-  font-weight:500;
-  color:#e53935;
-  margin-top:14px;
-  margin-left:2px;
-  display:none;
-}
-
-/* Barra */
-#progress-bar-container{
-  position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  height:8px;
-  background:#0001;
-  display:none;
-}
-
-#progress-bar{
-  width:0;
-  height:100%;
-  background:#4CAF50;
-  transition:width .25s ease-out;
+.bar span{
+  display:block;height:100%;
+  width:0;background:#4CAF50;
+  transition:width .25s
 }
 </style>
 </head>
 
 <body>
 
-<div id="splash">
-  <div id="splashLogo">Planner</div>
-  <div id="splashLine"></div>
-</div>
+<div id="splash"><b>Planner</b><i></i></div>
 
-<div class="container">
+<div class="app">
   <label>CPF</label>
-
-  <div class="input-row">
-    <input id="cpfInput" placeholder="CPF (somente números)">
-    <button id="entrarBtn" disabled>ENTRAR</button>
+  <div class="row">
+    <input id="cpf" placeholder="CPF (somente números)">
+    <button id="btn" disabled>ENTRAR</button>
   </div>
-
-  <div id="cpfError">CPF inválido</div>
+  <div class="errmsg" id="err"></div>
 </div>
 
-<div id="progress-bar-container">
-  <div id="progress-bar"></div>
-</div>
+<div class="bar"><span></span></div>
 
 <script>
-setTimeout(()=>{ splash.remove(); document.querySelector(".container").style.visibility="visible"; },1600);
+setTimeout(()=>{
+  splash.remove();
+  document.querySelector(".app").style.visibility="visible"
+},1600);
 
-const q=s=>document.querySelector(s);
-const inputCPF=q("#cpfInput");
-const btnEntrar=q("#entrarBtn");
-const errorMsg=q("#cpfError");
-const inputRow=q(".input-row");
+const $=s=>document.querySelector(s),
+cpf=$("#cpf"),btn=$("#btn"),err=$("#err"),row=$(".row"),
+norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 
-const normCPF=c=>c?c.replace(/\D/g,"").padStart(11,"0"):"";
-
-const validarCPF=c=>{
-  c=normCPF(c);
-  if(c.length!=11||/^(\d)\1+$/.test(c))return false;
-  let s=0,r;
-  for(let i=0;i<9;i++)s+=c[i]*(10-i);
-  r=(s*10)%11; if(r==10)r=0;
-  if(r!=c[9])return false;
-  s=0;
-  for(let i=0;i<10;i++)s+=c[i]*(11-i);
-  r=(s*10)%11; if(r==10)r=0;
-  return r==c[10];
+const valido=c=>{
+  if(/^(\d)\1+$/.test(c))return 0;
+  for(let t=9;t<11;t++){
+    let s=0;
+    for(let i=0;i<t;i++)s+=c[i]*(t+1-i);
+    if(((s*10)%11)%10!=c[t])return 0;
+  }
+  return 1;
 };
 
-/* Validação em tempo real */
-const atualizarEstado=()=>{
-  const cpf=normCPF(inputCPF.value);
-
-  if(cpf.length<11){
-    btnEntrar.disabled=true;
-    btnEntrar.classList.remove("ready");
-    errorMsg.style.display="none";
-    inputRow.classList.remove("error");
+cpf.oninput=()=>{
+  const v=norm(cpf.value);
+  err.style.display=row.className="row";
+  btn.disabled=1;btn.className="";
+  if(v.length<11)return;
+  if(!valido(v)){
+    err.textContent="CPF inválido";
+    err.style.display="block";
+    row.classList.add("err");
     return;
   }
-
-  if(!validarCPF(cpf)){
-    btnEntrar.disabled=true;
-    btnEntrar.classList.remove("ready");
-    errorMsg.textContent="CPF inválido";
-    errorMsg.style.display="block";
-    inputRow.classList.add("error");
-    return;
-  }
-
-  errorMsg.style.display="none";
-  inputRow.classList.remove("error");
-  btnEntrar.disabled=false;
-  btnEntrar.classList.add("ready");
+  btn.disabled=0;btn.classList.add("ready");
 };
 
-inputCPF.addEventListener("input", atualizarEstado);
-
-/* Barra de progresso */
 const barra=()=>{
-  const bar=q("#progress-bar"),c=bar.parentElement;
-  c.style.display="block"; bar.style.width="0%";
-  const start=performance.now(); let anim;
-  const loop=now=>{
-    bar.style.width=Math.min(((now-start)/1200)*85,85)+"%";
-    anim=requestAnimationFrame(loop);
+  const c=$(".bar"),b=c.firstChild,s=performance.now();
+  c.style.display="block";
+  const a=t=>{
+    b.style.width=Math.min((t-s)/1200*85,85)+"%";
+    r=requestAnimationFrame(a)
   };
-  anim=requestAnimationFrame(loop);
-  return ()=>{
-    cancelAnimationFrame(anim);
-    bar.style.width="100%";
-    setTimeout(()=>{c.style.display="none";bar.style.width="0%"},300);
-  };
+  let r=requestAnimationFrame(a);
+  return()=>{
+    cancelAnimationFrame(r);
+    b.style.width="100%";
+    setTimeout(()=>c.style.display="none",300)
+  }
 };
 
-/* Clique Entrar */
-btnEntrar.onclick=async()=>{
-  if(btnEntrar.disabled)return;
-
-  btnEntrar.disabled=true;
-  const cpf=normCPF(inputCPF.value);
-  const stop=barra();
-
-  const aluno=await (async()=>{
-    try{
-      const r=await fetch(
-        "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}
-      );
-      const d=await r.json();
-      return(d.codigo||[]).find(x=>normCPF(x.CPF2||x.CPF)===cpf)||null;
-    }catch{return null}
-  })();
-
-  stop();
-
-  if(!aluno||(aluno.ID??"").toString().trim()!=="#"){
-    errorMsg.textContent="CPF não autorizado";
-    errorMsg.style.display="block";
-    inputRow.classList.add("error");
-    btnEntrar.disabled=false;
-    return;
+btn.onclick=async()=>{
+  if(btn.disabled)return;
+  btn.disabled=1;
+  const v=norm(cpf.value),stop=barra();
+  try{
+    const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cpf:v})
+    });
+    const d=await r.json(),
+      a=(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)==v);
+    if(!a||String(a.ID).trim()!="#")throw 0;
+    sessionStorage.setItem("cpf",v);
+    sessionStorage.setItem("authMapa",1);
+    location.href="mapa/index.html";
+  }catch{
+    err.textContent="CPF não autorizado";
+    err.style.display="block";
+    row.classList.add("err");
+    btn.disabled=0;
   }
-
-  sessionStorage.setItem("cpf",cpf);
-  sessionStorage.setItem("authMapa","1");
-  location.href="mapa/index.html";
+  stop();
 };
 </script>
-
 </body>
 </html>
