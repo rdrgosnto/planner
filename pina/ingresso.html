@@ -10,67 +10,49 @@
     padding: 0;
     height: 100%;
     width: 100%;
-    background: #111; /* fundo uniforme, cor de app */
+    background: #fff; /* fundo branco */
     display: flex;
     justify-content: center;
     align-items: center;
     font-family: Arial, sans-serif;
+    flex-direction: column;
   }
 
-  .card {
-    position: relative;
+  img {
     width: 95%;
     max-width: 400px;
-    height: 95%;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-    background: #000; /* cor de fundo do card */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .card img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* mantém proporção */
+    height: auto;
     display: block;
   }
 
   .btn-download {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    margin-top: 16px;
     padding: 12px 24px;
-    background: rgba(255,255,255,0.9);
+    background: rgba(0,0,0,0.9);
     border: none;
     border-radius: 12px;
     font-size: 16px;
     cursor: pointer;
     font-weight: bold;
-    color: #000;
+    color: #fff;
   }
 
   .btn-download:active {
-    transform: translateX(-50%) scale(0.98);
+    transform: scale(0.98);
   }
 </style>
 </head>
 <body>
 
-<div class="card">
-  <img id="imgIngresso" alt="Ingresso Digital">
-  <button class="btn-download" onclick="baixar()">Baixar ingresso</button>
-</div>
+<img id="imgIngresso" alt="Ingresso Digital">
+<button class="btn-download" onclick="baixar()">Baixar ingresso</button>
 
 <script>
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
 
   if (!id) {
-    document.body.innerHTML = '<p style="color:white;text-align:center;">ID do ingresso não informado</p>';
+    document.body.innerHTML = '<p style="color:black;text-align:center;">ID do ingresso não informado</p>';
   } else {
     const imgUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
     const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
