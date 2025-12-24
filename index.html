@@ -117,6 +117,10 @@ const $=s=>document.querySelector(s),
 cpf=$("#cpf"),btn=$("#btn"),err=$("#err"),row=$(".row"),
 norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 
+const DEBOUNCE = 400;
+let timer = null;
+let ultimoCPF = "";
+
 const valido=c=>{
   if(/^(\d)\1+$/.test(c))return 0;
   for(let t=9;t<11;t++){
@@ -131,18 +135,17 @@ cpf.oninput=()=>{
   const raw=cpf.value;
   const v=norm(raw);
 
-  // reset visual
   btn.disabled=1;
   btn.className="";
   row.className="row";
 
-  // campo totalmente vazio → sem erro
+  if(timer) clearTimeout(timer);
+
   if(!raw){
     err.style.display="none";
     return;
   }
 
-  // digitando ou CPF inválido
   if(v.length<11 || !valido(v)){
     err.textContent="CPF inválido";
     err.style.display="block";
@@ -150,10 +153,38 @@ cpf.oninput=()=>{
     return;
   }
 
-  // CPF válido
   err.style.display="none";
-  btn.disabled=0;
-  btn.classList.add("ready");
+
+  timer=setTimeout(async()=>{
+    if(v===ultimoCPF) return;
+    ultimoCPF=v;
+
+    try{
+      const r=await fetch(
+        "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+        {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({cpf:v})
+        }
+      );
+
+      const d=await r.json();
+      const autorizado=(d.codigo||[]).find(
+        x=>norm(x.CPF2||x.CPF)===v && String(x.ID).trim()==="#"
+      );
+
+      if(!autorizado) throw 0;
+
+      btn.disabled=0;
+      btn.classList.add("ready");
+    }catch{
+      err.textContent="CPF não autorizado";
+      err.style.display="block";
+      row.classList.add("err");
+      btn.disabled=1;
+    }
+  },DEBOUNCE);
 };
 
 const barra=()=>{
@@ -176,11 +207,14 @@ btn.onclick=async()=>{
   btn.disabled=1;
   const v=norm(cpf.value),stop=barra();
   try{
-    const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({cpf:v})
-    });
+    const r=await fetch(
+      "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+      {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({cpf:v})
+      }
+    );
     const d=await r.json(),
       a=(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)==v);
     if(!a||String(a.ID).trim()!="#")throw 0;
