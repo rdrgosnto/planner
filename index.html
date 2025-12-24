@@ -66,9 +66,9 @@ body{
 /* Label CPF */
 label{
   display:block;
-  font-size:16px;    /* aumentado */
-  font-weight:500;   /* mais fino que bold */
-  color:#333;        /* um pouco mais escuro */
+  font-size:18px;
+  font-weight:500;
+  color:#333;
   margin-bottom:6px;
   padding-left:2px;
 }
@@ -76,10 +76,12 @@ label{
 /* Linha CPF + botão */
 .input-row{
   display:flex;
-  align-items:flex-end;
-  gap:12px;
+  align-items:center;
+  gap:8px;
   border-bottom:1px solid #ccc;
   padding-bottom:2px;
+  width:100%;
+  box-sizing:border-box;
 }
 
 .input-row:focus-within{
@@ -92,31 +94,35 @@ label{
 
 /* Input ultra clean */
 input{
-  flex:1;
+  flex:1 1 auto;       /* ocupa o máximo possível */
+  min-width:0;          /* permite encolher se necessário */
   border:0;
   padding:10px 2px;
-  font-size:16px;
+  font-size:18px;
   outline:none;
   background:transparent;
 }
 
 input::placeholder{
-  font-weight:300;
+  font-size:18px;
+  font-weight:500;
   color:#999;
 }
 
 /* Botão Entrar */
 #entrarBtn{
+  flex:0 0 auto;       /* não encolhe nem cresce */
+  max-width:35%;        /* nunca ultrapassa 35% da linha */
+  padding:6px 12px;
   background:none;
   color:#aaa;
   border:1px solid #aaa;
   border-radius:20px;
-  padding:6px 14px;
   font-size:14px;
   font-weight:bold;
   cursor:default;
   white-space:nowrap;
-  transform:translateY(-6px);
+  box-sizing:border-box;
 }
 
 #entrarBtn.ready{
@@ -128,7 +134,7 @@ input::placeholder{
 #entrarBtn.ready:active{
   background:#4CAF50;
   color:#fff;
-  transform:translateY(-6px) scale(.97);
+  transform:scale(.97);
 }
 
 #entrarBtn:disabled{
@@ -138,7 +144,8 @@ input::placeholder{
 
 /* Mensagem erro CPF */
 #cpfError{
-  font-size:12px;
+  font-size:16px;
+  font-weight:500;
   color:#e53935;
   margin-top:14px;
   margin-left:2px;
@@ -188,10 +195,7 @@ input::placeholder{
 </div>
 
 <script>
-setTimeout(()=>{
-  splash.remove();
-  document.querySelector(".container").style.visibility="visible";
-},1600);
+setTimeout(()=>{ splash.remove(); document.querySelector(".container").style.visibility="visible"; },1600);
 
 const q=s=>document.querySelector(s);
 const inputCPF=q("#cpfInput");
