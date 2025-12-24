@@ -7,7 +7,6 @@
 
 <style>
 *{box-sizing:border-box}
-
 body{
   margin:0;
   font-family:Arial,sans-serif;
@@ -16,38 +15,50 @@ body{
   justify-content:center;
 }
 
+/* 📱 Container */
 .app{
   width:100%;
   max-width:420px;
   padding:16px;
+  padding-bottom:90px;
 }
 
 /* 🔐 Header */
 header{
   text-align:center;
+  font-size:18px;
   font-weight:bold;
   margin-bottom:14px;
-  font-size:18px;
 }
 
-/* 🪑 Mapa com corredor */
+/* 🪑 Grid FIXO */
 .mapa{
+  position:relative;
   display:grid;
-  grid-template-columns:1fr 1fr 36px 1fr 1fr;
+  grid-template-columns:repeat(4,1fr);
   gap:10px;
   justify-items:center;
 }
 
-/* Corredor */
-.corredor{
-  width:100%;
+/* 🚶 Corredor visual */
+.mapa::before{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:50%;
+  width:18px;
+  transform:translateX(-50%);
+  background:#f5f5f5;
+  border-radius:12px;
+  z-index:0;
 }
 
-/* Poltronas */
+/* 🪑 Poltrona */
 .poltrona{
   width:100%;
   aspect-ratio:1/1;
-  border-radius:10px;
+  border-radius:12px;
   background:#eee;
   color:#555;
   display:flex;
@@ -56,21 +67,31 @@ header{
   font-weight:bold;
   user-select:none;
   transition:.15s;
+  position:relative;
+  z-index:1;
+  box-shadow:0 1px 2px #0001;
 }
 
-.poltrona.livre{background:#eee}
-
+/* Estados */
+.poltrona.livre{background:#f0f0f0}
 .poltrona.ocupada{
   background:#e53935;
   color:#fff;
   opacity:.45;
-  pointer-events:none;
 }
-
 .poltrona.selecionada{
   background:#4CAF50;
   color:#fff;
   transform:scale(1.05);
+  box-shadow:0 4px 10px #4caf5044;
+}
+
+/* 🚫 Ocupada não clica */
+.poltrona.ocupada{pointer-events:none}
+
+/* 📱 Feedback toque */
+.poltrona:active{
+  transform:scale(.95);
 }
 
 /* ⬇️ Barra inferior */
@@ -80,23 +101,28 @@ header{
   width:100%;
   background:#fff;
   border-top:1px solid #ddd;
-  padding:10px 16px;
+  padding:12px 16px;
 }
 
 .footer button{
   width:100%;
-  padding:14px;
+  padding:15px;
   border-radius:30px;
   border:0;
   font-size:16px;
   font-weight:bold;
   background:#ccc;
   color:#777;
+  transition:.15s;
 }
 
 .footer button.ready{
   background:#4CAF50;
   color:#fff;
+}
+
+.footer button:active{
+  transform:scale(.97);
 }
 </style>
 </head>
@@ -114,55 +140,56 @@ header{
 </div>
 
 <script>
-// 🔢 Configuração visual apenas
-const ocupadas = [3, 8, 12]; // exemplo visual
+// 🔐 Blindagem básica
+if(!sessionStorage.getItem("authMapa")){
+  location.replace("../index.html");
+}
+
+// 🪑 Configuração
+const ocupadas = [3,7,12]; // exemplo
 let selecionada = null;
 
 const mapa = document.getElementById("mapa");
 const btn = document.getElementById("confirmar");
 
-const totalPoltronas = 16;
-
-// 🪑 Renderização com corredor central
-for(let i=1;i<=totalPoltronas;i++){
-
-  // adiciona corredor a cada duas poltronas
-  if((i-1) % 4 === 0){
-    const c = document.createElement("div");
-    c.className = "corredor";
-    mapa.appendChild(c);
-  }
-
-  const p = document.createElement("div");
-  p.className = "poltrona";
-  p.textContent = i;
+// 🔢 Renderização
+for(let i=1;i<=16;i++){
+  const p=document.createElement("div");
+  p.className="poltrona";
+  p.textContent=i;
 
   if(ocupadas.includes(i)){
     p.classList.add("ocupada");
   }else{
     p.classList.add("livre");
-    p.onclick = () => {
+    p.onclick=()=>{
       document.querySelectorAll(".poltrona.selecionada")
-        .forEach(x => x.classList.remove("selecionada"));
+        .forEach(x=>x.classList.remove("selecionada"));
 
-      if(selecionada === i){
-        selecionada = null;
-        btn.disabled = true;
+      if(selecionada===i){
+        selecionada=null;
+        btn.disabled=true;
         btn.classList.remove("ready");
-        btn.textContent = "Selecionar poltrona";
+        btn.textContent="Selecionar poltrona";
         return;
       }
 
-      selecionada = i;
+      selecionada=i;
       p.classList.add("selecionada");
-      btn.disabled = false;
+      btn.disabled=false;
       btn.classList.add("ready");
-      btn.textContent = "Confirmar poltrona " + i;
-    };
+      btn.textContent="Confirmar poltrona "+i;
+    }
   }
 
   mapa.appendChild(p);
 }
+
+// ✅ Confirmar
+btn.onclick=()=>{
+  if(!selecionada) return;
+  alert("Poltrona "+selecionada+" confirmada!");
+};
 </script>
 
 </body>
