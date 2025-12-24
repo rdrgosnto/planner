@@ -128,16 +128,30 @@ const valido=c=>{
 };
 
 cpf.oninput=()=>{
-  const v=norm(cpf.value);
-  err.style.display=row.className="row";
-  btn.disabled=1;btn.className="";
-  if(v.length<11)return;
-  if(!valido(v)){
+  const raw=cpf.value;
+  const v=norm(raw);
+
+  // reset visual
+  btn.disabled=1;
+  btn.className="";
+  row.className="row";
+
+  // campo totalmente vazio → sem erro
+  if(!raw){
+    err.style.display="none";
+    return;
+  }
+
+  // digitando ou CPF inválido
+  if(v.length<11 || !valido(v)){
     err.textContent="CPF inválido";
     err.style.display="block";
     row.classList.add("err");
     return;
   }
+
+  // CPF válido
+  err.style.display="none";
   btn.disabled=0;
   btn.classList.add("ready");
 };
