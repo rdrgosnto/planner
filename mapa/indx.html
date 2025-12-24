@@ -7,6 +7,7 @@
 
 <style>
 *{box-sizing:border-box}
+
 body{
   margin:0;
   font-family:Arial,sans-serif;
@@ -25,17 +26,24 @@ body{
 header{
   text-align:center;
   font-weight:bold;
-  margin-bottom:12px;
+  margin-bottom:14px;
+  font-size:18px;
 }
 
-/* 🪑 Grid de poltronas */
+/* 🪑 Mapa com corredor */
 .mapa{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:1fr 1fr 36px 1fr 1fr;
   gap:10px;
   justify-items:center;
 }
 
+/* Corredor */
+.corredor{
+  width:100%;
+}
+
+/* Poltronas */
 .poltrona{
   width:100%;
   aspect-ratio:1/1;
@@ -51,19 +59,19 @@ header{
 }
 
 .poltrona.livre{background:#eee}
+
 .poltrona.ocupada{
   background:#e53935;
   color:#fff;
-  opacity:.5;
+  opacity:.45;
+  pointer-events:none;
 }
+
 .poltrona.selecionada{
   background:#4CAF50;
   color:#fff;
   transform:scale(1.05);
 }
-
-/* 🚫 Ocupada não clica */
-.poltrona.ocupada{pointer-events:none}
 
 /* ⬇️ Barra inferior */
 .footer{
@@ -106,56 +114,55 @@ header{
 </div>
 
 <script>
-// 🔐 Blindagem básica
-if(!sessionStorage.getItem("authMapa")){
-  location.replace("../index.html");
-}
-
-// 🪑 Configuração
-const ocupadas = [3,7,12]; // exemplo
+// 🔢 Configuração visual apenas
+const ocupadas = [3, 8, 12]; // exemplo visual
 let selecionada = null;
 
 const mapa = document.getElementById("mapa");
 const btn = document.getElementById("confirmar");
 
-// 🔢 Renderização
-for(let i=1;i<=16;i++){
-  const p=document.createElement("div");
-  p.className="poltrona";
-  p.textContent=i;
+const totalPoltronas = 16;
+
+// 🪑 Renderização com corredor central
+for(let i=1;i<=totalPoltronas;i++){
+
+  // adiciona corredor a cada duas poltronas
+  if((i-1) % 4 === 0){
+    const c = document.createElement("div");
+    c.className = "corredor";
+    mapa.appendChild(c);
+  }
+
+  const p = document.createElement("div");
+  p.className = "poltrona";
+  p.textContent = i;
 
   if(ocupadas.includes(i)){
     p.classList.add("ocupada");
   }else{
     p.classList.add("livre");
-    p.onclick=()=>{
+    p.onclick = () => {
       document.querySelectorAll(".poltrona.selecionada")
-        .forEach(x=>x.classList.remove("selecionada"));
+        .forEach(x => x.classList.remove("selecionada"));
 
-      if(selecionada===i){
-        selecionada=null;
-        btn.disabled=true;
+      if(selecionada === i){
+        selecionada = null;
+        btn.disabled = true;
         btn.classList.remove("ready");
-        btn.textContent="Selecionar poltrona";
+        btn.textContent = "Selecionar poltrona";
         return;
       }
 
-      selecionada=i;
+      selecionada = i;
       p.classList.add("selecionada");
-      btn.disabled=false;
+      btn.disabled = false;
       btn.classList.add("ready");
-      btn.textContent="Confirmar poltrona "+i;
-    }
+      btn.textContent = "Confirmar poltrona " + i;
+    };
   }
 
   mapa.appendChild(p);
 }
-
-// ✅ Confirmar
-btn.onclick=()=>{
-  if(!selecionada) return;
-  alert("Poltrona "+selecionada+" confirmada!");
-};
 </script>
 
 </body>
