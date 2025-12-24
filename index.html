@@ -62,12 +62,18 @@ button{
   font-weight:bold;
   white-space:nowrap
 }
+
+/* 🔽 ALTERAÇÃO AQUI */
 button.ready{
-  color:#4CAF50;border-color:#4CAF50;
+  background:#4CAF50;
+  color:#fff;
+  border-color:#4CAF50;
   cursor:pointer
 }
+
 button.ready:active{
-  background:#4CAF50;color:#fff;transform:scale(.97)
+  background:#43a047;
+  transform:scale(.97)
 }
 
 .errmsg{
@@ -119,7 +125,6 @@ norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 
 const DEBOUNCE = 400;
 let timer = null;
-let ultimoCPF = null;
 
 const valido=c=>{
   if(/^(\d)\1+$/.test(c))return 0;
@@ -173,9 +178,6 @@ cpf.oninput=()=>{
 
       if(!autorizado) throw 0;
 
-      // ✅ memoriza SOMENTE após autorização
-      ultimoCPF = v;
-
       btn.disabled=0;
       btn.classList.add("ready");
     }catch{
@@ -187,47 +189,14 @@ cpf.oninput=()=>{
   },DEBOUNCE);
 };
 
-const barra=()=>{
-  const c=$(".bar"),b=c.firstChild,s=performance.now();
-  c.style.display="block";
-  const a=t=>{
-    b.style.width=Math.min((t-s)/1200*85,85)+"%";
-    r=requestAnimationFrame(a)
-  };
-  let r=requestAnimationFrame(a);
-  return()=>{
-    cancelAnimationFrame(r);
-    b.style.width="100%";
-    setTimeout(()=>c.style.display="none",300)
-  }
-};
-
 btn.onclick=async()=>{
   if(btn.disabled)return;
   btn.disabled=1;
-  const v=norm(cpf.value),stop=barra();
   try{
-    const r=await fetch(
-      "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-      {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({cpf:v})
-      }
-    );
-    const d=await r.json(),
-      a=(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)==v);
-    if(!a||String(a.ID).trim()!="#")throw 0;
-    sessionStorage.setItem("cpf",v);
+    sessionStorage.setItem("cpf",norm(cpf.value));
     sessionStorage.setItem("authMapa",1);
     location.href="mapa/index.html";
-  }catch{
-    err.textContent="CPF não autorizado";
-    err.style.display="block";
-    row.classList.add("err");
-    btn.disabled=0;
-  }
-  stop();
+  }catch{}
 };
 </script>
 </body>
