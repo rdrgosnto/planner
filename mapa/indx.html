@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mapa de Poltronas</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#fff;
+  display:flex;
+  justify-content:center;
+}
+
+.app{
+  width:100%;
+  max-width:420px;
+  padding:16px;
+}
+
+/* 🔐 Header */
+header{
+  text-align:center;
+  font-weight:bold;
+  margin-bottom:12px;
+}
+
+/* 🪑 Grid de poltronas */
+.mapa{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  justify-items:center;
+}
+
+.poltrona{
+  width:100%;
+  aspect-ratio:1/1;
+  border-radius:10px;
+  background:#eee;
+  color:#555;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  user-select:none;
+  transition:.15s;
+}
+
+.poltrona.livre{background:#eee}
+.poltrona.ocupada{
+  background:#e53935;
+  color:#fff;
+  opacity:.5;
+}
+.poltrona.selecionada{
+  background:#4CAF50;
+  color:#fff;
+  transform:scale(1.05);
+}
+
+/* 🚫 Ocupada não clica */
+.poltrona.ocupada{pointer-events:none}
+
+/* ⬇️ Barra inferior */
+.footer{
+  position:fixed;
+  bottom:0;left:0;
+  width:100%;
+  background:#fff;
+  border-top:1px solid #ddd;
+  padding:10px 16px;
+}
+
+.footer button{
+  width:100%;
+  padding:14px;
+  border-radius:30px;
+  border:0;
+  font-size:16px;
+  font-weight:bold;
+  background:#ccc;
+  color:#777;
+}
+
+.footer button.ready{
+  background:#4CAF50;
+  color:#fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <header>Escolha sua poltrona</header>
+
+  <div class="mapa" id="mapa"></div>
+</div>
+
+<div class="footer">
+  <button id="confirmar" disabled>Selecionar poltrona</button>
+</div>
+
+<script>
+// 🔐 Blindagem básica
+if(!sessionStorage.getItem("authMapa")){
+  location.replace("../index.html");
+}
+
+// 🪑 Configuração
+const ocupadas = [3,7,12]; // exemplo
+let selecionada = null;
+
+const mapa = document.getElementById("mapa");
+const btn = document.getElementById("confirmar");
+
+// 🔢 Renderização
+for(let i=1;i<=16;i++){
+  const p=document.createElement("div");
+  p.className="poltrona";
+  p.textContent=i;
+
+  if(ocupadas.includes(i)){
+    p.classList.add("ocupada");
+  }else{
+    p.classList.add("livre");
+    p.onclick=()=>{
+      document.querySelectorAll(".poltrona.selecionada")
+        .forEach(x=>x.classList.remove("selecionada"));
+
+      if(selecionada===i){
+        selecionada=null;
+        btn.disabled=true;
+        btn.classList.remove("ready");
+        btn.textContent="Selecionar poltrona";
+        return;
+      }
+
+      selecionada=i;
+      p.classList.add("selecionada");
+      btn.disabled=false;
+      btn.classList.add("ready");
+      btn.textContent="Confirmar poltrona "+i;
+    }
+  }
+
+  mapa.appendChild(p);
+}
+
+// ✅ Confirmar
+btn.onclick=()=>{
+  if(!selecionada) return;
+  alert("Poltrona "+selecionada+" confirmada!");
+};
+</script>
+
+</body>
+</html>
