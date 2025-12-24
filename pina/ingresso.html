@@ -2,48 +2,64 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Ingresso</title>
+  <title>Ingresso Digital</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
     body {
       margin: 0;
       min-height: 100vh;
-      background: #f2f2f2;
+      background: #e9e9e9;
       display: flex;
       justify-content: center;
       align-items: center;
       font-family: Arial, sans-serif;
     }
 
-    .ingresso {
+    .card {
       background: #fff;
-      padding: 16px;
-      border-radius: 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,.15);
-      max-width: 360px;
+      padding: 14px;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      max-width: 380px;
       width: 100%;
+    }
+
+    .card img {
+      width: 100%;
+      border-radius: 12px;
+      display: block;
+    }
+
+    .acoes {
+      margin-top: 14px;
       text-align: center;
     }
 
-    .ingresso img {
+    .acoes button {
       width: 100%;
+      padding: 12px;
+      border: none;
       border-radius: 10px;
+      background: #111;
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
     }
 
-    .info {
-      margin-top: 12px;
-      font-size: 14px;
-      color: #555;
+    .acoes button:active {
+      transform: scale(0.98);
     }
   </style>
 </head>
 <body>
 
-  <div class="ingresso">
-    <h2>🎟️ Ingresso</h2>
-    <img id="imgIngresso" alt="Ingresso">
-    <div class="info">Apresente este ingresso na entrada</div>
+  <div class="card">
+    <img id="imgIngresso" alt="Ingresso digital">
+
+    <div class="acoes">
+      <button onclick="baixar()">Baixar ingresso</button>
+    </div>
   </div>
 
   <script>
@@ -53,8 +69,20 @@
     if (!id) {
       document.body.innerHTML = '<p>ID do ingresso não informado</p>';
     } else {
-      const url = `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
-      document.getElementById('imgIngresso').src = url;
+      const imgUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+      const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
+
+      const img = document.getElementById('imgIngresso');
+      img.src = imgUrl;
+
+      window.baixar = function () {
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = 'ingresso.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     }
   </script>
 
