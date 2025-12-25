@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pina | Ingresso</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+  }
+
+  #containerIngresso {
+    width: 90%;
+    max-width: 400px;
+  }
+
+  #imgIngresso {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 20px; 
+  }
+
+  #btnCPF {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px;
+    width: 90%;
+    max-width: 400px;
+    border: none;
+    border-radius: 0;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  #btnCPF:active {
+    transform: translateX(-50%) scale(0.98);
+  }
+
+  #btnCPF input {
+    width: 80%;
+    font-size: 16px;
+    padding: 6px;
+    border: none;
+    border-radius: 0;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div id="containerIngresso">
+  <img id="imgIngresso" alt="Ingresso Digital">
+</div>
+
+<button id="btnCPF">CPF</button>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const btnCPF = document.getElementById('btnCPF');
+
+  if (!id) {
+    document.body.innerHTML = '<p style="color:black;text-align:center;">ID do ingresso não informado</p>';
+  } else {
+    const imgUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
+    document.getElementById('imgIngresso').src = imgUrl;
+
+    let estado = 'inicial'; // inicial, digitando, carregando, valido, invalido
+
+    btnCPF.addEventListener('click', () => {
+      if (estado === 'inicial' || estado === 'invalido') {
+        // criar input dentro do botão
+        btnCPF.innerHTML = `<input type="text" id="cpfInput" placeholder="Digite seu CPF" maxlength="11">`;
+        const input = document.getElementById('cpfInput');
+        input.focus();
+        estado = 'digitando';
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            validarCPF(input.value);
+          }
+        });
+      }
+    });
+
+    function validarCPF(cpf) {
+      cpf = cpf.replace(/\D/g, ''); // remove tudo que não for número
+      btnCPF.innerText = 'Carregando';
+      let dots = 0;
+      estado = 'carregando';
+      const interval = setInterval(() => {
+        if (estado !== 'carregando') {
+          clearInterval(interval);
+          return;
+        }
+        dots = (dots + 1) % 4;
+        btnCPF.innerText = 'Carregando' + '.'.repeat(dots);
+      }, 500);
+
+      setTimeout(() => {
+        clearInterval(interval);
+        if (cpf === '35128248895') {
+          btnCPF.innerText = 'Baixar ingresso';
+          estado = 'valido';
+          btnCPF.onclick = () => {
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = 'ingresso.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        } else {
+          btnCPF.innerText = 'CPF não autorizado';
+          estado = 'invalido';
+        }
+      }, 1500); // simula validação
+    }
+
+    window.addEventListener('load', () => {
+      history.replaceState(null, '', '/planner/pina/');
+    });
+  }
+</script>
+
+</body>
+</html>
