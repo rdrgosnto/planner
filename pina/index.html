@@ -32,8 +32,8 @@
     width: 100%;
     height: auto;
     display: block;
-    transition: opacity 0.5s ease, transform 0.5s ease;
     opacity: 1;
+    transition: opacity 1s ease;
   }
 
   #btnCPF, #btnDownload {
@@ -51,7 +51,6 @@
     border: none;
     cursor: pointer;
     text-align: center;
-    margin-top: 10px;
   }
 
   #btnCPF:active, #btnDownload:active {
@@ -100,12 +99,6 @@
   let estado = 'inicial';
   let debounceTimer;
 
-  // Simulação sutil de troca de imagem inicial
-  setInterval(() => {
-    imgIngresso.style.opacity = 0.9 + Math.random() * 0.1;
-    imgIngresso.style.transform = `scale(${1 + Math.random()*0.01})`;
-  }, 1000);
-
   btnCPF.addEventListener('click', () => {
     if (estado === 'inicial' || estado === 'invalido') {
       btnCPF.innerHTML = '<input type="text" id="cpfInput" class="cursor" placeholder="CPF (somente números)">';
@@ -114,22 +107,22 @@
       estado = 'digitando';
 
       input.addEventListener('input', () => {
-        input.value = input.value.replace(/\D/g,''); // somente números
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => validarCPF(input.value), 400);
+        input.value = input.value.replace(/\D/g,''); // apenas números
+        if (input.value.length === 11) {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => validarCPF(input.value), 400);
+        }
       });
     }
   });
 
   function validarCPF(cpf) {
-    if (!cpf) return;
     if (!isValidCPF(cpf)) {
       btnCPF.innerText = 'CPF inválido';
       estado = 'invalido';
       return;
     }
 
-    // se válido, verificar autorização
     btnCPF.innerText = 'Carregando';
     let dots = 0;
     estado = 'carregando';
@@ -143,8 +136,9 @@
       clearInterval(interval);
       if (cpf === testCPF) {
         estado = 'valido';
-        imgIngresso.style.opacity = 1;
-        imgIngresso.style.transform = 'scale(1)';
+        // Fade sutil da imagem
+        imgIngresso.style.opacity = 0;
+        setTimeout(() => { imgIngresso.style.opacity = 1; }, 50);
         btnCPF.style.display = 'none';
         setTimeout(() => { btnDownload.style.display = 'block'; }, 1000);
       } else {
@@ -154,7 +148,6 @@
     }, 1500);
   }
 
-  // Validação completa de CPF
   function isValidCPF(cpf) {
     if(cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
     let sum = 0;
