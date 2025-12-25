@@ -31,14 +31,14 @@
     margin-bottom: 80px; /* espaço para o botão de download */
   }
 
-  /* Caixa de teste para imprimir (vai no canto superior direito) */
-  #btnImprimirTeste {
+  /* Botão de imprimir no canto superior direito */
+  #btnImprimir {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 2px;
+    right: 4px;
     width: 60px;
     height: 30px;
-    background-color: rgba(255,0,0,0.5); /* semi-transparente para teste */
+    background-color: rgba(255,0,0,0.5); /* cor de teste */
     color: #fff;
     border: none;
     cursor: pointer;
@@ -66,13 +66,29 @@
   .btn-download:active {
     transform: translateX(-50%) scale(0.98);
   }
+
+  /* CSS de impressão: mostra somente o ingresso */
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #containerIngresso, #containerIngresso * {
+      visibility: visible;
+    }
+    #containerIngresso {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+    }
+  }
 </style>
 </head>
 <body>
 
 <div id="containerIngresso">
   <img id="imgIngresso" alt="Ingresso Digital">
-  <button id="btnImprimirTeste" onclick="window.print()">Imprimir</button>
+  <button id="btnImprimir" onclick="window.print()">Imprimir</button>
 </div>
 
 <button class="btn-download" onclick="baixar()">Baixar ingresso</button>
