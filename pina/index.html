@@ -33,7 +33,7 @@ html, body{
   left:0;
 }
 
-/* ===== CAIXA CPF (FIXA) ===== */
+/* ===== CAIXA CPF ===== */
 #boxCPF{
   position:fixed;
   bottom:20px;
@@ -44,8 +44,8 @@ html, body{
   height:36px;
   background:#000;
   color:#fff;
-  font-size:16px;
-  font-weight:bold;
+  font-size:15px;
+  font-weight:500;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -69,17 +69,6 @@ html, body{
   color:transparent;
 }
 
-/* cursor piscando */
-.cursor::after{
-  content:" |";
-  animation:blink 1s step-start infinite;
-}
-
-@keyframes blink{
-  0%,50%{opacity:1}
-  50.01%,100%{opacity:0}
-}
-
 /* ===== BOTÃO DOWNLOAD ===== */
 #btnDownload{
   position:fixed;
@@ -91,8 +80,8 @@ html, body{
   height:36px;
   background:#000;
   color:#fff;
-  font-size:16px;
-  font-weight:bold;
+  font-size:15px;
+  font-weight:500;
   border:none;
   cursor:pointer;
   display:none;
@@ -157,15 +146,17 @@ async function buscarIngresso(cpf){
 
 /* ===== INTERAÇÃO ===== */
 boxCPF.onclick = () => {
+  if(estado==="carregando") return;
   if(estado==="inicial" || estado==="invalido"){
     cpfInput.focus();
-    cpfVisual.classList.add("cursor");
     cpfVisual.style.color="#999";
     estado="digitando";
   }
 };
 
 cpfInput.oninput = () => {
+  if(estado==="carregando") return;
+
   cpfInput.value = cpfInput.value.replace(/\D/g,"");
   cpfVisual.textContent = cpfInput.value || "CPF (somente números)";
   cpfVisual.style.color = cpfInput.value ? "#fff" : "#999";
@@ -178,7 +169,7 @@ cpfInput.oninput = () => {
 
 /* ===== VALIDAÇÃO ===== */
 async function validarCPF(cpf){
-  cpfVisual.classList.remove("cursor");
+  if(estado==="carregando") return;
 
   if(!valido(cpf)){
     cpfVisual.textContent = "CPF inválido";
