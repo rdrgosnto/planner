@@ -19,7 +19,6 @@
   }
 
   #containerIngresso {
-    position: relative;
     width: 90%;
     max-width: 400px;
   }
@@ -29,21 +28,6 @@
     height: auto;
     display: block;
     margin-bottom: 80px; /* espaço para o botão de download */
-  }
-
-  /* Botão de imprimir no canto superior direito */
-  #btnImprimir {
-    position: absolute;
-    top: 2px;
-    right: 4px;
-    width: 60px;
-    height: 24px; /* altura reduzida */
-    background-color: rgba(255,0,0,0.5); /* cor de teste */
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    z-index: 10;
-    font-size: 12px;
   }
 
   .btn-download {
@@ -66,32 +50,12 @@
   .btn-download:active {
     transform: translateX(-50%) scale(0.98);
   }
-
-  /* CSS de impressão: mostra apenas o ingresso e esconde o botão imprimir */
-  @media print {
-    body * {
-      visibility: hidden;
-    }
-    #containerIngresso, #containerIngresso img {
-      visibility: visible;
-    }
-    #btnImprimir {
-      display: none; /* botão não aparece na impressão */
-    }
-    #containerIngresso {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-    }
-  }
 </style>
 </head>
 <body>
 
 <div id="containerIngresso">
   <img id="imgIngresso" alt="Ingresso Digital">
-  <button id="btnImprimir" onclick="window.print()">Imprimir</button>
 </div>
 
 <button class="btn-download" onclick="baixar()">Baixar ingresso</button>
@@ -106,8 +70,7 @@
     const imgUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
     const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
 
-    const img = document.getElementById('imgIngresso');
-    img.src = imgUrl;
+    document.getElementById('imgIngresso').src = imgUrl;
 
     window.baixar = function() {
       const a = document.createElement('a');
