@@ -13,7 +13,7 @@
     background: #fff;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* para subir o ingresso */
+    justify-content: flex-start;
     align-items: center;
     font-family: Arial, sans-serif;
     color: #000;
@@ -22,7 +22,7 @@
   #containerIngresso {
     width: 90%;
     max-width: 400px;
-    margin-top: 40px; /* sobe um pouco a imagem */
+    margin-top: 120px; /* imagem mais baixa */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -36,7 +36,7 @@
     transition: opacity 1s ease;
   }
 
-  #btnCPF, #btnDownload {
+  #btnCPF {
     position: fixed;
     bottom: 20px;
     left: 50%;
@@ -53,10 +53,6 @@
     text-align: center;
   }
 
-  #btnCPF:active, #btnDownload:active {
-    transform: translateX(-50%) scale(0.98);
-  }
-
   #btnCPF input {
     width: 100%;
     background: #000;
@@ -66,6 +62,24 @@
     font-size: 16px;
     font-weight: bold;
     text-align: center;
+  }
+
+  #btnDownload {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    background: #000;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    display: none;
   }
 
   .cursor::after {
@@ -87,7 +101,7 @@
 </div>
 
 <button id="btnCPF">CPF (somente números)</button>
-<button id="btnDownload" style="display:none;">Baixar ingresso</button>
+<button id="btnDownload">Baixar ingresso</button>
 
 <script>
   const btnCPF = document.getElementById('btnCPF');
@@ -123,13 +137,13 @@
       return;
     }
 
-    btnCPF.innerText = 'Carregando';
+    btnCPF.innerText = 'carregando...';
     let dots = 0;
     estado = 'carregando';
     const interval = setInterval(() => {
       if (estado !== 'carregando') { clearInterval(interval); return; }
       dots = (dots + 1) % 4;
-      btnCPF.innerText = 'Carregando' + '.'.repeat(dots);
+      btnCPF.innerText = 'carregando' + '.'.repeat(dots);
     }, 500);
 
     setTimeout(() => {
@@ -137,14 +151,29 @@
       if (cpf === testCPF) {
         estado = 'valido';
 
-        // Simula fade da imagem do ingresso (mesmo sendo a mesma)
+        // Simula fade da imagem do ingresso
+        const tempImg = new Image();
+        tempImg.src = imgIngresso.src; // mesma imagem agora
+        tempImg.style.opacity = 0;
+        tempImg.style.width = '100%';
+        tempImg.style.height = 'auto';
+        tempImg.style.transition = 'opacity 1s ease';
+        document.getElementById('containerIngresso').appendChild(tempImg);
+
         imgIngresso.style.opacity = 0;
         setTimeout(() => {
-          imgIngresso.style.opacity = 1;
+          tempImg.style.opacity = 1;
+          setTimeout(() => {
+            imgIngresso.src = tempImg.src;
+            imgIngresso.style.opacity = 1;
+            tempImg.remove();
+
+            // Após fade, mostra botão Baixar ingresso
+            btnCPF.style.display = 'none';
+            btnDownload.style.display = 'block';
+          }, 1000);
         }, 50);
 
-        btnCPF.style.display = 'none';
-        setTimeout(() => { btnDownload.style.display = 'block'; }, 1000);
       } else {
         btnCPF.innerText = 'CPF não autorizado';
         estado = 'invalido';
