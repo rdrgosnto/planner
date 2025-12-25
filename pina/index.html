@@ -18,8 +18,7 @@ html,body{
 
 /* ===== IMAGEM ===== */
 #containerIngresso{
-  width:90%;
-  max-width:400px;
+  width:min(90vw,400px);
   margin-top:60px;
 }
 
@@ -34,8 +33,7 @@ html,body{
   position:fixed;
   left:50%;
   transform:translateX(-50%);
-  width:90%;
-  max-width:400px;
+  width:min(90vw,400px);
   height:36px;
   background:#000;
   color:#fff;
@@ -44,7 +42,7 @@ html,body{
   box-sizing:border-box;
 }
 
-/* safe-area corrigido (desktop + mobile) */
+/* safe-area (desktop + mobile) */
 #boxCPF{
   bottom:max(20px, env(safe-area-inset-bottom));
   display:flex;
@@ -52,7 +50,7 @@ html,body{
   justify-content:center;
 }
 
-/* feedback de foco invisível */
+/* foco invisível controlado */
 #boxCPF:focus-within{
   outline:1px solid rgba(255,255,255,.35);
   outline-offset:-1px;
@@ -84,7 +82,6 @@ html,body{
 <body>
 
 <div id="containerIngresso">
-  <!-- IMAGEM INICIAL -->
   <img id="imgIngresso"
        src="https://drive.google.com/thumbnail?id=1-JhJMcPse9JGHKKXpxySyVb20kT1QhFD&sz=w1200">
 </div>
@@ -105,7 +102,6 @@ const imgIngresso=document.getElementById("imgIngresso");
 
 let estado="inicial",debounce;
 
-/* ===== HELPERS ===== */
 const norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 
 const valido=c=>{
@@ -118,7 +114,6 @@ const valido=c=>{
   return true;
 };
 
-/* ===== POWER AUTOMATE ===== */
 async function buscarIngresso(cpf){
   const r=await fetch(
     "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
@@ -136,7 +131,6 @@ async function buscarIngresso(cpf){
   );
 }
 
-/* ===== INTERAÇÃO ===== */
 boxCPF.onpointerdown=()=>{
   if(estado==="carregando") return;
   cpfInput.focus();
@@ -157,7 +151,6 @@ cpfInput.oninput=()=>{
   }
 };
 
-/* ===== VALIDAÇÃO ===== */
 async function validarCPF(cpf){
   if(estado==="carregando") return;
   estado="carregando";
@@ -177,7 +170,6 @@ async function validarCPF(cpf){
     if(!autorizado) throw 0;
 
     const id=autorizado.GOOGLE;
-
     imgIngresso.src=
       `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 
@@ -195,7 +187,6 @@ async function validarCPF(cpf){
   }
 }
 
-/* ===== DOWNLOAD ===== */
 function download(url){
   const a=document.createElement("a");
   a.href=url;
