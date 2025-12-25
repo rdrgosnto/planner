@@ -50,7 +50,6 @@ html,body{
   justify-content:center;
 }
 
-/* foco invisível controlado */
 #boxCPF:focus-within{
   outline:1px solid rgba(255,255,255,.35);
   outline-offset:-1px;
@@ -88,7 +87,11 @@ html,body{
 
 <div id="boxCPF" tabindex="0">
   <span id="cpfVisual">CPF (somente números)</span>
-  <input id="cpfInput" inputmode="numeric" autocomplete="off">
+  <input
+    id="cpfInput"
+    inputmode="numeric"
+    enterkeyhint="done"
+    autocomplete="off">
 </div>
 
 <button id="btnDownload">Baixar ingresso</button>
@@ -113,6 +116,11 @@ const valido=c=>{
   }
   return true;
 };
+
+function esconderTeclado(){
+  cpfInput.blur();
+  document.body.focus();
+}
 
 async function buscarIngresso(cpf){
   const r=await fetch(
@@ -144,6 +152,8 @@ cpfInput.oninput=()=>{
   cpfVisual.style.color=cpfInput.value?"#fff":"#999";
 
   if(cpfInput.value.length===11){
+    esconderTeclado(); // 👈 fecha o teclado
+
     clearTimeout(debounce);
     debounce=setTimeout(
       ()=>validarCPF(norm(cpfInput.value)),400
