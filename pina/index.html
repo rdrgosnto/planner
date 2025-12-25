@@ -25,7 +25,7 @@ html,body{
 
 #containerIngresso img{
   width:100%;
-  display:block; /* <<< CRÍTICO: garante altura visível */
+  display:block;
 }
 
 /* ===== CPF / BOTÃO ===== */
@@ -44,11 +44,18 @@ html,body{
   box-sizing:border-box;
 }
 
+/* safe-area corrigido (desktop + mobile) */
 #boxCPF{
-  bottom:calc(20px + env(safe-area-inset-bottom));
+  bottom:max(20px, env(safe-area-inset-bottom));
   display:flex;
   align-items:center;
   justify-content:center;
+}
+
+/* feedback de foco invisível */
+#boxCPF:focus-within{
+  outline:1px solid rgba(255,255,255,.35);
+  outline-offset:-1px;
 }
 
 #cpfVisual{
@@ -66,7 +73,7 @@ html,body{
 }
 
 #btnDownload{
-  bottom:calc(20px + env(safe-area-inset-bottom));
+  bottom:max(20px, env(safe-area-inset-bottom));
   border:none;
   cursor:pointer;
   display:none;
@@ -82,7 +89,7 @@ html,body{
        src="https://drive.google.com/thumbnail?id=1-JhJMcPse9JGHKKXpxySyVb20kT1QhFD&sz=w1200">
 </div>
 
-<div id="boxCPF">
+<div id="boxCPF" tabindex="0">
   <span id="cpfVisual">CPF (somente números)</span>
   <input id="cpfInput" inputmode="numeric" autocomplete="off">
 </div>
@@ -171,8 +178,8 @@ async function validarCPF(cpf){
 
     const id=autorizado.GOOGLE;
 
-    /* troca imagem do ingresso */
-    imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    imgIngresso.src=
+      `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 
     setTimeout(()=>{
       btnDownload.style.display="block";
