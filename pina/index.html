@@ -31,7 +31,6 @@ html, body{
   position:absolute;
   top:0;
   left:0;
-  transition:opacity 1s ease-in-out;
 }
 
 /* ===== CAIXA CPF (FIXA) ===== */
@@ -53,18 +52,32 @@ html, body{
   box-sizing:border-box;
 }
 
+/* texto visível */
+#cpfVisual{
+  pointer-events:none;
+  white-space:nowrap;
+}
+
+/* input invisível */
 #cpfInput{
-  width:100%;
-  height:100%;
-  background:#000;
-  color:#fff;
+  position:absolute;
+  inset:0;
+  opacity:0;
   border:none;
   outline:none;
-  text-align:center;
-  font-size:16px;
-  font-weight:bold;
-  opacity:0;
-  pointer-events:none;
+  background:transparent;
+  color:transparent;
+}
+
+/* cursor piscando */
+.cursor::after{
+  content:" |";
+  animation:blink 1s step-start infinite;
+}
+
+@keyframes blink{
+  0%,50%{opacity:1}
+  50.01%,100%{opacity:0}
 }
 
 /* ===== BOTÃO DOWNLOAD ===== */
@@ -84,16 +97,6 @@ html, body{
   cursor:pointer;
   display:none;
 }
-
-/* cursor piscando */
-.cursor::after{
-  content:"|";
-  animation:blink 1s step-start infinite;
-}
-@keyframes blink{
-  0%,50%{opacity:1}
-  50.01%,100%{opacity:0}
-}
 </style>
 </head>
 
@@ -101,23 +104,22 @@ html, body{
 
 <div id="containerIngresso">
   <img id="imgIngresso"
-       src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200"
-       style="opacity:1;z-index:1">
+       src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
 </div>
 
 <div id="boxCPF">
-  <input id="cpfInput" class="cursor" placeholder="CPF (somente números)">
+  <span id="cpfVisual">CPF (somente números)</span>
+  <input id="cpfInput" inputmode="numeric">
 </div>
 
 <button id="btnDownload">Baixar ingresso</button>
 
 <script>
-/* ===== ELEMENTOS ===== */
 const boxCPF = document.getElementById("boxCPF");
 const cpfInput = document.getElementById("cpfInput");
+const cpfVisual = document.getElementById("cpfVisual");
 const btnDownload = document.getElementById("btnDownload");
 const imgIngresso = document.getElementById("imgIngresso");
-const container = document.getElementById("containerIngresso");
 
 let estado = "inicial";
 let debounce;
@@ -126,13 +128,13 @@ let debounce;
 const norm = v => v.replace(/\D/g,"").padStart(11,"0");
 
 const valido = c => {
-  if(/^(\d)\1+$/.test(c)) return 0;
+  if(/^(\d)\1+$/.test(c)) return false;
   for(let t=9;t<11;t++){
     let s=0;
     for(let i=0;i<t;i++) s+=c[i]*(t+1-i);
-    if(((s*10)%11)%10!=c[t]) return 0;
+    if(((s*10)%11)%10!=c[t]) return false;
   }
-  return 1;
+  return true;
 };
 
 /* ===== POWER AUTOMATE ===== */
@@ -145,9 +147,7 @@ async function buscarIngresso(cpf){
       body:JSON.stringify({ cpf })
     }
   );
-
   const d = await r.json();
-
   return (d.codigo||[]).find(x =>
     norm(x.CPF2||"") === cpf &&
     String(x.ID).trim() === "#" &&
@@ -157,73 +157,57 @@ async function buscarIngresso(cpf){
 
 /* ===== INTERAÇÃO ===== */
 boxCPF.onclick = () => {
-  if(estado==="inicial"||estado==="invalido"){
-    cpfInput.style.opacity=1;
-    cpfInput.style.pointerEvents="auto";
+  if(estado==="inicial" || estado==="invalido"){
     cpfInput.focus();
+    cpfVisual.classList.add("cursor");
+    cpfVisual.style.color="#999";
     estado="digitando";
   }
 };
 
 cpfInput.oninput = () => {
   cpfInput.value = cpfInput.value.replace(/\D/g,"");
-  if(cpfInput.value.length===11){
+  cpfVisual.textContent = cpfInput.value || "CPF (somente números)";
+  cpfVisual.style.color = cpfInput.value ? "#fff" : "#999";
+
+  if(cpfInput.value.length === 11){
     clearTimeout(debounce);
-    debounce = setTimeout(
-      ()=>validarCPF(norm(cpfInput.value)),400
-    );
+    debounce = setTimeout(() => validarCPF(norm(cpfInput.value)), 400);
   }
 };
 
 /* ===== VALIDAÇÃO ===== */
 async function validarCPF(cpf){
+  cpfVisual.classList.remove("cursor");
+
   if(!valido(cpf)){
-    cpfInput.value="";
-    cpfInput.placeholder="CPF inválido";
+    cpfVisual.textContent = "CPF inválido";
+    cpfVisual.style.color="#fff";
     estado="invalido";
     return;
   }
 
-  cpfInput.value="";
-  cpfInput.placeholder="carregando...";
+  cpfVisual.textContent = "carregando...";
+  cpfVisual.style.color="#fff";
   estado="carregando";
 
   try{
     const autorizado = await buscarIngresso(cpf);
     if(!autorizado) throw 0;
 
-    estado="valido";
-
     const id = autorizado.GOOGLE;
-    const imgUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
-    const downUrl = `https://drive.google.com/uc?export=download&id=${id}`;
+    imgIngresso.src = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 
-    const novaImg = new Image();
-    novaImg.src = imgUrl;
-    novaImg.style.opacity = 0;
-    novaImg.style.position = "absolute";
-    novaImg.style.zIndex = 2;
-    novaImg.style.transition = "opacity 1s";
-    container.appendChild(novaImg);
-
-    novaImg.onload = () => {
-      requestAnimationFrame(()=>{
-        novaImg.style.opacity = 1;
-        imgIngresso.style.opacity = 0;
-
-        setTimeout(()=>{
-          imgIngresso.src = imgUrl;
-          imgIngresso.style.opacity = 1;
-          novaImg.remove();
-          boxCPF.style.display="none";
-          btnDownload.style.display="block";
-          btnDownload.onclick=()=>download(downUrl);
-        },1000);
-      });
-    };
+    setTimeout(()=>{
+      btnDownload.style.display="block";
+      btnDownload.onclick = () => download(
+        `https://drive.google.com/uc?export=download&id=${id}`
+      );
+    },1000);
 
   }catch{
-    cpfInput.placeholder="CPF não autorizado";
+    cpfVisual.textContent = "CPF não autorizado";
+    cpfVisual.style.color="#fff";
     estado="invalido";
   }
 }
