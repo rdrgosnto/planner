@@ -6,9 +6,11 @@
 <title>Pina | Ingresso</title>
 
 <style>
-html, body {
-  margin:0; padding:0;
-  height:100%; width:100%;
+html, body{
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
   background:#fff;
   display:flex;
   flex-direction:column;
@@ -16,21 +18,24 @@ html, body {
   font-family:Arial,sans-serif;
 }
 
-#containerIngresso {
+/* ===== IMAGEM ===== */
+#containerIngresso{
   width:90%;
   max-width:400px;
   margin-top:60px;
   position:relative;
 }
 
-#containerIngresso img {
+#containerIngresso img{
   width:100%;
   position:absolute;
-  top:0; left:0;
+  top:0;
+  left:0;
   transition:opacity 1s ease-in-out;
 }
 
-#btnCPF, #btnDownload {
+/* ===== CAIXA CPF ===== */
+#boxCPF{
   position:fixed;
   bottom:20px;
   left:50%;
@@ -38,36 +43,57 @@ html, body {
   width:90%;
   max-width:400px;
   height:36px;
-  line-height:36px;
+  background:#000;
+  color:#fff;
+  font-size:16px;
+  font-weight:bold;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:text;
+}
+
+#labelCPF{
+  pointer-events:none;
+}
+
+#cpfInput{
+  width:100%;
+  height:100%;
+  background:#000;
+  color:#fff;
+  border:none;
+  outline:none;
+  text-align:center;
+  font-size:16px;
+  font-weight:bold;
+  display:none;
+}
+
+/* ===== BOTÃO DOWNLOAD ===== */
+#btnDownload{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:90%;
+  max-width:400px;
+  height:36px;
   background:#000;
   color:#fff;
   font-size:16px;
   font-weight:bold;
   border:none;
   cursor:pointer;
-  text-align:center;
+  display:none;
 }
 
-#btnCPF input {
-  width:100%;
-  height:36px;
-  background:#000;
-  color:#fff;
-  border:none;
-  outline:none;
-  font-size:16px;
-  font-weight:bold;
-  text-align:center;
-}
-
-#btnDownload { display:none; }
-
-.cursor::after {
+/* cursor piscando */
+.cursor::after{
   content:"|";
   animation:blink 1s step-start infinite;
 }
-
-@keyframes blink {
+@keyframes blink{
   0%,50%{opacity:1}
   50.01%,100%{opacity:0}
 }
@@ -82,11 +108,18 @@ html, body {
        style="opacity:1;z-index:1">
 </div>
 
-<button id="btnCPF">CPF (somente números)</button>
+<div id="boxCPF">
+  <span id="labelCPF">CPF (somente números)</span>
+  <input id="cpfInput" class="cursor" placeholder="CPF (somente números)">
+</div>
+
 <button id="btnDownload">Baixar ingresso</button>
 
 <script>
-const btnCPF = document.getElementById("btnCPF");
+/* ===== ELEMENTOS ===== */
+const boxCPF = document.getElementById("boxCPF");
+const labelCPF = document.getElementById("labelCPF");
+const cpfInput = document.getElementById("cpfInput");
 const btnDownload = document.getElementById("btnDownload");
 const imgIngresso = document.getElementById("imgIngresso");
 const container = document.getElementById("containerIngresso");
@@ -94,7 +127,7 @@ const container = document.getElementById("containerIngresso");
 let estado = "inicial";
 let debounce;
 
-/* ========= FUNÇÕES BASE ========= */
+/* ===== FUNÇÕES BASE ===== */
 const norm = v => v.replace(/\D/g,"").padStart(11,"0");
 
 const valido = c => {
@@ -107,7 +140,7 @@ const valido = c => {
   return 1;
 };
 
-/* ========= CONSULTA POWER AUTOMATE ========= */
+/* ===== POWER AUTOMATE ===== */
 async function buscarIngresso(cpf){
   const r = await fetch(
     "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
@@ -127,40 +160,45 @@ async function buscarIngresso(cpf){
   );
 }
 
-/* ========= INTERAÇÃO ========= */
-btnCPF.onclick = () => {
+/* ===== INTERAÇÃO CPF ===== */
+boxCPF.onclick = () => {
   if(estado==="inicial"||estado==="invalido"){
-    btnCPF.innerHTML =
-      '<input id="cpfInput" class="cursor" placeholder="CPF (somente números)">';
-    const input = document.getElementById("cpfInput");
-    input.focus();
+    labelCPF.style.display="none";
+    cpfInput.style.display="block";
+    cpfInput.focus();
     estado="digitando";
-
-    input.oninput = () => {
-      input.value = input.value.replace(/\D/g,"");
-      if(input.value.length===11){
-        clearTimeout(debounce);
-        debounce = setTimeout(
-          ()=>validarCPF(norm(input.value)),400
-        );
-      }
-    };
   }
 };
 
-/* ========= VALIDAÇÃO ========= */
+cpfInput.oninput = () => {
+  cpfInput.value = cpfInput.value.replace(/\D/g,"");
+  if(cpfInput.value.length===11){
+    clearTimeout(debounce);
+    debounce = setTimeout(
+      ()=>validarCPF(norm(cpfInput.value)),400
+    );
+  }
+};
+
+/* ===== VALIDAÇÃO ===== */
 async function validarCPF(cpf){
   if(!valido(cpf)){
-    btnCPF.innerText="CPF inválido";
+    labelCPF.innerText="CPF inválido";
+    labelCPF.style.display="block";
+    cpfInput.style.display="none";
     estado="invalido";
     return;
   }
 
   estado="carregando";
+  labelCPF.innerText="carregando";
+  labelCPF.style.display="block";
+  cpfInput.style.display="none";
+
   let dots=0;
   const anim=setInterval(()=>{
     if(estado!=="carregando"){clearInterval(anim);return;}
-    btnCPF.innerText="carregando"+".".repeat(dots++%4);
+    labelCPF.innerText="carregando"+".".repeat(dots++%4);
   },500);
 
   try{
@@ -172,8 +210,10 @@ async function validarCPF(cpf){
     estado="valido";
 
     const id = autorizado.GOOGLE;
-    const imgUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
-    const downUrl = `https://drive.google.com/uc?export=download&id=${id}`;
+    const imgUrl =
+      `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    const downUrl =
+      `https://drive.google.com/uc?export=download&id=${id}`;
 
     const temp = new Image();
     temp.src = imgUrl;
@@ -190,7 +230,7 @@ async function validarCPF(cpf){
         imgIngresso.src=imgUrl;
         imgIngresso.style.opacity=1;
         temp.remove();
-        btnCPF.style.display="none";
+        boxCPF.style.display="none";
         btnDownload.style.display="block";
         btnDownload.onclick=()=>download(downUrl);
       },1000);
@@ -198,12 +238,13 @@ async function validarCPF(cpf){
 
   }catch{
     clearInterval(anim);
-    btnCPF.innerText="CPF não autorizado";
+    labelCPF.innerText="CPF não autorizado";
+    labelCPF.style.display="block";
     estado="invalido";
   }
 }
 
-/* ========= DOWNLOAD ========= */
+/* ===== DOWNLOAD ===== */
 function download(url){
   const a=document.createElement("a");
   a.href=url;
