@@ -22,18 +22,22 @@
   #containerIngresso {
     width: 90%;
     max-width: 400px;
-    margin-top: 80px; /* imagem mais baixa */
+    margin-top: 120px; /* imagem mais baixa */
+    position: relative; /* necessário para crossfade absoluto */
     display: flex;
     justify-content: center;
     align-items: center;
+    height: auto;
   }
 
-  #imgIngresso {
+  #containerIngresso img {
     width: 100%;
     height: auto;
     display: block;
-    opacity: 1;
-    transition: opacity 1s ease;
+    position: absolute; /* todas as imagens sobrepostas */
+    top: 0;
+    left: 0;
+    transition: opacity 1s ease-in-out;
   }
 
   #btnCPF, #btnDownload {
@@ -47,7 +51,7 @@
     color: #fff;
     font-size: 14px; /* texto menor */
     font-weight: bold;
-    padding: 10px;    /* altura menor */
+    padding: 8px;    /* altura menor */
     border: none;
     cursor: pointer;
     text-align: center;
@@ -83,7 +87,7 @@
 <body>
 
 <div id="containerIngresso">
-  <img id="imgIngresso" src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200" alt="Ingresso Digital">
+  <img id="imgIngresso" src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200" alt="Ingresso Digital" style="opacity:1; z-index:1;">
 </div>
 
 <button id="btnCPF">CPF (somente números)</button>
@@ -93,6 +97,7 @@
 const btnCPF = document.getElementById('btnCPF');
 const btnDownload = document.getElementById('btnDownload');
 const imgIngresso = document.getElementById('imgIngresso');
+const container = document.getElementById('containerIngresso');
 const testCPF = '35128248895';
 const downloadUrl = 'https://drive.google.com/uc?export=download&id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe';
 
@@ -137,28 +142,33 @@ function validarCPF(cpf) {
     if (cpf === testCPF) {
       estado = 'valido';
 
-      // Simula fade da imagem do ingresso
+      // Crossfade absoluto
       const tempImg = new Image();
       tempImg.src = imgIngresso.src; // mesma imagem agora
       tempImg.style.opacity = 0;
       tempImg.style.width = '100%';
       tempImg.style.height = 'auto';
-      tempImg.style.transition = 'opacity 1s ease';
-      document.getElementById('containerIngresso').appendChild(tempImg);
+      tempImg.style.position = 'absolute';
+      tempImg.style.top = '0';
+      tempImg.style.left = '0';
+      tempImg.style.transition = 'opacity 1s ease-in-out';
+      tempImg.style.zIndex = 2;
+      container.appendChild(tempImg);
 
-      imgIngresso.style.opacity = 0;
+      // inicia fade
+      setTimeout(() => { tempImg.style.opacity = 1; }, 50);
       setTimeout(() => {
-        tempImg.style.opacity = 1;
+        imgIngresso.style.opacity = 0;
         setTimeout(() => {
           imgIngresso.src = tempImg.src;
           imgIngresso.style.opacity = 1;
           tempImg.remove();
 
-          // Após fade, mostra botão Baixar ingresso
+          // mostra botão Baixar ingresso
           btnCPF.style.display = 'none';
           btnDownload.style.display = 'block';
         }, 1000);
-      }, 50);
+      }, 1050);
 
     } else {
       btnCPF.innerText = 'CPF não autorizado';
