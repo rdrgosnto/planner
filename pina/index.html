@@ -37,7 +37,7 @@
     top: 2px;
     right: 4px;
     width: 60px;
-    height: 28px; /* altura ajustada */
+    height: 24px; /* altura reduzida */
     background-color: rgba(255,0,0,0.5); /* cor de teste */
     color: #fff;
     border: none;
@@ -67,25 +67,22 @@
     transform: translateX(-50%) scale(0.98);
   }
 
-  /* CSS de impressão: mostra somente o ingresso e ocupa toda a página */
+  /* CSS de impressão: mostra apenas o ingresso e esconde o botão imprimir */
   @media print {
     body * {
       visibility: hidden;
     }
-    #containerIngresso, #containerIngresso * {
+    #containerIngresso, #containerIngresso img {
       visibility: visible;
+    }
+    #btnImprimir {
+      display: none; /* botão não aparece na impressão */
     }
     #containerIngresso {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 100%;
-    }
-    #containerIngresso img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain; /* mantém proporção */
     }
   }
 </style>
