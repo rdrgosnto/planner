@@ -22,8 +22,8 @@
   #containerIngresso {
     width: 90%;
     max-width: 400px;
-    margin-top: 120px; /* imagem mais baixa */
-    position: relative; /* necessário para crossfade absoluto */
+    margin-top: 60px; /* imagem mais para cima */
+    position: relative; 
     display: flex;
     justify-content: center;
     align-items: center;
@@ -49,9 +49,10 @@
     max-width: 400px;
     background: #000;
     color: #fff;
-    font-size: 14px; /* texto menor */
+    font-size: 16px;   /* texto maior */
     font-weight: bold;
-    padding: 8px;    /* altura menor */
+    padding: 14px;     /* caixa maior */
+    line-height: 1.2;  /* centraliza verticalmente */
     border: none;
     cursor: pointer;
     text-align: center;
@@ -63,9 +64,11 @@
     color: #fff;
     border: none;
     outline: none;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
+    padding: 14px 0; /* altura do input */
     text-align: center;
+    line-height: 1.2;
   }
 
   #btnDownload {
@@ -155,7 +158,6 @@ function validarCPF(cpf) {
       tempImg.style.zIndex = 2;
       container.appendChild(tempImg);
 
-      // inicia fade
       setTimeout(() => { tempImg.style.opacity = 1; }, 50);
       setTimeout(() => {
         imgIngresso.style.opacity = 0;
@@ -164,7 +166,6 @@ function validarCPF(cpf) {
           imgIngresso.style.opacity = 1;
           tempImg.remove();
 
-          // mostra botão Baixar ingresso
           btnCPF.style.display = 'none';
           btnDownload.style.display = 'block';
         }, 1000);
