@@ -13,7 +13,7 @@
     background: #fff;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start; /* para subir o ingresso */
     align-items: center;
     font-family: Arial, sans-serif;
     color: #000;
@@ -22,7 +22,7 @@
   #containerIngresso {
     width: 90%;
     max-width: 400px;
-    margin-bottom: 20px;
+    margin-top: 40px; /* sobe um pouco a imagem */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -136,9 +136,13 @@
       clearInterval(interval);
       if (cpf === testCPF) {
         estado = 'valido';
-        // Fade sutil da imagem
+
+        // Simula fade da imagem do ingresso (mesmo sendo a mesma)
         imgIngresso.style.opacity = 0;
-        setTimeout(() => { imgIngresso.style.opacity = 1; }, 50);
+        setTimeout(() => {
+          imgIngresso.style.opacity = 1;
+        }, 50);
+
         btnCPF.style.display = 'none';
         setTimeout(() => { btnDownload.style.display = 'block'; }, 1000);
       } else {
