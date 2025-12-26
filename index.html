@@ -36,8 +36,12 @@ label{font-size:16px;color:#333;margin:0 0 6px 2px}
   gap:8px;
   border-bottom:1px solid #ccc
 }
-.row:focus-within{border-color:#4CAF50}
+
+/* não deixa o foco mandar na cor final */
+.row:focus-within{border-color:#ccc}
+
 .row.err{border-color:#e53935}
+.row.ok{border-color:#4CAF50}
 
 input{
   flex:1 1 auto;
@@ -124,11 +128,15 @@ const valido=c=>{
   return 1;
 };
 
+const setRow = state=>{
+  row.className="row";
+  if(state) row.classList.add(state);
+};
+
 cpf.oninput=()=>{
   const raw = cpf.value;
   const nums = raw.replace(/\D/g,"");
 
-  // 🔽 fecha o teclado ao completar 11 dígitos
   if(nums.length === 11){
     cpf.blur();
   }
@@ -137,7 +145,7 @@ cpf.oninput=()=>{
 
   btn.disabled=1;
   btn.className="";
-  row.className="row";
+  setRow();
 
   if(timer) clearTimeout(timer);
 
@@ -146,10 +154,10 @@ cpf.oninput=()=>{
     return;
   }
 
-  if(v.length<11 || !valido(v)){
+  if(nums.length < 11 || !valido(v)){
     err.textContent="CPF inválido";
     err.style.display="block";
-    row.classList.add("err");
+    setRow("err");
     return;
   }
 
@@ -175,10 +183,12 @@ cpf.oninput=()=>{
 
       btn.disabled=0;
       btn.classList.add("ready");
+      setRow("ok");
+
     }catch{
       err.textContent="CPF não autorizado";
       err.style.display="block";
-      row.classList.add("err");
+      setRow("err");
       btn.disabled=1;
     }
   },DEBOUNCE);
