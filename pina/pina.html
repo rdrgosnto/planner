@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pina | Ingresso Digital</title>
+<title>Pina | Ingresso</title>
 
 <style>
-/* ===== RESET / BASE ===== */
 *{ box-sizing:border-box; }
 
 html,body{
@@ -17,11 +16,10 @@ html,body{
   font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
 }
 
-/* ===== LAYOUT ===== */
 body{
   display:flex;
   justify-content:center;
-  padding:24px 16px;
+  padding:28px 16px;
 }
 
 .app{
@@ -29,24 +27,14 @@ body{
   max-width:420px;
 }
 
-/* ===== HEADER ===== */
-header{
-  text-align:center;
+/* ===== LOGO ===== */
+.logo{
   margin-bottom:24px;
 }
 
-header h1{
-  margin:0;
-  font-size:28px;
-  font-weight:600;
-  letter-spacing:.5px;
-}
-
-header span{
+.logo img{
+  height:44px;
   display:block;
-  margin-top:4px;
-  font-size:14px;
-  color:#9a9a9a;
 }
 
 /* ===== CARD ===== */
@@ -54,32 +42,30 @@ header span{
   background:#1c1c1c;
   border-radius:14px;
   padding:18px;
-  box-shadow:0 8px 24px rgba(0,0,0,.4);
   border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
 }
 
-/* ===== IMAGEM ===== */
-.ingresso{
-  margin-bottom:18px;
-}
-
+/* ===== INGRESSO ===== */
 .ingresso img{
   width:100%;
   display:block;
   border-radius:10px;
+  margin-bottom:16px;
 }
 
-/* ===== TEXTO ===== */
-.instrucao{
+/* ===== TEXTO PADRÃO ===== */
+.texto{
   font-size:14px;
   color:#cfcfcf;
   margin-bottom:10px;
 }
 
-/* ===== CPF FIELD ===== */
+/* ===== CPF ===== */
 .cpf-field{
   position:relative;
   height:42px;
+  width:100%;
   border-radius:8px;
   border:1px solid rgba(255,255,255,.15);
   background:#151515;
@@ -90,15 +76,13 @@ header span{
 }
 
 .cpf-field:focus-within{
-  border-color:#fff;
+  border-color:#ffffff;
 }
 
 #cpfVisual{
   font-size:15px;
   color:#9a9a9a;
   white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
 }
 
 #cpfInput{
@@ -114,12 +98,13 @@ header span{
 .status{
   margin-top:8px;
   font-size:14px;
+  color:#cfcfcf;
   min-height:18px;
 }
 
 /* ===== BOTÃO ===== */
 .btn-primary{
-  margin-top:16px;
+  margin-top:18px;
   width:100%;
   height:42px;
   border:none;
@@ -142,10 +127,9 @@ header span{
 
 <main class="app">
 
-  <header>
-    <h1>Pina</h1>
-    <span>Ingresso Digital</span>
-  </header>
+  <div class="logo">
+    <img src="pina-logo.png" alt="Pina">
+  </div>
 
   <section class="card">
 
@@ -154,17 +138,13 @@ header span{
            src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
     </div>
 
-    <p class="instrucao">
+    <div class="texto">
       Digite seu CPF para acessar seu ingresso
-    </p>
+    </div>
 
     <div class="cpf-field" id="boxCPF" tabindex="0">
       <span id="cpfVisual">CPF (somente números)</span>
-      <input
-        id="cpfInput"
-        inputmode="numeric"
-        enterkeyhint="done"
-        autocomplete="off">
+      <input id="cpfInput" inputmode="numeric" autocomplete="off">
     </div>
 
     <div class="status" id="statusMsg"></div>
@@ -201,30 +181,21 @@ const valido=c=>{
 
 function esconderTeclado(){
   cpfInput.blur();
-  document.body.focus();
 }
 
 async function buscarIngresso(cpf){
-  const r=await fetch(
-    "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
-    {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({cpf})
-    }
-  );
+  const r=await fetch("SUA_API_AQUI",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({cpf})
+  });
   const d=await r.json();
-  return (d.codigo||[]).find(x=>
-    norm(x.CPF2||"")===cpf &&
-    String(x.ID).trim()==="#" &&
-    x.GOOGLE
-  );
+  return (d.codigo||[]).find(x=>norm(x.CPF2||"")===cpf && x.GOOGLE);
 }
 
 boxCPF.onpointerdown=()=>{
   if(estado==="carregando") return;
   cpfInput.focus();
-  estado="digitando";
 };
 
 cpfInput.oninput=()=>{
@@ -236,19 +207,15 @@ cpfInput.oninput=()=>{
   if(cpfInput.value.length===11){
     esconderTeclado();
     clearTimeout(debounce);
-    debounce=setTimeout(
-      ()=>validarCPF(norm(cpfInput.value)),400
-    );
+    debounce=setTimeout(()=>validarCPF(norm(cpfInput.value)),400);
   }
 };
 
 async function validarCPF(cpf){
-  if(estado==="carregando") return;
   estado="carregando";
 
   if(!valido(cpf)){
     statusMsg.textContent="CPF inválido";
-    estado="invalido";
     return;
   }
 
@@ -259,19 +226,19 @@ async function validarCPF(cpf){
     if(!autorizado) throw 0;
 
     const id=autorizado.GOOGLE;
-    imgIngresso.src=
-      `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 
     statusMsg.textContent="Ingresso disponível";
 
-    btnDownload.style.display="block";
-    btnDownload.onclick=()=>download(
-      `https://drive.google.com/uc?export=download&id=${id}`
-    );
+    setTimeout(()=>{
+      btnDownload.style.display="block";
+      btnDownload.onclick=()=>download(
+        `https://drive.google.com/uc?export=download&id=${id}`
+      );
+    },1400);
 
   }catch{
     statusMsg.textContent="CPF não autorizado";
-    estado="invalido";
   }
 }
 
