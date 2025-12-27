@@ -8,34 +8,23 @@ const urlsToCache = [
   './icon-512.png'
 ];
 
-// Instalando o service worker
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache aberto');
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
-// Ativando o service worker
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.map(key => {
-        if (key !== CACHE_NAME) {
-          return caches.delete(key);
-        }
-      })
+      keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null)
     ))
   );
 });
 
-// Interceptando requisições
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
+    caches.match(event.request).then(response => response || fetch(event.request))
   );
 });
