@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planner | Seat Test</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
+#splash{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center}
+#splash b{font-size:36px;color:#4CAF50;margin-bottom:10px}
+#splash i{width:120px;height:2px;background:#e0e0e0;overflow:hidden}
+#splash i:after{content:"";display:block;width:40px;height:100%;background:#4CAF50;animation:l .9s infinite}
+@keyframes l{from{transform:translateX(-40px)}to{transform:translateX(120px)}}
+
+/* Login */
+.app{width:90%;max-width:300px;visibility:hidden}
+label{font-size:16px;color:#333;margin:0 0 6px 2px}
+.row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc}
+.row:focus-within{border-color:#ccc}
+.row.err{border-color:#e53935}
+.row.ok{border-color:#4CAF50}
+input{flex:1 1 auto;min-width:0;border:0;padding:10px 2px;font-size:18px;background:0;outline:0}
+input::placeholder{font-size:16px;color:#999}
+button{flex:0 0 auto;max-width:35%;padding:6px 12px;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:14px;font-weight:bold;white-space:nowrap}
+button.ready{background:#4CAF50;color:#fff;border-color:#4CAF50;cursor:pointer}
+button.ready:active{background:#43a047;transform:scale(.97)}
+.errmsg{font-size:13px;color:#e53935;margin:14px 0 0 2px;display:none}
+
+/* Mapa */
+#bus-wrapper{transform:scale(.8);transform-origin:top center;display:none;width:100%;height:100%;flex-direction:column;justify-content:flex-start}
+.bus-container{padding:20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
+.grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
+.seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
+.seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer}
+.seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
+.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default!important;pointer-events:none!important}
+.seat.white::after{border-color:#8c96b2!important}
+.seat.selected{background:#e74c3c;border-color:#e74c3c}
+.empty{background:0 0}
+.seat.lost{background:#b0b0b0!important;border-color:#b0b0b0!important;color:transparent!important;pointer-events:none!important}
+.seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
+#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
+#confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
+#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
+</style>
+</head>
+<body>
+<!-- Splash -->
+<div id="splash"><b>Planner</b><i></i></div>
+
+<!-- Login -->
+<div class="app">
+  <label>CPF</label>
+  <div class="row">
+    <input id="cpf" placeholder="CPF (somente números)" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    <button id="btn" disabled>ENTRAR</button>
+  </div>
+  <div class="errmsg" id="err"></div>
+</div>
+
+<!-- Mapa -->
+<div id="bus-wrapper">
+  <div class="bus-container">
+    <div id="cursoBox"><div id="cursoText"></div></div>
+    <button id="confirmarBtn">CONFIRMAR</button>
+  </div>
+</div>
+<div id="progress-bar-container"><div id="progress-bar"></div></div>
+
+<script>
+/* SPLASH */
+setTimeout(()=>{splash.remove();document.querySelector(".app").style.visibility="visible"},1600);
+
+/* LOGIN */
+const $=s=>document.querySelector(s),
+      cpf=$("#cpf"),
+      btn=$("#btn"),
+      err=$("#err"),
+      row=$(".row"),
+      norm=v=>v.replace(/\D/g,"").padStart(11,"0");
+const DEBOUNCE=400; let timer=null;
+const valido=c=>/^(\d)\1+$/.test(c)?0:([9,10].every(t=>{let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);return ((s*10)%11)%10==c[t]}))?1:0;
+const setRow=state=>{row.className="row";if(state)row.classList.add(state);};
+
+cpf.oninput=()=>{
+  const nums=cpf.value.replace(/\D/g,""); cpf.value=nums;
+  if(nums.length===11) cpf.blur();
+  const v=nums.padStart(11,"0"); btn.disabled=1; btn.className=""; setRow();
+  if(timer) clearTimeout(timer);
+  if(!nums){ err.style.display="none"; return; }
+  if(nums.length<11 || !valido(v)){ err.textContent="CPF inválido"; err.style.display="block"; setRow("err"); return; }
+  err.style.display="none";
+  timer=setTimeout(async()=>{
+    try{
+      const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:v})});
+      const d=await r.json();
+      const autorizado=(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)===v && String(x.ID).trim()==="#");
+      if(!autorizado) throw 0;
+      btn.disabled=0; btn.classList.add("ready"); setRow("ok");
+    }catch{
+      err.textContent="CPF não autorizado"; err.style.display="block"; setRow("err"); btn.disabled=1;
+    }
+  },DEBOUNCE);
+};
+
+/* MAPA */
+let sel=null,bl=[],rb=[],rbSet=new Set(),userBlockedSeats=[],fakeBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="",layout=[];
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+      POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
+      map={AAL:"0046",ALI:"0046",QUI:"0046"};
+
+const q=(s,d=document)=>d.querySelector(s),
+      normCPF=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
+      cSeat=v=>{const e=document.createElement("div");if(v===null)e.className="empty"; else if(v==="white")e.className="seat white"; else{e.className="seat"; e.textContent=v.toString().padStart(2,"0")} return e;},
+      selSeat=e=>{if(e.classList.contains("white")||e.classList.contains("lost")) return; sel?.classList.remove("selected"); sel=e!==sel?(e.classList.add("selected"),e):null;};
+
+const fetchJSON=async u=>{const c=new AbortController(),id=setTimeout(()=>c.abort(),5e3); try{return await(await fetch(u+"?v="+Date.now(),{signal:c.signal})).json()}finally{clearTimeout(id)}},
+      anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0; (function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()},
+      getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k) return o[k]}};
+
+const render=l=>{const w=q(".bus-container"); w.querySelector(".grid")?.remove(); const g=document.createElement("div"); g.className="grid"; const frag=document.createDocumentFragment(); for(const row of l) for(const v of row){const e=cSeat(v); if(v!==null && v!=="white"){const id=v.toString().padStart(2,"0"); e.dataset.seat=id; if(bl.includes(id)||userBlockedSeats.includes(id)||fakeBlockedSeats.includes(id)||rbSet.has(id)) e.classList.add("white"); else e.onclick=()=>selSeat(e);} frag.appendChild(e);} g.appendChild(frag); w.appendChild(g);};
+
+const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})}); return {ok:r.ok,status:r.status,json:r.ok?await r.json():null}}catch(e){return {ok:0,status:0,error:e}}};
+
+/* CLIQUE NO BOTÃO ENTRAR */
+btn.onclick=async()=>{
+  if(btn.disabled) return;
+  sessionStorage.setItem("cpf", norm(cpf.value));
+  currentUserCPF=norm(cpf.value);
+
+  // Fullscreen
+  const elem = document.documentElement;
+  if(elem.requestFullscreen) elem.requestFullscreen();
+  else if(elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+  else if(elem.msRequestFullscreen) elem.msRequestFullscreen();
+
+  // Esconde login, mostra mapa
+  document.querySelector(".app").style.display="none";
+  q("#bus-wrapper").style.display="flex";
+
+  // Carrega mapa
+  anim(20);
+  const r = await fetchFlow(GET, currentUserCPF);
+  if(!r.ok || !r.json){ alert("Erro ao consultar fluxo."); return; }
+  const lista = r.json.poltronas || r.json.lista || [];
+  const cod = r.json.codigo || r.json.cursos || [];
+  anim(50);
+  const aluno = cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
+  if(!aluno){ alert("CPF não encontrado."); return; }
+  currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+  currentBus=map[currentCurso]||"0046"; q("#cursoText").textContent=currentCurso;
+  anim(70);
+  const cursoRows = lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+  bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+  rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean); rbSet=new Set(rb);
+  userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF).map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+  const cfg=await fetchJSON(`../configs/${currentBus}.json`);
+  if(!cfg){ alert("Erro layout"); return; }
+  layout=cfg.layout;
+  fakeBlockedSeats=[]; // Para simplificar teste
+  render(cfg.layout);
+  anim(100);
+  setTimeout(()=>q("#progress-bar-container").remove(),600);
+};
+
+/* CONFIRMAR POLTRONA */
+q("#confirmarBtn").onclick=async()=>{
+  if(!sel){alert("Selecione uma poltrona."); return;}
+  document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
+  q("#confirmarBtn").disabled=true;
+  alert("Poltrona selecionada: "+sel.textContent);
+};
+</script>
+</body>
+</html>
