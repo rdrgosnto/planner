@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planner PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#4CAF50">
+</head>
+<body>
+  <h1>Bem-vindo ao Planner PWA!</h1>
+  <p>Se você está vendo isso, a PWA está funcionando.</p>
+
+  <script>
+    // Registrando o Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('Service Worker registrado', reg))
+          .catch(err => console.log('Erro ao registrar Service Worker', err));
+      });
+    }
+  </script>
+</body>
+</html>
