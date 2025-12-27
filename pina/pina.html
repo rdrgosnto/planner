@@ -2,8 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pina | Ingresso</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121212">
 
 <style>
 html,body{
@@ -45,20 +48,31 @@ header img{
 /* ===== CONTAINER INGRESSO ===== */
 #containerIngresso{
   width:100%;
+  position:relative;
   margin-bottom:16px;
 }
 
-#containerIngresso img{
+#skeleton{
   width:100%;
+  aspect-ratio:3/4;
+  background:linear-gradient(100deg,#1c1c1c 40%,#2a2a2a 50%,#1c1c1c 60%);
+  background-size:200% 100%;
+  animation:shimmer 1.2s infinite;
   border-radius:8px;
-  display:block;
+}
+
+@keyframes shimmer{ to{ background-position:-200% 0; } }
+
+#imgIngresso{
+  width:100%;
+  display:none;
+  border-radius:8px;
 }
 
 /* ===== MENSAGEM ===== */
 #mensagem{
   width:100%;
   font-size:14px;
-  color:#eaeaea;
   text-align:left;
   margin-bottom:12px;
   min-height:18px;
@@ -118,7 +132,8 @@ header img{
 
 <div id="card">
   <div id="containerIngresso">
-    <img id="imgIngresso" src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200" alt="Ingresso">
+    <div id="skeleton"></div>
+    <img id="imgIngresso" alt="Ingresso">
   </div>
 
   <div id="mensagem">Digite seu CPF para acessar seu ingresso</div>
@@ -132,12 +147,12 @@ header img{
 </div>
 
 <script>
-const boxCPF=document.getElementById("boxCPF");
 const cpfInput=document.getElementById("cpfInput");
 const cpfVisual=document.getElementById("cpfVisual");
-const btnDownload=document.getElementById("btnDownload");
-const imgIngresso=document.getElementById("imgIngresso");
 const mensagem=document.getElementById("mensagem");
+const imgIngresso=document.getElementById("imgIngresso");
+const skeleton=document.getElementById("skeleton");
+const btnDownload=document.getElementById("btnDownload");
 
 let estado="inicial",debounce;
 
@@ -153,35 +168,19 @@ const valido=c=>{
   return true;
 };
 
-function esconderTeclado(){
-  cpfInput.blur();
-  document.body.focus();
-}
+function esconderTeclado(){ cpfInput.blur(); document.body.focus(); }
 
 async function buscarIngresso(cpf){
-  const r=await fetch(
-    "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
-    {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({cpf})
-    }
-  );
+  const r=await fetch("SUA_API_AQUI",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({cpf})
+  });
   const d=await r.json();
-  return (d.codigo||[]).find(x=>
-    norm(x.CPF2||"")===cpf &&
-    x.GOOGLE
-  );
+  return d.codigo?.find(x=>norm(x.CPF2||"")===cpf && x.GOOGLE);
 }
 
-boxCPF.onpointerdown=()=>{
-  if(estado==="carregando") return;
-  cpfInput.focus();
-  cpfVisual.style.color="#999";
-  estado="digitando";
-};
-
-cpfInput.oninput=()=>{
+cpfInput.oninput=async ()=>{
   cpfInput.value=cpfInput.value.replace(/\D/g,"");
   cpfVisual.textContent=cpfInput.value||"CPF (somente números)";
   cpfVisual.style.color=cpfInput.value?"#fff":"#999";
@@ -203,32 +202,26 @@ async function validarCPF(cpf){
     return;
   }
 
-  mensagem.textContent="Carregando...";
+  mensagem.textContent="Verificando ingresso...";
+
   try{
-    const autorizado=await buscarIngresso(cpf);
-    if(!autorizado) throw 0;
+    const ingresso=await buscarIngresso(cpf);
+    if(!ingresso) throw 0;
 
-    const id=autorizado.GOOGLE;
-    imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    imgIngresso.onload=()=>{
+      skeleton.style.display="none";
+      imgIngresso.style.display="block";
+      setTimeout(()=>btnDownload.style.display="flex",700);
+    };
 
-    setTimeout(()=>{
-      btnDownload.style.display="flex";
-      btnDownload.onclick=()=>download(`https://drive.google.com/uc?export=download&id=${id}`);
-    },700); // delay menor
+    imgIngresso.src=`https://drive.google.com/thumbnail?id=${ingresso.GOOGLE}&sz=w1200`;
+
+    btnDownload.onclick=()=>window.location.href=`https://drive.google.com/uc?export=download&id=${ingresso.GOOGLE}`;
 
   }catch{
     mensagem.textContent="CPF não autorizado";
     estado="invalido";
   }
-}
-
-function download(url){
-  const a=document.createElement("a");
-  a.href=url;
-  a.download="ingresso.png";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
 }
 </script>
 
