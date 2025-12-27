@@ -12,7 +12,7 @@ html,body{
   margin:0;
   min-height:100%;
   background:#121212;
-  color:#f1f1f1;
+  color:#fff;
   font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
 }
 
@@ -94,9 +94,9 @@ body{
 /* ===== TEXTO FIXO ===== */
 .texto{
   font-size:14px;
-  color:#cfcfcf;
+  color:#fff;
   margin-bottom:10px;
-  padding-left:3px; /* 2px deslocamento refinado */
+  padding-left:3px;
 }
 
 /* ===== CPF ===== */
@@ -110,24 +110,19 @@ body{
   display:flex;
   align-items:center;
   padding:0 12px;
-  cursor:text;
 }
 .cpf-field:focus-within{
   border-color:#ffffff;
 }
-#cpfVisual{
-  font-size:15px;
-  color:#9a9a9a;
-  white-space:nowrap;
-  padding-left:2px;
-}
 #cpfInput{
-  position:absolute;
-  inset:0;
-  opacity:0;
+  width:100%;
+  height:100%;
   border:none;
   outline:none;
   background:transparent;
+  color:#fff;
+  font-size:15px;
+  padding-left:2px;
 }
 
 /* ===== STATUS ===== */
@@ -140,6 +135,7 @@ body{
   justify-content:flex-start;
   padding-left:3px;
   border-radius:6px;
+  color:#fff;
 }
 
 /* ===== BOTÃO ===== */
@@ -178,7 +174,7 @@ body{
       <img id="imgIngresso"
            src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
       <div class="loading-img" id="loadingImg">
-        Carregando ingresso…
+        carregando…
       </div>
     </div>
 
@@ -189,11 +185,11 @@ body{
 
     <!-- CPF -->
     <div class="cpf-field" id="boxCPF" tabindex="0">
-      <span id="cpfVisual">Digite aqui</span>
       <input
         id="cpfInput"
         inputmode="numeric"
         enterkeyhint="done"
+        placeholder="Digite aqui"
         autocomplete="off">
     </div>
 
@@ -210,9 +206,7 @@ body{
 </main>
 
 <script>
-const boxCPF=document.getElementById("boxCPF");
 const cpfInput=document.getElementById("cpfInput");
-const cpfVisual=document.getElementById("cpfVisual");
 const btnDownload=document.getElementById("btnDownload");
 const imgIngresso=document.getElementById("imgIngresso");
 const statusMsg=document.getElementById("statusMsg");
@@ -234,10 +228,7 @@ const valido=c=>{
   return true;
 };
 
-// Esconder teclado
-function esconderTeclado(){ cpfInput.blur(); }
-
-// Função que consulta o Power Automate
+// Consulta Power Automate
 async function buscarIngresso(cpf){
   const r=await fetch(
     "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
@@ -248,16 +239,12 @@ async function buscarIngresso(cpf){
     }
   );
   const d=await r.json();
-  return (d.codigo||[]).find(x =>
-    norm(x.CPF2||"")===cpf && x.GOOGLE
-  );
+  return (d.codigo||[]).find(x => norm(x.CPF2||"")===cpf && x.GOOGLE);
 }
 
 // Evento de digitação
 cpfInput.oninput=()=>{
   cpfInput.value=cpfInput.value.replace(/\D/g,"");
-  cpfVisual.textContent=cpfInput.value||"Digite aqui";
-  cpfVisual.style.color=cpfInput.value?"#fff":"#9a9a9a";
   btnDownload.style.display="none";
 
   if(cpfInput.value.length<11){
@@ -270,7 +257,7 @@ cpfInput.oninput=()=>{
   debounce=setTimeout(()=>validarCPF(norm(cpfInput.value)),400);
 };
 
-// Validação CPF + consulta
+// Validação + consulta
 async function validarCPF(cpf){
   if(!valido(cpf)){
     statusMsg.textContent="CPF inválido";
@@ -278,13 +265,8 @@ async function validarCPF(cpf){
     return;
   }
 
-  // Carregando...
+  statusMsg.textContent="carregando…";
   statusMsg.style.color="#000";
-  let dots=0;
-  const intervalDots=setInterval(()=>{
-    dots++;
-    statusMsg.textContent="Carregando" + ".".repeat(dots%4);
-  },400);
   loadingImg.classList.add("ativo");
 
   try{
@@ -295,21 +277,19 @@ async function validarCPF(cpf){
     imgIngresso.onload=()=>loadingImg.classList.remove("ativo");
     imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 
-    // CPF localizado
     statusMsg.textContent="CPF localizado";
     statusMsg.style.color="#fff";
 
     setTimeout(()=>{
-      clearInterval(intervalDots);
       loadingImg.classList.remove("ativo");
       btnDownload.style.display="block";
+      statusMsg.textContent=""; // desaparece depois que botão aparece
       btnDownload.onclick=()=>download(
         `https://drive.google.com/uc?export=download&id=${id}`
       );
     },600);
 
   }catch{
-    clearInterval(intervalDots);
     loadingImg.classList.remove("ativo");
     statusMsg.textContent="CPF não autorizado";
     statusMsg.style.color="#fff";
