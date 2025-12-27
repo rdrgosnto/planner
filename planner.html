@@ -36,8 +36,11 @@ label{font-size:16px;color:#333;margin:0 0 6px 2px}
   gap:8px;
   border-bottom:1px solid #ccc
 }
-.row:focus-within{border-color:#4CAF50}
+
+.row:focus-within{border-color:#ccc}
+
 .row.err{border-color:#e53935}
+.row.ok{border-color:#4CAF50}
 
 input{
   flex:1 1 auto;
@@ -63,14 +66,12 @@ button{
   white-space:nowrap
 }
 
-/* 🔽 ALTERAÇÃO AQUI */
 button.ready{
   background:#4CAF50;
   color:#fff;
   border-color:#4CAF50;
   cursor:pointer
 }
-
 button.ready:active{
   background:#43a047;
   transform:scale(.97)
@@ -80,20 +81,6 @@ button.ready:active{
   font-size:13px;color:#e53935;
   margin:14px 0 0 2px;
   display:none
-}
-
-.bar{
-  position:fixed;bottom:0;left:0;
-  width:100%;height:8px;
-  background:#0001;
-  display:none
-}
-.bar span{
-  display:block;
-  height:100%;
-  width:0;
-  background:#4CAF50;
-  transition:width .25s
 }
 </style>
 </head>
@@ -105,13 +92,17 @@ button.ready:active{
 <div class="app">
   <label>CPF</label>
   <div class="row">
-    <input id="cpf" placeholder="CPF (somente números)">
+    <input
+      id="cpf"
+      placeholder="CPF (somente números)"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      autocomplete="off"
+    >
     <button id="btn" disabled>ENTRAR</button>
   </div>
   <div class="errmsg" id="err"></div>
 </div>
-
-<div class="bar"><span></span></div>
 
 <script>
 setTimeout(()=>{
@@ -127,42 +118,54 @@ const DEBOUNCE = 400;
 let timer = null;
 
 const valido=c=>{
-  if(/^(\d)\1+$/.test(c))return 0;
+  if(/^(\d)\1+$/.test(c)) return 0;
   for(let t=9;t<11;t++){
     let s=0;
-    for(let i=0;i<t;i++)s+=c[i]*(t+1-i);
-    if(((s*10)%11)%10!=c[t])return 0;
+    for(let i=0;i<t;i++) s+=c[i]*(t+1-i);
+    if(((s*10)%11)%10!=c[t]) return 0;
   }
   return 1;
 };
 
-cpf.oninput=()=>{
-  const raw=cpf.value;
-  const v=norm(raw);
-
-  btn.disabled=1;
-  btn.className="";
+const setRow = state=>{
   row.className="row";
+  if(state) row.classList.add(state);
+};
+
+cpf.oninput=()=>{
+  // remove tudo que não for número e atualiza o campo
+  const nums = cpf.value.replace(/\D/g,"");
+  cpf.value = nums;
+
+  if(nums.length === 11){
+    cpf.blur();
+  }
+
+  const v = nums.padStart(11,"0");
+
+  btn.disabled = 1;
+  btn.className = "";
+  setRow();
 
   if(timer) clearTimeout(timer);
 
-  if(!raw){
-    err.style.display="none";
+  if(!nums){
+    err.style.display = "none";
     return;
   }
 
-  if(v.length<11 || !valido(v)){
-    err.textContent="CPF inválido";
-    err.style.display="block";
-    row.classList.add("err");
+  if(nums.length < 11 || !valido(v)){
+    err.textContent = "CPF inválido";
+    err.style.display = "block";
+    setRow("err");
     return;
   }
 
-  err.style.display="none";
+  err.style.display = "none";
 
-  timer=setTimeout(async()=>{
+  timer = setTimeout(async()=>{
     try{
-      const r=await fetch(
+      const r = await fetch(
         "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
         {
           method:"POST",
@@ -171,33 +174,33 @@ cpf.oninput=()=>{
         }
       );
 
-      const d=await r.json();
-      const autorizado=(d.codigo||[]).find(
-        x=>norm(x.CPF2||x.CPF)===v && String(x.ID).trim()==="#"
+      const d = await r.json();
+      const autorizado = (d.codigo||[]).find(
+        x => norm(x.CPF2||x.CPF) === v && String(x.ID).trim() === "#"
       );
 
       if(!autorizado) throw 0;
 
-      btn.disabled=0;
+      btn.disabled = 0;
       btn.classList.add("ready");
+      setRow("ok");
+
     }catch{
-      err.textContent="CPF não autorizado";
-      err.style.display="block";
-      row.classList.add("err");
-      btn.disabled=1;
+      err.textContent = "CPF não autorizado";
+      err.style.display = "block";
+      setRow("err");
+      btn.disabled = 1;
     }
-  },DEBOUNCE);
+  }, DEBOUNCE);
 };
 
-btn.onclick=async()=>{
-  if(btn.disabled)return;
-  btn.disabled=1;
-  try{
-    sessionStorage.setItem("cpf",norm(cpf.value));
-    sessionStorage.setItem("authMapa",1);
-    location.href="mapa/index.html";
-  }catch{}
+btn.onclick = ()=>{
+  if(btn.disabled) return;
+  sessionStorage.setItem("cpf", norm(cpf.value));
+  sessionStorage.setItem("authMapa", 1);
+  location.href = "mapa/index.html";
 };
 </script>
+
 </body>
 </html>
