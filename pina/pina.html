@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pina | Ingresso Digital</title>
+
+<style>
+/* ===== RESET / BASE ===== */
+*{ box-sizing:border-box; }
+
+html,body{
+  margin:0;
+  min-height:100%;
+  background:#121212;
+  color:#f1f1f1;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+
+/* ===== LAYOUT ===== */
+body{
+  display:flex;
+  justify-content:center;
+  padding:24px 16px;
+}
+
+.app{
+  width:100%;
+  max-width:420px;
+}
+
+/* ===== HEADER ===== */
+header{
+  text-align:center;
+  margin-bottom:24px;
+}
+
+header h1{
+  margin:0;
+  font-size:28px;
+  font-weight:600;
+  letter-spacing:.5px;
+}
+
+header span{
+  display:block;
+  margin-top:4px;
+  font-size:14px;
+  color:#9a9a9a;
+}
+
+/* ===== CARD ===== */
+.card{
+  background:#1c1c1c;
+  border-radius:14px;
+  padding:18px;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+  border:1px solid rgba(255,255,255,.06);
+}
+
+/* ===== IMAGEM ===== */
+.ingresso{
+  margin-bottom:18px;
+}
+
+.ingresso img{
+  width:100%;
+  display:block;
+  border-radius:10px;
+}
+
+/* ===== TEXTO ===== */
+.instrucao{
+  font-size:14px;
+  color:#cfcfcf;
+  margin-bottom:10px;
+}
+
+/* ===== CPF FIELD ===== */
+.cpf-field{
+  position:relative;
+  height:42px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.15);
+  background:#151515;
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  cursor:text;
+}
+
+.cpf-field:focus-within{
+  border-color:#fff;
+}
+
+#cpfVisual{
+  font-size:15px;
+  color:#9a9a9a;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#cpfInput{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  border:none;
+  outline:none;
+  background:transparent;
+}
+
+/* ===== STATUS ===== */
+.status{
+  margin-top:8px;
+  font-size:14px;
+  min-height:18px;
+}
+
+/* ===== BOTÃO ===== */
+.btn-primary{
+  margin-top:16px;
+  width:100%;
+  height:42px;
+  border:none;
+  border-radius:8px;
+  background:#ffffff;
+  color:#000;
+  font-size:15px;
+  font-weight:500;
+  cursor:pointer;
+  display:none;
+}
+
+.btn-primary:hover{
+  background:#eaeaea;
+}
+</style>
+</head>
+
+<body>
+
+<main class="app">
+
+  <header>
+    <h1>Pina</h1>
+    <span>Ingresso Digital</span>
+  </header>
+
+  <section class="card">
+
+    <div class="ingresso">
+      <img id="imgIngresso"
+           src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
+    </div>
+
+    <p class="instrucao">
+      Digite seu CPF para acessar seu ingresso
+    </p>
+
+    <div class="cpf-field" id="boxCPF" tabindex="0">
+      <span id="cpfVisual">CPF (somente números)</span>
+      <input
+        id="cpfInput"
+        inputmode="numeric"
+        enterkeyhint="done"
+        autocomplete="off">
+    </div>
+
+    <div class="status" id="statusMsg"></div>
+
+    <button class="btn-primary" id="btnDownload">
+      Baixar ingresso
+    </button>
+
+  </section>
+
+</main>
+
+<script>
+const boxCPF=document.getElementById("boxCPF");
+const cpfInput=document.getElementById("cpfInput");
+const cpfVisual=document.getElementById("cpfVisual");
+const btnDownload=document.getElementById("btnDownload");
+const imgIngresso=document.getElementById("imgIngresso");
+const statusMsg=document.getElementById("statusMsg");
+
+let estado="inicial",debounce;
+
+const norm=v=>v.replace(/\D/g,"").padStart(11,"0");
+
+const valido=c=>{
+  if(/^(\d)\1+$/.test(c)) return false;
+  for(let t=9;t<11;t++){
+    let s=0;
+    for(let i=0;i<t;i++) s+=c[i]*(t+1-i);
+    if(((s*10)%11)%10!=c[t]) return false;
+  }
+  return true;
+};
+
+function esconderTeclado(){
+  cpfInput.blur();
+  document.body.focus();
+}
+
+async function buscarIngresso(cpf){
+  const r=await fetch(
+    "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
+    {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({cpf})
+    }
+  );
+  const d=await r.json();
+  return (d.codigo||[]).find(x=>
+    norm(x.CPF2||"")===cpf &&
+    String(x.ID).trim()==="#" &&
+    x.GOOGLE
+  );
+}
+
+boxCPF.onpointerdown=()=>{
+  if(estado==="carregando") return;
+  cpfInput.focus();
+  estado="digitando";
+};
+
+cpfInput.oninput=()=>{
+  cpfInput.value=cpfInput.value.replace(/\D/g,"");
+  cpfVisual.textContent=cpfInput.value||"CPF (somente números)";
+  cpfVisual.style.color=cpfInput.value?"#fff":"#9a9a9a";
+  statusMsg.textContent="";
+
+  if(cpfInput.value.length===11){
+    esconderTeclado();
+    clearTimeout(debounce);
+    debounce=setTimeout(
+      ()=>validarCPF(norm(cpfInput.value)),400
+    );
+  }
+};
+
+async function validarCPF(cpf){
+  if(estado==="carregando") return;
+  estado="carregando";
+
+  if(!valido(cpf)){
+    statusMsg.textContent="CPF inválido";
+    estado="invalido";
+    return;
+  }
+
+  statusMsg.textContent="Verificando CPF...";
+
+  try{
+    const autorizado=await buscarIngresso(cpf);
+    if(!autorizado) throw 0;
+
+    const id=autorizado.GOOGLE;
+    imgIngresso.src=
+      `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+
+    statusMsg.textContent="Ingresso disponível";
+
+    btnDownload.style.display="block";
+    btnDownload.onclick=()=>download(
+      `https://drive.google.com/uc?export=download&id=${id}`
+    );
+
+  }catch{
+    statusMsg.textContent="CPF não autorizado";
+    estado="invalido";
+  }
+}
+
+function download(url){
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="ingresso.png";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+</script>
+
+</body>
+</html>
