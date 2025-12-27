@@ -27,7 +27,9 @@ button.ready:active{background:#43a047;transform:scale(.97)}
 </style>
 </head>
 <body>
+
 <div id="splash"><b>Planner</b><i></i></div>
+
 <div class="app">
   <label>CPF</label>
   <div class="row">
@@ -36,37 +38,112 @@ button.ready:active{background:#43a047;transform:scale(.97)}
   </div>
   <div class="errmsg" id="err"></div>
 </div>
+
 <script>
 setTimeout(()=>{splash.remove();document.querySelector(".app").style.visibility="visible"},1600);
 
-const $=s=>document.querySelector(s),cpf=$("#cpf"),btn=$("#btn"),err=$("#err"),row=$(".row"),norm=v=>v.replace(/\D/g,"").padStart(11,"0");
-const DEBOUNCE=400;let timer=null;
-const valido=c=>/^(\d)\1+$/.test(c)?0:([9,10].every(t=>{let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);return ((s*10)%11)%10==c[t]}))?1:0;
-const setRow=state=>{row.className="row";if(state)row.classList.add(state);};
+const $=s=>document.querySelector(s),
+      cpf=$("#cpf"),
+      btn=$("#btn"),
+      err=$("#err"),
+      row=$(".row"),
+      norm=v=>v.replace(/\D/g,"").padStart(11,"0");
+
+const DEBOUNCE=400;
+let timer=null;
+
+/* ===== HAPTIC (IGUAL AO PRIMEIRO CÓDIGO) ===== */
+const vibrarDigitacao = () => {
+  if (navigator.vibrate) {
+    navigator.vibrate(30); // MESMO tempo/intensidade
+  }
+};
+
+const valido=c=>/^(\d)\1+$/.test(c)?0:
+  ([9,10].every(t=>{
+    let s=0;
+    for(let i=0;i<t;i++) s+=c[i]*(t+1-i);
+    return ((s*10)%11)%10==c[t];
+  }))?1:0;
+
+const setRow=state=>{
+  row.className="row";
+  if(state) row.classList.add(state);
+};
 
 cpf.oninput=()=>{
-  const nums=cpf.value.replace(/\D/g,"");cpf.value=nums;
-  if(nums.length===11)cpf.blur();
-  const v=nums.padStart(11,"0");btn.disabled=1;btn.className="";setRow();
-  if(timer)clearTimeout(timer);
-  if(!nums){err.style.display="none";return;}
-  if(nums.length<11||!valido(v)){err.textContent="CPF inválido";err.style.display="block";setRow("err");return;}
+  const nums=cpf.value.replace(/\D/g,"");
+  cpf.value=nums;
+
+  if(nums.length===11) cpf.blur();
+
+  const v=nums.padStart(11,"0");
+  btn.disabled=1;
+  btn.className="";
+  setRow();
+
+  if(timer) clearTimeout(timer);
+
+  if(!nums){
+    err.style.display="none";
+    return;
+  }
+
+  /* 🔔 vibra enquanto digita (igual ao outro HTML) */
+  if(nums.length < 11){
+    vibrarDigitacao();
+    err.style.display="none";
+    return;
+  }
+
+  if(!valido(v)){
+    vibrarDigitacao();
+    err.textContent="CPF inválido";
+    err.style.display="block";
+    setRow("err");
+    return;
+  }
+
   err.style.display="none";
+
   timer=setTimeout(async()=>{
     try{
-      const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:v})});
+      const r=await fetch(
+        "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+        {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body:JSON.stringify({ cpf:v })
+        }
+      );
+
       const d=await r.json();
-      const autorizado=(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)===v&&String(x.ID).trim()==="#");
-      if(!autorizado)throw 0;
-      btn.disabled=0;btn.classList.add("ready");setRow("ok");
+      const autorizado=(d.codigo||[])
+        .find(x=>norm(x.CPF2||x.CPF)===v && String(x.ID).trim()==="#");
+
+      if(!autorizado) throw 0;
+
+      btn.disabled=0;
+      btn.classList.add("ready");
+      setRow("ok");
+
     }catch{
-      err.textContent="CPF não autorizado";err.style.display="block";setRow("err");btn.disabled=1;
+      vibrarDigitacao();
+      err.textContent="CPF não autorizado";
+      err.style.display="block";
+      setRow("err");
+      btn.disabled=1;
     }
   },DEBOUNCE);
 };
 
-btn.onclick=()=>{if(btn.disabled)return;sessionStorage.setItem("cpf",norm(cpf.value));sessionStorage.setItem("authMapa",1);location.href="mapa/index.html"};
+btn.onclick=()=>{
+  if(btn.disabled) return;
+  sessionStorage.setItem("cpf",norm(cpf.value));
+  sessionStorage.setItem("authMapa",1);
+  location.href="mapa/index.html";
+};
 </script>
+
 </body>
 </html>
