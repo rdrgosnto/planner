@@ -28,7 +28,7 @@ html, body {
     object-fit:contain;
     background:#000;
     z-index:0;
-    transition:filter .9s ease; /* 🔹 mais suave */
+    transition:filter .9s ease;
 }
 
 #videoFundo.pausado {
@@ -55,10 +55,10 @@ html, body {
     z-index:2;
 }
 
-/* ===== CPF GROUP (DESCIDO) ===== */
+/* ===== CPF GROUP ===== */
 .cpf-group {
     position:absolute;
-    bottom:clamp(30px,6vh,80px); /* 🔽 desceu */
+    bottom:clamp(30px,6vh,80px);
     left:50%;
     transform:translateX(-50%);
     width:90%;
@@ -75,9 +75,9 @@ html, body {
     font-size:14px;
 }
 
-/* caixa CPF */
+/* ===== CAIXA CPF (ALTURA CORRIGIDA) ===== */
 .cpf-field {
-    height:44px;
+    height:48px; /* ✅ altura ideal */
     border-radius:0;
     border:1px solid rgba(255,255,255,.25);
     background:rgba(0,0,0,.45);
@@ -89,12 +89,13 @@ html, body {
 
 .cpf-field input {
     width:100%;
-    height:100%;
     border:none;
     outline:none;
     background:transparent;
     color:#fff;
-    font-size:14px;
+    font-size:15px;
+    line-height:48px; /* ✅ centralização perfeita */
+    padding:0;
 }
 
 .cpf-field input::placeholder {
@@ -105,7 +106,7 @@ html, body {
 /* botão */
 .btn-primary {
     display:none;
-    height:44px;
+    height:48px;
     border:none;
     border-radius:0;
     background:#fff;
@@ -151,6 +152,13 @@ const statusMsg   = document.getElementById("statusMsg");
 const video       = document.getElementById("videoFundo");
 
 let debounce;
+
+/* ===== HAPTIC (SUTIL) ===== */
+function vibrarErro(){
+    if(navigator.vibrate){
+        navigator.vibrate(30); // vibração curta e elegante
+    }
+}
 
 /* ===== CONTROLE DE VÍDEO (SUAVE) ===== */
 function pausarVideoSuave(){
@@ -203,6 +211,7 @@ cpfInput.oninput = () => {
 
     if(cpfInput.value.length < 11){
         statusMsg.textContent="CPF inválido";
+        vibrarErro();
         return;
     }
 
@@ -214,12 +223,12 @@ cpfInput.oninput = () => {
 async function validarCPF(cpf){
     if(!valido(cpf)){
         statusMsg.textContent="CPF inválido";
+        vibrarErro();
         pausarVideoSuave();
         return;
     }
 
     tocarVideoSuave();
-    statusMsg.textContent="Verificando CPF…";
 
     try{
         const autorizado = await buscarIngresso(cpf);
@@ -244,6 +253,7 @@ async function validarCPF(cpf){
 
     } catch {
         statusMsg.textContent="CPF não autorizado";
+        vibrarErro();
         pausarVideoSuave();
         btnDownload.style.display="none";
     }
