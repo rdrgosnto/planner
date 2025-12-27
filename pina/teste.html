@@ -75,9 +75,9 @@ html, body {
     font-size:14px;
 }
 
-/* ===== CAIXA CPF (ALTURA CORRIGIDA) ===== */
+/* ===== CAIXA CPF ===== */
 .cpf-field {
-    height:48px; /* ✅ altura ideal */
+    height:48px;
     border-radius:0;
     border:1px solid rgba(255,255,255,.25);
     background:rgba(0,0,0,.45);
@@ -94,7 +94,7 @@ html, body {
     background:transparent;
     color:#fff;
     font-size:15px;
-    line-height:48px; /* ✅ centralização perfeita */
+    line-height:48px;
     padding:0;
 }
 
@@ -151,16 +151,19 @@ const btnDownload = document.getElementById("btnDownload");
 const statusMsg   = document.getElementById("statusMsg");
 const video       = document.getElementById("videoFundo");
 
+/* 🎬 velocidade do vídeo (ajustável depois) */
+video.playbackRate = 0.75;
+
 let debounce;
 
-/* ===== HAPTIC (SUTIL) ===== */
+/* ===== HAPTIC ===== */
 function vibrarErro(){
     if(navigator.vibrate){
-        navigator.vibrate(30); // vibração curta e elegante
+        navigator.vibrate(30);
     }
 }
 
-/* ===== CONTROLE DE VÍDEO (SUAVE) ===== */
+/* ===== CONTROLE DE VÍDEO ===== */
 function pausarVideoSuave(){
     video.classList.add("pausado");
     setTimeout(() => {
@@ -202,9 +205,7 @@ async function buscarIngresso(cpf){
 /* input */
 cpfInput.oninput = () => {
     cpfInput.value = cpfInput.value.replace(/\D/g,"");
-
     pausarVideoSuave();
-
     btnDownload.style.display="none";
     statusMsg.textContent="";
     clearTimeout(debounce);
@@ -216,7 +217,6 @@ cpfInput.oninput = () => {
     }
 
     cpfInput.blur();
-
     debounce = setTimeout(() => validarCPF(norm(cpfInput.value)), 400);
 };
 
@@ -236,13 +236,11 @@ async function validarCPF(cpf){
 
         statusMsg.textContent="CPF localizado";
         pausarVideoSuave();
-
         btnDownload.style.display="block";
 
         const id = autorizado.GOOGLE;
         btnDownload.onclick = () => {
             tocarVideoSuave();
-
             const a = document.createElement("a");
             a.href = `https://drive.google.com/uc?export=download&id=${id}`;
             a.download = "ingresso.png";
