@@ -8,6 +8,8 @@
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#121212">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 
 <style>
 html,body{
@@ -113,7 +115,7 @@ header img{
 
 <div id="containerIngresso">
   <div id="skeleton"></div>
-  <img id="imgIngresso">
+  <img id="imgIngresso" alt="Ingresso">
 </div>
 
 <div id="mensagem">
@@ -122,7 +124,11 @@ header img{
 
 <div id="boxCPF">
   <span id="cpfVisual">CPF (somente números)</span>
-  <input id="cpfInput" inputmode="numeric">
+  <input
+    id="cpfInput"
+    inputmode="numeric"
+    autocomplete="off"
+    enterkeyhint="done">
 </div>
 
 <button id="btnDownload">Baixar ingresso</button>
@@ -166,11 +172,15 @@ cpfInput.oninput = async () => {
     const r = await fetch("SUA_API_AQUI",{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({cpf})
+      body:JSON.stringify({ cpf })
     });
 
+    if(!r.ok) throw 0;
+
     const d = await r.json();
-    const ingresso = d.codigo?.find(x => norm(x.CPF2||"") === cpf && x.GOOGLE);
+    const ingresso = d.codigo?.find(
+      x => norm(x.CPF2||"") === cpf && x.GOOGLE
+    );
 
     if(!ingresso) throw 0;
 
@@ -199,11 +209,10 @@ cpfInput.oninput = async () => {
 };
 </script>
 
-<!-- ✅ REGISTRO DO SERVICE WORKER (OBRIGATÓRIO PARA PWA) -->
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js");
+    navigator.serviceWorker.register("./sw.js");
   });
 }
 </script>
