@@ -31,12 +31,11 @@ html, body {
     transition:filter .4s ease;
 }
 
-/* escurece quando pausado */
 #videoFundo.pausado {
     filter:brightness(.6);
 }
 
-/* camada cinematográfica */
+/* overlay cinematográfico */
 .cinema-overlay {
     position:absolute;
     inset:0;
@@ -49,7 +48,7 @@ html, body {
     z-index:1;
 }
 
-/* ===== CONTEÚDO ===== */
+/* conteúdo */
 .overlay {
     position:absolute;
     inset:0;
@@ -59,7 +58,7 @@ html, body {
 /* grupo CPF alinhado pelo rodapé */
 .cpf-group {
     position:absolute;
-    bottom:clamp(90px,14vh,160px);
+    bottom:clamp(60px,10vh,120px);
     left:50%;
     transform:translateX(-50%);
     width:90%;
@@ -69,10 +68,7 @@ html, body {
     gap:10px;
 }
 
-/* textos */
-.label-cpf {
-    font-size:14px;
-}
+.label-cpf { font-size:14px; }
 
 .status {
     min-height:18px;
@@ -126,7 +122,6 @@ html, body {
 </head>
 <body>
 
-<!-- vídeo -->
 <video id="videoFundo" autoplay muted playsinline loop>
     <source src="pina_.mp4" type="video/mp4">
 </video>
@@ -150,14 +145,14 @@ html, body {
 </div>
 
 <script>
-const cpfInput   = document.getElementById("cpfInput");
+const cpfInput    = document.getElementById("cpfInput");
 const btnDownload = document.getElementById("btnDownload");
-const statusMsg  = document.getElementById("statusMsg");
-const video      = document.getElementById("videoFundo");
+const statusMsg   = document.getElementById("statusMsg");
+const video       = document.getElementById("videoFundo");
 
 let debounce;
 
-/* ===== CPF ===== */
+/* CPF utils */
 const norm = v => v.replace(/\D/g,"").padStart(11,"0");
 const valido = c => {
     if(/^(\d)\1+$/.test(c)) return false;
@@ -169,7 +164,7 @@ const valido = c => {
     return true;
 };
 
-/* ===== POWER AUTOMATE ===== */
+/* Power Automate */
 async function buscarIngresso(cpf){
     const r = await fetch(
         "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
@@ -183,11 +178,11 @@ async function buscarIngresso(cpf){
     return (d.codigo||[]).find(x => norm(x.CPF2||"") === cpf && x.GOOGLE);
 }
 
-/* ===== INPUT ===== */
+/* input */
 cpfInput.oninput = () => {
     cpfInput.value = cpfInput.value.replace(/\D/g,"");
 
-    // pausa vídeo ao digitar
+    // pausa ao digitar
     if(!video.paused){
         video.pause();
         video.classList.add("pausado");
@@ -202,16 +197,21 @@ cpfInput.oninput = () => {
         return;
     }
 
+    // fecha teclado
+    cpfInput.blur();
+
     debounce = setTimeout(() => validarCPF(norm(cpfInput.value)), 400);
 };
 
 async function validarCPF(cpf){
     if(!valido(cpf)){
         statusMsg.textContent="CPF inválido";
+        video.pause();
+        video.classList.add("pausado");
         return;
     }
 
-    // retoma vídeo na consulta
+    // durante consulta o vídeo roda
     video.play().catch(()=>{});
     video.classList.remove("pausado");
 
@@ -222,12 +222,15 @@ async function validarCPF(cpf){
         if(!autorizado) throw 0;
 
         statusMsg.textContent="CPF localizado";
+
+        // pausa após resposta
+        video.pause();
+        video.classList.add("pausado");
+
         btnDownload.style.display="block";
 
         const id = autorizado.GOOGLE;
-
         btnDownload.onclick = () => {
-            // garante vídeo rodando no download
             video.play().catch(()=>{});
             video.classList.remove("pausado");
 
@@ -241,6 +244,8 @@ async function validarCPF(cpf){
 
     } catch {
         statusMsg.textContent="CPF não autorizado";
+        video.pause();
+        video.classList.add("pausado");
         btnDownload.style.display="none";
     }
 }
