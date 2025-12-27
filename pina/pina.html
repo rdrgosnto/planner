@@ -62,17 +62,14 @@ body{
 /* ===== INGRESSO ===== */
 .ingresso{
   position:relative;
-  margin-top:80px; /* espaço para logo */
+  margin-top:80px;
   margin-bottom:16px;
 }
-
 .ingresso img{
   width:100%;
   display:block;
   border-radius:10px;
 }
-
-/* ===== LOADING IMAGEM ===== */
 .loading-img{
   position:absolute;
   inset:0;
@@ -123,6 +120,7 @@ body{
   color:#fff;
   font-size:15px;
   padding-left:2px;
+  caret-color:#fff;
 }
 
 /* ===== STATUS ===== */
@@ -206,31 +204,31 @@ body{
 </main>
 
 <script>
-const cpfInput=document.getElementById("cpfInput");
-const btnDownload=document.getElementById("btnDownload");
-const imgIngresso=document.getElementById("imgIngresso");
-const statusMsg=document.getElementById("statusMsg");
-const loadingImg=document.getElementById("loadingImg");
+const cpfInput = document.getElementById("cpfInput");
+const btnDownload = document.getElementById("btnDownload");
+const imgIngresso = document.getElementById("imgIngresso");
+const statusMsg = document.getElementById("statusMsg");
+const loadingImg = document.getElementById("loadingImg");
 
 let debounce;
 
 // Normaliza CPF
-const norm=v=>v.replace(/\D/g,"").padStart(11,"0");
+const norm = v => v.replace(/\D/g,"").padStart(11,"0");
 
 // Validação CPF
-const valido=c=>{
+const valido = c => {
   if(/^(\d)\1+$/.test(c)) return false;
-  for(let t=9;t<11;t++){
+  for(let t=9; t<11; t++){
     let s=0;
-    for(let i=0;i<t;i++) s+=c[i]*(t+1-i);
-    if(((s*10)%11)%10!=c[t]) return false;
+    for(let i=0;i<t;i++) s += c[i]*(t+1-i);
+    if(((s*10)%11)%10 != c[t]) return false;
   }
   return true;
 };
 
 // Consulta Power Automate
 async function buscarIngresso(cpf){
-  const r=await fetch(
+  const r = await fetch(
     "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
     {
       method:"POST",
@@ -238,69 +236,70 @@ async function buscarIngresso(cpf){
       body:JSON.stringify({cpf})
     }
   );
-  const d=await r.json();
+  const d = await r.json();
   return (d.codigo||[]).find(x => norm(x.CPF2||"")===cpf && x.GOOGLE);
 }
 
 // Evento de digitação
-cpfInput.oninput=()=>{
-  cpfInput.value=cpfInput.value.replace(/\D/g,"");
-  btnDownload.style.display="none";
+cpfInput.oninput = () => {
+  cpfInput.value = cpfInput.value.replace(/\D/g,"");
+  btnDownload.style.display = "none";
 
-  if(cpfInput.value.length<11){
-    statusMsg.textContent="CPF inválido";
-    statusMsg.style.color="#fff";
+  if(cpfInput.value.length < 11){
+    statusMsg.textContent = "CPF inválido";
+    statusMsg.style.color = "#fff";
     return;
   }
 
   clearTimeout(debounce);
-  debounce=setTimeout(()=>validarCPF(norm(cpfInput.value)),400);
+  debounce = setTimeout(() => validarCPF(norm(cpfInput.value)),400);
 };
 
 // Validação + consulta
 async function validarCPF(cpf){
   if(!valido(cpf)){
-    statusMsg.textContent="CPF inválido";
-    statusMsg.style.color="#fff";
+    statusMsg.textContent = "CPF inválido";
+    statusMsg.style.color = "#fff";
     return;
   }
 
-  statusMsg.textContent="carregando…";
-  statusMsg.style.color="#000";
+  // CPF válido → verificar Power Automate
+  statusMsg.textContent = "";
   loadingImg.classList.add("ativo");
+  btnDownload.textContent = "carregando…";
+  btnDownload.style.display = "block";
 
   try{
-    const autorizado=await buscarIngresso(cpf);
+    const autorizado = await buscarIngresso(cpf);
     if(!autorizado) throw 0;
 
-    const id=autorizado.GOOGLE;
-    imgIngresso.onload=()=>loadingImg.classList.remove("ativo");
-    imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    const id = autorizado.GOOGLE;
+    imgIngresso.onload = () => loadingImg.classList.remove("ativo");
+    imgIngresso.src = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 
-    statusMsg.textContent="CPF localizado";
-    statusMsg.style.color="#fff";
+    // CPF localizado
+    statusMsg.textContent = "CPF localizado";
+    statusMsg.style.color = "#fff";
 
     setTimeout(()=>{
       loadingImg.classList.remove("ativo");
-      btnDownload.style.display="block";
-      statusMsg.textContent=""; // desaparece depois que botão aparece
-      btnDownload.onclick=()=>download(
-        `https://drive.google.com/uc?export=download&id=${id}`
-      );
+      btnDownload.textContent = "Baixar ingresso";
+      btnDownload.onclick = () => download(`https://drive.google.com/uc?export=download&id=${id}`);
     },600);
 
   }catch{
     loadingImg.classList.remove("ativo");
-    statusMsg.textContent="CPF não autorizado";
-    statusMsg.style.color="#fff";
+    btnDownload.style.display = "none";
+    statusMsg.textContent = "CPF não autorizado";
+    statusMsg.style.color = "#fff";
   }
 }
 
 // Função download
 function download(url){
-  const a=document.createElement("a");
-  a.href=url;
-  a.download="ingresso.png";
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "ingresso.png";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
