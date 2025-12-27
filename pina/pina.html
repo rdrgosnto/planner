@@ -183,7 +183,8 @@ cpfInput.oninput = async () => {
       },1500);
     };
 
-    imgIngresso.src = `https://drive.google.com/thumbnail?id=${ingresso.GOOGLE}&sz=w1200`;
+    imgIngresso.src =
+      `https://drive.google.com/thumbnail?id=${ingresso.GOOGLE}&sz=w1200`;
 
     mensagem.textContent = "Ingresso disponível";
 
@@ -196,6 +197,15 @@ cpfInput.oninput = async () => {
     mensagem.textContent = "CPF não autorizado";
   }
 };
+</script>
+
+<!-- ✅ REGISTRO DO SERVICE WORKER (OBRIGATÓRIO PARA PWA) -->
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js");
+  });
+}
 </script>
 
 </body>
