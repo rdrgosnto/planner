@@ -1,8 +1,8 @@
-const CACHE_NAME = "pina-v1";
+const CACHE_NAME = "pina-pwa-v1";
 
 const ASSETS = [
   "./",
-  "./index.html",
+  "./pina.html",
   "./pina_.png",
   "./manifest.json"
 ];
@@ -13,10 +13,22 @@ self.addEventListener("install", event => {
   );
 });
 
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys
+          .filter(k => k !== CACHE_NAME)
+          .map(k => caches.delete(k))
+      )
+    )
+  );
+});
+
 self.addEventListener("fetch", event => {
   const { request } = event;
 
-  // NÃO cachear requisições da API
+  // Nunca cachear chamadas da API
   if (request.url.includes("powerplatform.com")) {
     return;
   }
