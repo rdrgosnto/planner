@@ -28,11 +28,11 @@ html, body {
     object-fit:contain;
     background:#000;
     z-index:0;
-    transition:filter .4s ease;
+    transition:filter .9s ease; /* 🔹 mais suave */
 }
 
 #videoFundo.pausado {
-    filter:brightness(.6);
+    filter:brightness(.55);
 }
 
 /* overlay cinematográfico */
@@ -55,10 +55,10 @@ html, body {
     z-index:2;
 }
 
-/* grupo CPF alinhado pelo rodapé */
+/* ===== CPF GROUP (DESCIDO) ===== */
 .cpf-group {
     position:absolute;
-    bottom:clamp(60px,10vh,120px);
+    bottom:clamp(30px,6vh,80px); /* 🔽 desceu */
     left:50%;
     transform:translateX(-50%);
     width:90%;
@@ -152,6 +152,19 @@ const video       = document.getElementById("videoFundo");
 
 let debounce;
 
+/* ===== CONTROLE DE VÍDEO (SUAVE) ===== */
+function pausarVideoSuave(){
+    video.classList.add("pausado");
+    setTimeout(() => {
+        if(!video.paused) video.pause();
+    }, 450);
+}
+
+function tocarVideoSuave(){
+    video.play().catch(()=>{});
+    video.classList.remove("pausado");
+}
+
 /* CPF utils */
 const norm = v => v.replace(/\D/g,"").padStart(11,"0");
 const valido = c => {
@@ -182,11 +195,7 @@ async function buscarIngresso(cpf){
 cpfInput.oninput = () => {
     cpfInput.value = cpfInput.value.replace(/\D/g,"");
 
-    // pausa ao digitar
-    if(!video.paused){
-        video.pause();
-        video.classList.add("pausado");
-    }
+    pausarVideoSuave();
 
     btnDownload.style.display="none";
     statusMsg.textContent="";
@@ -197,7 +206,6 @@ cpfInput.oninput = () => {
         return;
     }
 
-    // fecha teclado
     cpfInput.blur();
 
     debounce = setTimeout(() => validarCPF(norm(cpfInput.value)), 400);
@@ -206,15 +214,11 @@ cpfInput.oninput = () => {
 async function validarCPF(cpf){
     if(!valido(cpf)){
         statusMsg.textContent="CPF inválido";
-        video.pause();
-        video.classList.add("pausado");
+        pausarVideoSuave();
         return;
     }
 
-    // durante consulta o vídeo roda
-    video.play().catch(()=>{});
-    video.classList.remove("pausado");
-
+    tocarVideoSuave();
     statusMsg.textContent="Verificando CPF…";
 
     try{
@@ -222,17 +226,13 @@ async function validarCPF(cpf){
         if(!autorizado) throw 0;
 
         statusMsg.textContent="CPF localizado";
-
-        // pausa após resposta
-        video.pause();
-        video.classList.add("pausado");
+        pausarVideoSuave();
 
         btnDownload.style.display="block";
 
         const id = autorizado.GOOGLE;
         btnDownload.onclick = () => {
-            video.play().catch(()=>{});
-            video.classList.remove("pausado");
+            tocarVideoSuave();
 
             const a = document.createElement("a");
             a.href = `https://drive.google.com/uc?export=download&id=${id}`;
@@ -244,8 +244,7 @@ async function validarCPF(cpf){
 
     } catch {
         statusMsg.textContent="CPF não autorizado";
-        video.pause();
-        video.classList.add("pausado");
+        pausarVideoSuave();
         btnDownload.style.display="none";
     }
 }
