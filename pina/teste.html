@@ -15,6 +15,11 @@ html, body {
     font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
     color:#fff;
     overflow:hidden;
+
+    /* ❌ impedir seleção de texto */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 /* ===== VÍDEO ===== */
@@ -96,6 +101,10 @@ html, body {
     font-size:15px;
     line-height:48px;
     padding:0;
+
+    /* input continua selecionável */
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .cpf-field input::placeholder {
@@ -176,30 +185,39 @@ function tocarVideoSuave(){
     video.classList.remove("pausado");
 }
 
-/* ===== PAUSAR AO SEGURAR ===== */
-let segurando = false;
+/* ===== PRESS & HOLD (250ms) ===== */
+let holdTimer = null;
+let emHold = false;
+const HOLD_TIME = 250;
 
-function segurar(){
-    if(segurando) return;
-    segurando = true;
-    pausarVideoSuave();
+function iniciarHold(){
+    if(holdTimer) return;
+
+    holdTimer = setTimeout(() => {
+        emHold = true;
+        pausarVideoSuave();
+    }, HOLD_TIME);
 }
 
-function soltar(){
-    if(!segurando) return;
-    segurando = false;
-    tocarVideoSuave();
+function cancelarHold(){
+    clearTimeout(holdTimer);
+    holdTimer = null;
+
+    if(emHold){
+        emHold = false;
+        tocarVideoSuave();
+    }
 }
 
 /* mobile */
-document.addEventListener("touchstart", segurar, { passive:true });
-document.addEventListener("touchend", soltar);
-document.addEventListener("touchcancel", soltar);
+document.addEventListener("touchstart", iniciarHold, { passive:true });
+document.addEventListener("touchend", cancelarHold);
+document.addEventListener("touchcancel", cancelarHold);
 
 /* desktop */
-document.addEventListener("mousedown", segurar);
-document.addEventListener("mouseup", soltar);
-document.addEventListener("mouseleave", soltar);
+document.addEventListener("mousedown", iniciarHold);
+document.addEventListener("mouseup", cancelarHold);
+document.addEventListener("mouseleave", cancelarHold);
 
 /* CPF utils */
 const norm = v => v.replace(/\D/g,"").padStart(11,"0");
