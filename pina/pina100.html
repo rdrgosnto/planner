@@ -17,25 +17,35 @@ html, body {
     overflow: hidden;
 }
 
-/* Vídeo como fundo */
-#videoFundo {
+/* Container do vídeo ocupando toda a tela */
+#videoContainer {
     position: fixed;
-    top: 50%;
-    left: 50%;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100%;
-    transform: translate(-50%, -50%);
-    object-fit: contain;
+    height: 100vh;
     background: #000;
     z-index: -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Container centralizado com largura máxima do celular */
+#videoContainer video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}
+
+/* Container dos elementos */
 .app {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     max-width: 420px;
     margin: 0 auto;
-    position: relative;
     padding: 20px 16px;
     display: flex;
     flex-direction: column;
@@ -54,18 +64,17 @@ html, body {
 .logo img {
     height: 44px;
     filter: invert(1) brightness(1.1);
-    display: block;
 }
 
 /* Texto e input CPF */
 .texto {
     font-size: 14px;
     color: #fff;
-    margin-top: 100px; /* mesma posição aproximada do original */
+    margin-top: 100px;
     margin-bottom: 10px;
     padding-left: 3px;
-    z-index: 2;
     position: relative;
+    z-index: 2;
 }
 .cpf-field {
     position: relative;
@@ -145,10 +154,12 @@ html, body {
 </head>
 <body>
 
-<video id="videoFundo" autoplay muted playsinline loop>
-    <source src="pina_.mp4" type="video/mp4">
-    Seu navegador não suporta vídeo.
-</video>
+<div id="videoContainer">
+    <video autoplay muted playsinline loop>
+        <source src="pina_.mp4" type="video/mp4">
+        Seu navegador não suporta vídeo.
+    </video>
+</div>
 
 <main class="app">
     <div class="logo"><img src="pina_.png" alt="Pina"></div>
