@@ -30,11 +30,14 @@ body{
 /* ===== LOGO ===== */
 .logo{
   margin-bottom:24px;
+  display:flex;
+  justify-content:center;
 }
 
 .logo img{
   height:44px;
   display:block;
+  filter:invert(1) brightness(1.1);
 }
 
 /* ===== CARD ===== */
@@ -47,11 +50,35 @@ body{
 }
 
 /* ===== INGRESSO ===== */
+.ingresso{
+  position:relative;
+  margin-bottom:16px;
+}
+
 .ingresso img{
   width:100%;
   display:block;
   border-radius:10px;
-  margin-bottom:16px;
+}
+
+/* ===== LOADING IMAGEM ===== */
+.loading-img{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  font-size:14px;
+  color:#cfcfcf;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+}
+
+.loading-img.ativo{
+  opacity:1;
 }
 
 /* ===== TEXTO PADRÃO ===== */
@@ -59,6 +86,7 @@ body{
   font-size:14px;
   color:#cfcfcf;
   margin-bottom:10px;
+  padding-left:1px; /* refinamento óptico */
 }
 
 /* ===== CPF ===== */
@@ -100,6 +128,7 @@ body{
   font-size:14px;
   color:#cfcfcf;
   min-height:18px;
+  padding-left:1px; /* refinamento óptico */
 }
 
 /* ===== BOTÃO ===== */
@@ -134,10 +163,13 @@ body{
 
   <section class="card">
 
-    <!-- IMAGEM INGRESSO -->
+    <!-- INGRESSO -->
     <div class="ingresso">
       <img id="imgIngresso"
            src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
+      <div class="loading-img" id="loadingImg">
+        Carregando ingresso…
+      </div>
     </div>
 
     <!-- TEXTO -->
@@ -174,6 +206,7 @@ const cpfVisual=document.getElementById("cpfVisual");
 const btnDownload=document.getElementById("btnDownload");
 const imgIngresso=document.getElementById("imgIngresso");
 const statusMsg=document.getElementById("statusMsg");
+const loadingImg=document.getElementById("loadingImg");
 
 let estado="inicial",debounce;
 
@@ -193,7 +226,6 @@ function esconderTeclado(){
   cpfInput.blur();
 }
 
-/* ===== API ORIGINAL (FUNCIONAL) ===== */
 async function buscarIngresso(cpf){
   const r=await fetch(
     "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
@@ -241,18 +273,23 @@ async function validarCPF(cpf){
   }
 
   statusMsg.textContent="Verificando CPF...";
+  loadingImg.classList.add("ativo");
 
   try{
     const autorizado=await buscarIngresso(cpf);
     if(!autorizado) throw 0;
 
     const id=autorizado.GOOGLE;
+
+    imgIngresso.onload=()=>{
+      loadingImg.classList.remove("ativo");
+    };
+
     imgIngresso.src=
       `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 
     statusMsg.textContent="Ingresso disponível";
 
-    /* DELAY REFINADO */
     setTimeout(()=>{
       btnDownload.style.display="block";
       btnDownload.onclick=()=>download(
@@ -261,6 +298,7 @@ async function validarCPF(cpf){
     },1400);
 
   }catch{
+    loadingImg.classList.remove("ativo");
     statusMsg.textContent="CPF não autorizado";
     estado="invalido";
   }
