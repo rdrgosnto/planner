@@ -4,203 +4,69 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Planner</title>
-
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;font-family:Arial,sans-serif;
-  display:flex;justify-content:center;align-items:center;
-  height:100vh;background:#fff
-}
-#splash{
-  position:fixed;inset:0;z-index:9;
-  display:flex;flex-direction:column;
-  justify-content:center;align-items:center
-}
+body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
+#splash{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center}
 #splash b{font-size:36px;color:#4CAF50;margin-bottom:10px}
-#splash i{
-  width:120px;height:2px;background:#e0e0e0;overflow:hidden
-}
-#splash i:after{
-  content:"";display:block;width:40px;height:100%;
-  background:#4CAF50;animation:l .9s infinite
-}
+#splash i{width:120px;height:2px;background:#e0e0e0;overflow:hidden}
+#splash i:after{content:"";display:block;width:40px;height:100%;background:#4CAF50;animation:l .9s infinite}
 @keyframes l{from{transform:translateX(-40px)}to{transform:translateX(120px)}}
-
 .app{width:90%;max-width:300px;visibility:hidden}
 label{font-size:16px;color:#333;margin:0 0 6px 2px}
-
-.row{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  border-bottom:1px solid #ccc
-}
-
+.row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc}
 .row:focus-within{border-color:#ccc}
-
 .row.err{border-color:#e53935}
 .row.ok{border-color:#4CAF50}
-
-input{
-  flex:1 1 auto;
-  min-width:0;
-  border:0;
-  padding:10px 2px;
-  font-size:18px;
-  background:0;
-  outline:0
-}
+input{flex:1 1 auto;min-width:0;border:0;padding:10px 2px;font-size:18px;background:0;outline:0}
 input::placeholder{font-size:16px;color:#999}
-
-button{
-  flex:0 0 auto;
-  max-width:35%;
-  padding:6px 12px;
-  border:1px solid #aaa;
-  border-radius:20px;
-  background:0;
-  color:#aaa;
-  font-size:14px;
-  font-weight:bold;
-  white-space:nowrap
-}
-
-button.ready{
-  background:#4CAF50;
-  color:#fff;
-  border-color:#4CAF50;
-  cursor:pointer
-}
-button.ready:active{
-  background:#43a047;
-  transform:scale(.97)
-}
-
-.errmsg{
-  font-size:13px;color:#e53935;
-  margin:14px 0 0 2px;
-  display:none
-}
+button{flex:0 0 auto;max-width:35%;padding:6px 12px;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:14px;font-weight:bold;white-space:nowrap}
+button.ready{background:#4CAF50;color:#fff;border-color:#4CAF50;cursor:pointer}
+button.ready:active{background:#43a047;transform:scale(.97)}
+.errmsg{font-size:13px;color:#e53935;margin:14px 0 0 2px;display:none}
 </style>
 </head>
-
 <body>
-
 <div id="splash"><b>Planner</b><i></i></div>
-
 <div class="app">
   <label>CPF</label>
   <div class="row">
-    <input
-      id="cpf"
-      placeholder="CPF (somente números)"
-      inputmode="numeric"
-      pattern="[0-9]*"
-      autocomplete="off"
-    >
+    <input id="cpf" placeholder="CPF (somente números)" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
     <button id="btn" disabled>ENTRAR</button>
   </div>
   <div class="errmsg" id="err"></div>
 </div>
-
 <script>
-setTimeout(()=>{
-  splash.remove();
-  document.querySelector(".app").style.visibility="visible"
-},1600);
+setTimeout(()=>{splash.remove();document.querySelector(".app").style.visibility="visible"},1600);
 
-const $=s=>document.querySelector(s),
-cpf=$("#cpf"),btn=$("#btn"),err=$("#err"),row=$(".row"),
-norm=v=>v.replace(/\D/g,"").padStart(11,"0");
-
-const DEBOUNCE = 400;
-let timer = null;
-
-const valido=c=>{
-  if(/^(\d)\1+$/.test(c)) return 0;
-  for(let t=9;t<11;t++){
-    let s=0;
-    for(let i=0;i<t;i++) s+=c[i]*(t+1-i);
-    if(((s*10)%11)%10!=c[t]) return 0;
-  }
-  return 1;
-};
-
-const setRow = state=>{
-  row.className="row";
-  if(state) row.classList.add(state);
-};
+const $=s=>document.querySelector(s),cpf=$("#cpf"),btn=$("#btn"),err=$("#err"),row=$(".row"),norm=v=>v.replace(/\D/g,"").padStart(11,"0");
+const DEBOUNCE=400;let timer=null;
+const valido=c=>/^(\d)\1+$/.test(c)?0:([9,10].every(t=>{let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);return ((s*10)%11)%10==c[t]}))?1:0;
+const setRow=state=>{row.className="row";if(state)row.classList.add(state);};
 
 cpf.oninput=()=>{
-  // remove tudo que não for número e atualiza o campo
-  const nums = cpf.value.replace(/\D/g,"");
-  cpf.value = nums;
-
-  if(nums.length === 11){
-    cpf.blur();
-  }
-
-  const v = nums.padStart(11,"0");
-
-  btn.disabled = 1;
-  btn.className = "";
-  setRow();
-
-  if(timer) clearTimeout(timer);
-
-  if(!nums){
-    err.style.display = "none";
-    return;
-  }
-
-  if(nums.length < 11 || !valido(v)){
-    err.textContent = "CPF inválido";
-    err.style.display = "block";
-    setRow("err");
-    return;
-  }
-
-  err.style.display = "none";
-
-  timer = setTimeout(async()=>{
+  const nums=cpf.value.replace(/\D/g,"");cpf.value=nums;
+  if(nums.length===11)cpf.blur();
+  const v=nums.padStart(11,"0");btn.disabled=1;btn.className="";setRow();
+  if(timer)clearTimeout(timer);
+  if(!nums){err.style.display="none";return;}
+  if(nums.length<11||!valido(v)){err.textContent="CPF inválido";err.style.display="block";setRow("err");return;}
+  err.style.display="none";
+  timer=setTimeout(async()=>{
     try{
-      const r = await fetch(
-        "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-        {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({cpf:v})
-        }
-      );
-
-      const d = await r.json();
-      const autorizado = (d.codigo||[]).find(
-        x => norm(x.CPF2||x.CPF) === v && String(x.ID).trim() === "#"
-      );
-
-      if(!autorizado) throw 0;
-
-      btn.disabled = 0;
-      btn.classList.add("ready");
-      setRow("ok");
-
+      const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:v})});
+      const d=await r.json();
+      const autorizado=(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)===v&&String(x.ID).trim()==="#");
+      if(!autorizado)throw 0;
+      btn.disabled=0;btn.classList.add("ready");setRow("ok");
     }catch{
-      err.textContent = "CPF não autorizado";
-      err.style.display = "block";
-      setRow("err");
-      btn.disabled = 1;
+      err.textContent="CPF não autorizado";err.style.display="block";setRow("err");btn.disabled=1;
     }
-  }, DEBOUNCE);
+  },DEBOUNCE);
 };
 
-btn.onclick = ()=>{
-  if(btn.disabled) return;
-  sessionStorage.setItem("cpf", norm(cpf.value));
-  sessionStorage.setItem("authMapa", 1);
-  location.href = "mapa/index.html";
-};
+btn.onclick=()=>{if(btn.disabled)return;sessionStorage.setItem("cpf",norm(cpf.value));sessionStorage.setItem("authMapa",1);location.href="mapa/index.html"};
 </script>
-
 </body>
 </html>
