@@ -159,15 +159,12 @@ body{
 <body>
 
 <main class="app">
-
   <section class="card">
 
-    <!-- LOGO -->
     <div class="logo">
       <img src="pina_.png" alt="Pina">
     </div>
 
-    <!-- INGRESSO -->
     <div class="ingresso">
       <img id="imgIngresso"
            src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
@@ -176,12 +173,10 @@ body{
       </div>
     </div>
 
-    <!-- TEXTO FIXO -->
     <div class="texto">
       CPF (somente números)
     </div>
 
-    <!-- CPF -->
     <div class="cpf-field" id="boxCPF" tabindex="0">
       <input
         id="cpfInput"
@@ -191,16 +186,13 @@ body{
         autocomplete="off">
     </div>
 
-    <!-- STATUS -->
     <div class="status" id="statusMsg"></div>
 
-    <!-- BOTÃO -->
     <button class="btn-primary" id="btnDownload">
       Baixar ingresso
     </button>
 
   </section>
-
 </main>
 
 <script>
@@ -266,20 +258,19 @@ async function validarCPF(cpf){
   // CPF válido → verificar Power Automate
   statusMsg.textContent = "";
   loadingImg.classList.add("ativo");
-  btnDownload.textContent = "carregando…";
-  btnDownload.style.display = "block";
 
   try{
     const autorizado = await buscarIngresso(cpf);
     if(!autorizado) throw 0;
 
+    // CPF autorizado → mostrar botão carregando e status
+    btnDownload.style.display = "block";
+    btnDownload.textContent = "carregando…";
+    statusMsg.textContent = "CPF localizado";
+
     const id = autorizado.GOOGLE;
     imgIngresso.onload = () => loadingImg.classList.remove("ativo");
     imgIngresso.src = `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
-
-    // CPF localizado
-    statusMsg.textContent = "CPF localizado";
-    statusMsg.style.color = "#fff";
 
     setTimeout(()=>{
       loadingImg.classList.remove("ativo");
