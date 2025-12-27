@@ -6,60 +6,120 @@
 <title>Pina | Ingresso</title>
 
 <style>
+*{ box-sizing:border-box; }
+
 html,body{
   margin:0;
-  height:100%;
-  background:#fff;
+  min-height:100%;
+  background:#121212;
+  color:#f1f1f1;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+}
+
+body{
+  display:flex;
+  justify-content:center;
+  padding:0;
+}
+
+.app{
+  width:100%;
+  max-width:420px;
+  min-height:100vh;
   display:flex;
   flex-direction:column;
-  align-items:center;
-  font-family:Arial,sans-serif;
+  justify-content:flex-start;
 }
 
-/* ===== IMAGEM ===== */
-#containerIngresso{
-  width:min(90vw,400px);
-  margin-top:60px;
+/* ===== CARD ===== */
+.card{
+  background:#1c1c1c;
+  border-radius:14px;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  min-height:100vh;
+  position:relative;
 }
 
-#containerIngresso img{
-  width:100%;
-  display:block;
-}
-
-/* ===== CPF / BOTÃO ===== */
-#boxCPF,
-#btnDownload{
-  position:fixed;
+/* ===== LOGO ===== */
+.logo{
+  position:absolute;
+  top:24px;
   left:50%;
   transform:translateX(-50%);
-  width:min(90vw,400px);
-  height:36px;
-  background:#000;
-  color:#fff;
-  font-size:15px;
-  font-weight:500;
-  box-sizing:border-box;
+  z-index:2;
+}
+.logo img{
+  height:44px;
+  display:block;
+  filter:invert(1) brightness(1.1);
 }
 
-/* safe-area (desktop + mobile) */
-#boxCPF{
-  bottom:max(20px, env(safe-area-inset-bottom));
+/* ===== INGRESSO ===== */
+.ingresso{
+  position:relative;
+  margin-top:80px; /* espaço para logo */
+  margin-bottom:16px;
+}
+.ingresso img{
+  width:100%;
+  display:block;
+  border-radius:10px;
+}
+
+/* ===== LOADING IMAGEM ===== */
+.loading-img{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.55);
   display:flex;
   align-items:center;
   justify-content:center;
-}
-
-#boxCPF:focus-within{
-  outline:1px solid rgba(255,255,255,.35);
-  outline-offset:-1px;
-}
-
-#cpfVisual{
+  border-radius:10px;
+  font-size:14px;
+  color:#cfcfcf;
+  opacity:0;
   pointer-events:none;
-  white-space:nowrap;
+  transition:opacity .2s ease;
+}
+.loading-img.ativo{
+  opacity:1;
 }
 
+/* ===== TEXTO FIXO ===== */
+.texto{
+  font-size:14px;
+  color:#cfcfcf;
+  margin-bottom:10px;
+  padding-left:3px; /* 2px deslocamento refinado */
+}
+
+/* ===== CPF ===== */
+.cpf-field{
+  position:relative;
+  height:42px;
+  width:100%;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.15);
+  background:#151515;
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  cursor:text;
+}
+.cpf-field:focus-within{
+  border-color:#ffffff;
+}
+#cpfVisual{
+  font-size:15px;
+  color:#9a9a9a;
+  white-space:nowrap;
+  padding-left:2px;
+}
 #cpfInput{
   position:absolute;
   inset:0;
@@ -69,32 +129,85 @@ html,body{
   background:transparent;
 }
 
-#btnDownload{
-  bottom:max(20px, env(safe-area-inset-bottom));
+/* ===== STATUS ===== */
+.status{
+  margin-top:8px;
+  font-size:14px;
+  min-height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  padding-left:3px;
+  border-radius:6px;
+  color:#fff;
+}
+
+/* ===== BOTÃO ===== */
+.btn-primary{
+  margin-top:12px;
+  width:100%;
+  height:42px;
   border:none;
+  border-radius:8px;
+  background:#ffffff;
+  color:#000;
+  font-size:15px;
+  font-weight:500;
   cursor:pointer;
   display:none;
+}
+.btn-primary:hover{
+  background:#eaeaea;
 }
 </style>
 </head>
 
 <body>
 
-<div id="containerIngresso">
-  <img id="imgIngresso"
-       src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
-</div>
+<main class="app">
 
-<div id="boxCPF" tabindex="0">
-  <span id="cpfVisual">CPF (somente números)</span>
-  <input
-    id="cpfInput"
-    inputmode="numeric"
-    enterkeyhint="done"
-    autocomplete="off">
-</div>
+  <section class="card">
 
-<button id="btnDownload">Baixar ingresso</button>
+    <!-- LOGO -->
+    <div class="logo">
+      <img src="pina_.png" alt="Pina">
+    </div>
+
+    <!-- INGRESSO -->
+    <div class="ingresso">
+      <img id="imgIngresso"
+           src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
+      <div class="loading-img" id="loadingImg">
+        Carregando ingresso…
+      </div>
+    </div>
+
+    <!-- TEXTO FIXO -->
+    <div class="texto">
+      CPF (somente números)
+    </div>
+
+    <!-- CPF -->
+    <div class="cpf-field" id="boxCPF" tabindex="0">
+      <span id="cpfVisual">Digite aqui</span>
+      <input
+        id="cpfInput"
+        inputmode="numeric"
+        enterkeyhint="done"
+        autocomplete="off">
+    </div>
+
+    <!-- STATUS -->
+    <div class="status" id="statusMsg">CPF inválido</div>
+
+    <!-- BOTÃO -->
+    <button class="btn-primary" id="btnDownload">
+      Baixar ingresso
+    </button>
+
+  </section>
+
+</main>
 
 <script>
 const boxCPF=document.getElementById("boxCPF");
@@ -102,8 +215,10 @@ const cpfInput=document.getElementById("cpfInput");
 const cpfVisual=document.getElementById("cpfVisual");
 const btnDownload=document.getElementById("btnDownload");
 const imgIngresso=document.getElementById("imgIngresso");
+const statusMsg=document.getElementById("statusMsg");
+const loadingImg=document.getElementById("loadingImg");
 
-let estado="inicial",debounce;
+let debounce;
 
 const norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 
@@ -119,9 +234,9 @@ const valido=c=>{
 
 function esconderTeclado(){
   cpfInput.blur();
-  document.body.focus();
 }
 
+// ==== POWER AUTOMATE API ====
 async function buscarIngresso(cpf){
   const r=await fetch(
     "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
@@ -132,68 +247,74 @@ async function buscarIngresso(cpf){
     }
   );
   const d=await r.json();
-  return (d.codigo||[]).find(x=>
+  return (d.codigo||[]).find(x =>
     norm(x.CPF2||"")===cpf &&
-    String(x.ID).trim()==="#" &&
     x.GOOGLE
   );
 }
 
-boxCPF.onpointerdown=()=>{
-  if(estado==="carregando") return;
-  cpfInput.focus();
-  cpfVisual.style.color="#999";
-  estado="digitando";
-};
-
 cpfInput.oninput=()=>{
   cpfInput.value=cpfInput.value.replace(/\D/g,"");
-  cpfVisual.textContent=cpfInput.value||"CPF (somente números)";
-  cpfVisual.style.color=cpfInput.value?"#fff":"#999";
+  cpfVisual.textContent=cpfInput.value||"Digite aqui";
+  cpfVisual.style.color=cpfInput.value?"#fff":"#9a9a9a";
+  btnDownload.style.display="none";
 
-  if(cpfInput.value.length===11){
-    esconderTeclado(); // 👈 fecha o teclado
-
-    clearTimeout(debounce);
-    debounce=setTimeout(
-      ()=>validarCPF(norm(cpfInput.value)),400
-    );
-  }
-};
-
-async function validarCPF(cpf){
-  if(estado==="carregando") return;
-  estado="carregando";
-
-  if(!valido(cpf)){
-    cpfVisual.textContent="CPF inválido";
-    cpfVisual.style.color="#fff";
-    estado="invalido";
+  if(cpfInput.value.length<11){
+    statusMsg.textContent="CPF inválido";
+    statusMsg.style.color="#fff";
     return;
   }
 
-  cpfVisual.textContent="carregando...";
-  cpfVisual.style.color="#fff";
+  clearTimeout(debounce);
+  debounce=setTimeout(()=>validarCPF(norm(cpfInput.value)),400);
+};
+
+async function validarCPF(cpf){
+  if(cpf.length!==11) return;
+
+  if(!valido(cpf)){
+    statusMsg.textContent="CPF inválido";
+    statusMsg.style.color="#fff";
+    return;
+  }
+
+  // Carregando...
+  statusMsg.textContent="Carregando";
+  statusMsg.style.color="#000";
+  let dots=0;
+  const intervalDots=setInterval(()=>{
+    dots++;
+    statusMsg.textContent="Carregando" + ".".repeat(dots%4);
+  },400);
+
+  loadingImg.classList.add("ativo");
 
   try{
     const autorizado=await buscarIngresso(cpf);
     if(!autorizado) throw 0;
 
     const id=autorizado.GOOGLE;
-    imgIngresso.src=
-      `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+    imgIngresso.onload=()=>loadingImg.classList.remove("ativo");
+    imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
+
+    // CPF localizado
+    statusMsg.textContent="CPF localizado";
+    statusMsg.style.color="#fff";
 
     setTimeout(()=>{
+      clearInterval(intervalDots);
+      loadingImg.classList.remove("ativo");
       btnDownload.style.display="block";
       btnDownload.onclick=()=>download(
         `https://drive.google.com/uc?export=download&id=${id}`
       );
-    },1000);
+    },600);
 
   }catch{
-    cpfVisual.textContent="CPF não autorizado";
-    cpfVisual.style.color="#fff";
-    estado="invalido";
+    clearInterval(intervalDots);
+    loadingImg.classList.remove("ativo");
+    statusMsg.textContent="CPF não autorizado";
+    statusMsg.style.color="#fff";
   }
 }
 
