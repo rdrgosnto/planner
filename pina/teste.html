@@ -151,7 +151,7 @@ const btnDownload = document.getElementById("btnDownload");
 const statusMsg   = document.getElementById("statusMsg");
 const video       = document.getElementById("videoFundo");
 
-/* 🎬 velocidade do vídeo (ajustável depois) */
+/* 🎬 velocidade do vídeo */
 video.playbackRate = 1.00;
 
 let debounce;
@@ -175,6 +175,31 @@ function tocarVideoSuave(){
     video.play().catch(()=>{});
     video.classList.remove("pausado");
 }
+
+/* ===== PAUSAR AO SEGURAR ===== */
+let segurando = false;
+
+function segurar(){
+    if(segurando) return;
+    segurando = true;
+    pausarVideoSuave();
+}
+
+function soltar(){
+    if(!segurando) return;
+    segurando = false;
+    tocarVideoSuave();
+}
+
+/* mobile */
+document.addEventListener("touchstart", segurar, { passive:true });
+document.addEventListener("touchend", soltar);
+document.addEventListener("touchcancel", soltar);
+
+/* desktop */
+document.addEventListener("mousedown", segurar);
+document.addEventListener("mouseup", soltar);
+document.addEventListener("mouseleave", soltar);
 
 /* CPF utils */
 const norm = v => v.replace(/\D/g,"").padStart(11,"0");
