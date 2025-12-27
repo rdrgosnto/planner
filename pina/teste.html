@@ -3,36 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Teste Vídeo</title>
+<title>Pina | Ingresso</title>
+
 <style>
+* { box-sizing: border-box; margin:0; padding:0; }
+
 html, body {
-    margin:0;
-    padding:0;
     width:100%;
     height:100%;
     background:#000;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    color:#fff;
+    overflow:hidden;
 }
+
+/* Vídeo de fundo */
 #videoFundo {
-    position: absolute;
+    position:absolute;
     top:50%;
     left:50%;
     width:100%;
     height:100%;
-    transform: translate(-50%,-50%);
-    object-fit: contain;
+    transform:translate(-50%,-50%);
+    object-fit:contain;
+    background:#000;
     z-index:0;
 }
-.cpf-field {
-    position: absolute;
-    top:220px;
+
+/* Camada dos elementos */
+.overlay {
+    position:absolute;
+    inset:0;
+    z-index:1;
+}
+
+/* Texto CPF */
+.label-cpf {
+    position:absolute;
+    top:50vh;
     left:50%;
-    transform: translateX(-50%);
+    transform:translateX(-50%);
+    width:90%;
+    max-width:400px;
+    font-size:14px;
+    color:#fff;
+    margin-bottom:6px;
+}
+
+/* Caixa CPF */
+.cpf-field {
+    position:absolute;
+    top:55vh; /* 👈 aqui está o ajuste principal */
+    left:50%;
+    transform:translateX(-50%);
     width:90%;
     max-width:400px;
     height:42px;
-    background: rgba(0,0,0,0.5);
-    z-index:1;
+    border-radius:8px;
+    border:1px solid rgba(255,255,255,.15);
+    background:rgba(0,0,0,0.55);
+    display:flex;
+    align-items:center;
+    padding:0 12px;
 }
+
 .cpf-field input {
     width:100%;
     height:100%;
@@ -40,19 +74,46 @@ html, body {
     outline:none;
     background:transparent;
     color:#fff;
-    padding:0 12px;
     font-size:14px;
+}
+
+.cpf-field input::placeholder {
+    font-size:12px;
+    color:#cfcfcf;
+}
+
+/* Status */
+.status {
+    position:absolute;
+    top:61vh;
+    left:50%;
+    transform:translateX(-50%);
+    width:90%;
+    max-width:400px;
+    font-size:14px;
+    min-height:18px;
+    color:#fff;
 }
 </style>
 </head>
 <body>
 
+<!-- Vídeo -->
 <video id="videoFundo" autoplay muted playsinline loop>
     <source src="pina_.mp4" type="video/mp4">
 </video>
 
-<div class="cpf-field">
-    <input type="text" placeholder="CPF (somente números)">
+<!-- Conteúdo -->
+<div class="overlay">
+
+    <div class="label-cpf">CPF (somente números)</div>
+
+    <div class="cpf-field">
+        <input type="text" placeholder="CPF (somente números)" autocomplete="off">
+    </div>
+
+    <div class="status">CPF inválido</div>
+
 </div>
 
 </body>
