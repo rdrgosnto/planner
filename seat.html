@@ -1,20 +1,14 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Seat</title>
 <style>
+/* --- Estilos do Login --- */
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
-#splash{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center}
-#splash b{font-size:36px;color:#4CAF50;margin-bottom:10px}
-#splash i{width:120px;height:2px;background:#e0e0e0;overflow:hidden}
-#splash i:after{content:"";display:block;width:40px;height:100%;background:#4CAF50;animation:l .9s infinite}
-@keyframes l{from{transform:translateX(-40px)}to{transform:translateX(120px)}}
-
-/* Login */
-.app{width:90%;max-width:300px;visibility:hidden}
+body{margin:0;font-family:Arial,sans-serif;background:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;flex-direction:column;}
+.app{width:90%;max-width:300px;visibility:visible}
 label{font-size:16px;color:#333;margin:0 0 6px 2px}
 .row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc}
 .row:focus-within{border-color:#ccc}
@@ -24,11 +18,11 @@ input{flex:1 1 auto;min-width:0;border:0;padding:10px 2px;font-size:18px;backgro
 input::placeholder{font-size:16px;color:#999}
 button{flex:0 0 auto;max-width:35%;padding:6px 12px;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:14px;font-weight:bold;white-space:nowrap}
 button.ready{background:#4CAF50;color:#fff;border-color:#4CAF50;cursor:pointer}
-button.ready:active{transform:scale(.97)}
+button.ready:active{background:#43a047;transform:scale(.97)}
 .errmsg{font-size:13px;color:#e53935;margin:14px 0 0 2px;display:none}
 
-/* Mapa */
-#bus-wrapper{transform:scale(.8);transform-origin:top center;display:none;width:100%;height:100%;flex-direction:column;justify-content:flex-start}
+/* --- Estilos do Mapa --- */
+#bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
 .bus-container{padding:20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
 .grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
@@ -49,11 +43,8 @@ button.ready:active{transform:scale(.97)}
 </head>
 <body>
 
-<!-- Splash -->
-<div id="splash"><b>Planner</b><i></i></div>
-
-<!-- Login -->
-<div class="app">
+<!-- --- Tela de Login --- -->
+<div class="app" id="login-app">
   <label>CPF</label>
   <div class="row">
     <input id="cpf" placeholder="CPF (somente números)" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
@@ -62,7 +53,7 @@ button.ready:active{transform:scale(.97)}
   <div class="errmsg" id="err"></div>
 </div>
 
-<!-- Mapa -->
+<!-- --- Tela do Mapa --- -->
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
@@ -72,122 +63,147 @@ button.ready:active{transform:scale(.97)}
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-/* SPLASH */
-setTimeout(()=>{splash.remove();document.querySelector(".app").style.visibility="visible"},1600);
+// --- Funções Auxiliares ---
+const $=(s,d=document)=>d.querySelector(s), norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 
-/* LOGIN */
-const $=s=>document.querySelector(s),
-      cpf=$("#cpf"),
-      btn=$("#btn"),
-      err=$("#err"),
-      row=$(".row"),
-      norm=v=>v.replace(/\D/g,"").padStart(11,"0");
+// --- Login ---
+const cpf=$("#cpf"), btn=$("#btn"), err=$("#err"), row=$(".row");
 const DEBOUNCE=400; let timer=null;
 const valido=c=>/^(\d)\1+$/.test(c)?0:([9,10].every(t=>{let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);return ((s*10)%11)%10==c[t]}))?1:0;
-const setRow=state=>{row.className="row";if(state)row.classList.add(state);};
+const setRow=state=>{row.className="row"; if(state)row.classList.add(state);};
 
-/* MAPA */
-let sel=null,bl=[],rb=[],rbSet=new Set(),userBlockedSeats=[],fakeBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="",layout=[];
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-      POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
-      map={AAL:"0046",ALI:"0046",QUI:"0046"};
+cpf.oninput=()=>{
+  const nums=cpf.value.replace(/\D/g,""); cpf.value=nums;
+  if(nums.length===11)cpf.blur();
+  const v=nums.padStart(11,"0"); btn.disabled=1; btn.className=""; setRow();
+  if(timer) clearTimeout(timer);
+  if(!nums){err.style.display="none"; return;}
+  if(nums.length<11 || !valido(v)){err.textContent="CPF inválido"; err.style.display="block"; setRow("err"); return;}
+  err.style.display="none";
+  timer=setTimeout(async()=>{
+    try{
+      const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:v})});
+      const d=await r.json();
+      const autorizado=(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)===v && String(x.ID).trim()==="#");
+      if(!autorizado) throw 0;
+      btn.disabled=0; btn.classList.add("ready"); setRow("ok");
+    }catch{
+      err.textContent="CPF não autorizado"; err.style.display="block"; setRow("err"); btn.disabled=1;
+    }
+  }, DEBOUNCE);
+};
 
-const q=(s,d=document)=>d.querySelector(s),
-      normCPF=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
-      cSeat=v=>{const e=document.createElement("div");if(v===null)e.className="empty"; else if(v==="white")e.className="seat white"; else{e.className="seat"; e.textContent=v.toString().padStart(2,"0")} return e;},
-      selSeat=e=>{if(e.classList.contains("white")||e.classList.contains("lost")) return; sel?.classList.remove("selected"); sel=e!==sel?(e.classList.add("selected"),e):null;};
-
-const fetchJSON=async u=>{const c=new AbortController(),id=setTimeout(()=>c.abort(),5e3); try{return await(await fetch(u+"?v="+Date.now(),{signal:c.signal})).json()}finally{clearTimeout(id)}},
-      anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0; (function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()},
-      getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k) return o[k]}};
-
-const render=l=>{const w=q(".bus-container"); w.querySelector(".grid")?.remove(); const g=document.createElement("div"); g.className="grid"; const frag=document.createDocumentFragment(); for(const row of l) for(const v of row){const e=cSeat(v); if(v!==null && v!=="white"){const id=v.toString().padStart(2,"0"); e.dataset.seat=id; if(bl.includes(id)||userBlockedSeats.includes(id)||fakeBlockedSeats.includes(id)||rbSet.has(id)) e.classList.add("white"); else e.onclick=()=>selSeat(e);} frag.appendChild(e);} g.appendChild(frag); w.appendChild(g);};
-
-const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})}); return {ok:r.ok,status:r.status,json:r.ok?await r.json():null}}catch(e){return {ok:0,status:0,error:e}}};
-
-/* BOTÃO ENTRAR */
-btn.onclick=async()=>{
+// --- Fullscreen + Mostrar Mapa ---
+btn.onclick=()=>{ 
   if(btn.disabled) return;
   sessionStorage.setItem("cpf", norm(cpf.value));
-  currentUserCPF=norm(cpf.value);
+  sessionStorage.setItem("authMapa",1);
 
-  // FULLSCREEN
-  const elem = document.documentElement;
-  if(elem.requestFullscreen) elem.requestFullscreen();
-  else if(elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-  else if(elem.msRequestFullscreen) elem.msRequestFullscreen();
+  // Ativar fullscreen
+  const el = document.documentElement;
+  if(el.requestFullscreen) el.requestFullscreen();
+  else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if(el.msRequestFullscreen) el.msRequestFullscreen();
 
-  // ESCONDE LOGIN, MOSTRA MAPA
-  document.querySelector(".app").style.display="none";
-  q("#bus-wrapper").style.display="flex";
+  // Esconder login e mostrar mapa
+  $("#login-app").style.display="none";
+  $("#bus-wrapper").style.display="block";
 
-  // CARREGA MAPA (mantendo todas as funcionalidades originais)
-  anim(20);
-  const r = await fetchFlow(GET, currentUserCPF);
-  if(!r.ok || !r.json){ alert("Erro ao consultar fluxo."); return; }
-  const lista = r.json.poltronas || r.json.lista || [];
-  const cod = r.json.codigo || r.json.cursos || [];
-  anim(50);
-  const aluno = cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
-  if(!aluno){ alert("CPF não encontrado."); return; }
-  currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
-  currentBus=map[currentCurso]||"0046"; q("#cursoText").textContent=currentCurso;
-  anim(70);
-  const cursoRows = lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
-  bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-  rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean); rbSet=new Set(rb);
-  userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF).map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
-  const cfg=await fetchJSON(`../configs/${currentBus}.json`);
-  if(!cfg){ alert("Erro layout"); return; }
-  fakeBlockedSeats=[]; // reset
-  // Lógica completa do fake seats
-  const FAKE_BLOCKING={enabled:true,courses:["AAL"],ttlMs:179e3}, fakeKey=()=>`fake:${currentUserCPF}:${currentCurso}:${currentBus}`;
+  // Inicializar mapa
+  initMapa();
+};
+
+// --- Mapa ---
+let sel=null, bl=[], rb=[], rbSet=new Set(), userBlockedSeats=[], fakeBlockedSeats=[], currentUserCPF=null, currentCurso="", currentBus="", layout=[];
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
+map={AAL:"0046",ALI:"0046",QUI:"0046"};
+
+const qSeat=(s,d=document)=>d.querySelector(s);
+
+const cSeat=v=>{const e=document.createElement("div"); return v===null?e.className="empty":v==="white"?e.className="seat white":(e.className="seat",e.textContent=v.toString().padStart(2,"0")),e};
+
+const selSeat=e=>{if(e.classList.contains("white")||e.classList.contains("lost"))return; sel?.classList.remove("selected"); sel=e!==sel?(e.classList.add("selected"),e):null};
+
+const fetchJSON=async u=>{const c=new AbortController(),id=setTimeout(()=>c.abort(),5e3);try{return await(await fetch(u+"?v="+Date.now(),{signal:c.signal})).json()}finally{clearTimeout(id)}};
+
+const anim=t=>{let w=parseFloat($("#progress-bar").style.width)||0;(function s(){w<t?(w++,$("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
+
+const getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
+
+function initMapa(){
+  currentUserCPF=norm(sessionStorage.getItem("cpf"));
+  const FAKE_BLOCKING={enabled:true,courses:["AAL"],ttlMs:179e3};
+  const fakeKey=()=>`fake:${currentUserCPF}:${currentCurso}:${currentBus}`;
   const applyFakeBlocking=l=>{
-    layout=l;
-    if(!FAKE_BLOCKING.enabled || !FAKE_BLOCKING.courses.includes(currentCurso)) return [];
+    layout=l; if(!FAKE_BLOCKING.enabled || !FAKE_BLOCKING.courses.includes(currentCurso)) return [];
     const now=Date.now(), cached=localStorage.getItem(fakeKey());
-    if(cached){ const d=JSON.parse(cached); if(d.expiresAt>now) return d.seats;}
+    if(cached){const d=JSON.parse(cached); if(d.expiresAt>now) return d.seats;}
     const pairs=[];
-    for(const row of l) for(let i=0;i<row.length-1;i++){if(typeof row[i]==="number" && typeof row[i+1]==="number"){
-      const a=row[i].toString().padStart(2,"0"),b=row[i+1].toString().padStart(2,"0");
-      if(!bl.includes(a) && !bl.includes(b) && !userBlockedSeats.includes(a) && !userBlockedSeats.includes(b)) pairs.push([a,b]);
-    }}
-    const maxFake=Math.max(0,6-Math.floor((bl.length+userBlockedSeats.length)/5)), chosen=pairs.sort(()=>Math.random()-.5).slice(0,maxFake).flat();
+    for(const row of l) for(let i=0;i<row.length-1;i++){
+      if(typeof row[i]==="number" && typeof row[i+1]==="number"){
+        const a=row[i].toString().padStart(2,"0"), b=row[i+1].toString().padStart(2,"0");
+        if(!bl.includes(a)&&!bl.includes(b)&&!userBlockedSeats.includes(a)&&!userBlockedSeats.includes(b)) pairs.push([a,b]);
+      }
+    }
+    const maxFake=Math.max(0,6-Math.floor((bl.length+userBlockedSeats.length)/5));
+    const chosen=pairs.sort(()=>Math.random()-.5).slice(0,maxFake).flat();
     localStorage.setItem(fakeKey(),JSON.stringify({seats:chosen,expiresAt:now+FAKE_BLOCKING.ttlMs}));
     return chosen;
   };
-  fakeBlockedSeats=applyFakeBlocking(cfg.layout);
-  render(cfg.layout);
 
-  // lastAttempt
-  const last=sessionStorage.getItem("lastAttempt");
-  if(last){
-    const lastId=last.toString().padStart(2,"0"),
-          ownerRow=cursoRows.find(x=>getField(x,"ID","Id","id").toString().padStart(2,"0")===lastId),
-          ownerCpf=ownerRow?normCPF(getField(ownerRow,"CPF2","Cpf2","cpf2","CPF","cpf")):null;
-    if(bl.includes(lastId) && ownerCpf && ownerCpf!==currentUserCPF){
-      const el=[...document.querySelectorAll(".seat")].find(s=>s.dataset.seat===lastId);
-      el&&(el.classList.remove("white"),el.classList.add("lost"));
+  const render=l=>{
+    const w=qSeat(".bus-container"); w.querySelector(".grid")?.remove(); const g=document.createElement("div"); g.className="grid"; const frag=document.createDocumentFragment();
+    for(const row of l) for(const v of row){
+      const e=cSeat(v); if(v!==null && v!=="white"){ const id=v.toString().padStart(2,"0"); e.dataset.seat=id; if(bl.includes(id)||userBlockedSeats.includes(id)||fakeBlockedSeats.includes(id)||rbSet.has(id)) e.classList.add("white"); else e.onclick=()=>selSeat(e);}
+      frag.appendChild(e);
     }
-    sessionStorage.removeItem("lastAttempt");
-  }
+    g.appendChild(frag); w.appendChild(g);
+  };
 
-  anim(100);
-  setTimeout(()=>q("#progress-bar-container").remove(),600);
-};
+  window.addEventListener("storage",e=>{if(e.key?.startsWith("fake:")){fakeBlockedSeats=JSON.parse(e.newValue||'{}').seats||[];layout.length&&render(layout)}});
 
-/* CONFIRMAR POLTRONA */
-q("#confirmarBtn").onclick=async()=>{
+  (async()=>{
+    anim(20);
+    const r = await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentUserCPF})});
+    const d = await r.json();
+    const lista = d.poltronas||d.lista||[], cod=d.codigo||d.cursos||[];
+    anim(50);
+    const aluno = cod.find(x=>norm(x.CPF2||x.CPF)===currentUserCPF);
+    if(!aluno){alert("CPF não encontrado."); return;}
+    currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+    currentBus=map[currentCurso]||"0046";
+    $("#cursoText").textContent=currentCurso;
+    anim(70);
+    const cursoRows = lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+    bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+    rb=cursoRows.map(x=>norm(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
+    rbSet=new Set(rb);
+    userBlockedSeats=cursoRows.filter(x=>norm(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF).map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+    const cfg = await fetchJSON(`../configs/${currentBus}.json`);
+    fakeBlockedSeats=applyFakeBlocking(cfg.layout);
+    render(cfg.layout);
+    const last=sessionStorage.getItem("lastAttempt");
+    if(last){const lastId=last.toString().padStart(2,"0"),ownerRow=cursoRows.find(x=>getField(x,"ID","Id","id").toString().padStart(2,"0")===lastId),ownerCpf=ownerRow?norm(getField(ownerRow,"CPF2","Cpf2","cpf2","CPF","cpf")):null;if(bl.includes(lastId)&&ownerCpf&&ownerCpf!==currentUserCPF){const el=[...document.querySelectorAll(".seat")].find(s=>s.dataset.seat===lastId);el&&(el.classList.remove("white"),el.classList.add("lost"))}sessionStorage.removeItem("lastAttempt")}
+    anim(100); setTimeout(()=>$("#progress-bar-container").remove(),600);
+  })();
+}
+
+// --- Confirmar ---
+$("#confirmarBtn").onclick=async()=>{
   if(!sel){alert("Selecione uma poltrona."); return;}
   document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
-  q("#confirmarBtn").disabled=true;
-  if(rbSet.has(currentUserCPF)){alert("Usuário já possui reserva."); setTimeout(()=>{sel?.classList.remove("selected"); sel=null; document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto"); q("#confirmarBtn").disabled=false},2000); return;}
-  sessionStorage.setItem("lastAttempt", sel.dataset.seat||sel.textContent);
+  $("#confirmarBtn").disabled=true;
+  if(rbSet.has(currentUserCPF)){alert("Usuário já possui reserva."); setTimeout(()=>{sel?.classList.remove("selected"); sel=null; document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto"); $("#confirmarBtn").disabled=false},2000); return;}
+  sessionStorage.setItem("lastAttempt",sel.dataset.seat||sel.textContent);
   try{
     const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
     alert(r.ok?"Poltrona selecionada!":"Poltrona selecionada por outro usuário.");
     setTimeout(()=>location.reload(true),2000);
-  }catch{alert("Erro de comunicação."); setTimeout(()=>location.reload(true),2200);}
+  }catch{
+    alert("Erro de comunicação."); setTimeout(()=>location.reload(true),2200);
+  }
 };
 </script>
 </body>
