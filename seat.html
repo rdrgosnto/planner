@@ -13,10 +13,9 @@ body{margin:0;font-family:Arial,sans-serif;background:#fff;display:flex;flex-dir
 #splash i:after{content:"";display:block;width:40px;height:100%;background:#4CAF50;animation:l .9s infinite}
 @keyframes l{from{transform:translateX(-40px)}to{transform:translateX(120px)}}
 
-/* Login centralizado vertical */
-.app{width:90%;max-width:300px;visibility:hidden;display:flex;flex-direction:column;justify-content:center;height:100vh;}
+.app{width:90%;max-width:300px;visibility:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;flex:1;}
 label{font-size:16px;color:#333;margin:0 0 6px 2px}
-.row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc}
+.row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc;width:100%}
 .row:focus-within{border-color:#ccc}
 .row.err{border-color:#e53935}
 .row.ok{border-color:#4CAF50}
@@ -24,11 +23,11 @@ input{flex:1 1 auto;min-width:0;border:0;padding:10px 2px;font-size:18px;backgro
 input::placeholder{font-size:16px;color:#999}
 button{flex:0 0 auto;max-width:35%;padding:6px 12px;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:14px;font-weight:bold;white-space:nowrap}
 button.ready{background:#4CAF50;color:#fff;border-color:#4CAF50;cursor:pointer}
-button.ready:active{background:#43a047;transform:scale(.97)}
+button.ready:active{transform:scale(.97)}
 .errmsg{font-size:13px;color:#e53935;margin:14px 0 0 2px;display:none}
 
 /* Layout de poltronas */
-#bus-wrapper{display:none;flex-direction:column;align-items:center;margin-top:40px;transform:scale(.8);transform-origin:top center;position:relative;}
+#bus-wrapper{display:none;flex-direction:column;align-items:center;margin-top:40px;transform:scale(.8);transform-origin:top center;}
 .bus-container{padding:20px;border:3px solid #b0b0b0;border-radius:16px;display:flex;flex-direction:column;align-items:center;position:relative}
 #cursoBox{position:absolute;top:0;right:-60px;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none;z-index:9999}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
@@ -43,8 +42,7 @@ button.ready:active{background:#43a047;transform:scale(.97)}
 .seat.lost{background:#b0b0b0!important;border-color:#b0b0b0!important;color:transparent!important;pointer-events:none!important}
 .seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 
-/* Confirmar botão fora do container */
-#confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;z-index:9999;margin-top:0}
+#confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;margin-top:20px;align-self:flex-end}
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 </style>
@@ -62,10 +60,10 @@ button.ready:active{background:#43a047;transform:scale(.97)}
 </div>
 
 <div id="bus-wrapper">
-  <div class="bus-container" id="busContainer">
+  <div class="bus-container">
+    <div id="cursoBox"><div id="cursoText"></div></div>
     <div id="seats-grid" class="grid"></div>
   </div>
-  <div id="cursoBox"><div id="cursoText"></div></div>
   <button id="confirmarBtn">CONFIRMAR</button>
 </div>
 
@@ -82,11 +80,11 @@ let timer = null;
 
 function cpfValido(c){
   if(/^(\d)\1+$/.test(c)) return false;
-  let t9 = 0, t10 = 0;
-  for(let i=0;i<9;i++) t9 += c[i]*(10-i);
-  for(let i=0;i<10;i++) t10 += c[i]*(11-i);
-  const d1 = ((t9*10)%11)%10;
-  const d2 = ((t10*10)%11)%10;
+  let t9=0, t10=0;
+  for(let i=0;i<9;i++) t9+=c[i]*(10-i);
+  for(let i=0;i<10;i++) t10+=c[i]*(11-i);
+  const d1=((t9*10)%11)%10;
+  const d2=((t10*10)%11)%10;
   return d1==c[9] && d2==c[10];
 }
 
@@ -108,7 +106,7 @@ cpf.oninput = () => {
 
   timer = setTimeout(async () => {
     try{
-      const r = await fetch("YOUR_POWER_AUTOMATE_URL",
+      const r = await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
         {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:normCPF(val)})});
       const d = await r.json();
       const autorizado = (d.codigo||[]).find(x => normCPF(x.CPF2||x.CPF) === normCPF(val));
@@ -133,7 +131,6 @@ btn.onclick = () => {
   document.querySelector(".app").style.display="none";
   $("#bus-wrapper").style.display="flex";
   document.documentElement.requestFullscreen().catch(()=>{});
-  positionCursoEConfirmar();
   loadSeats();
 };
 
@@ -145,7 +142,7 @@ async function loadSeats(){
   try{
     const cpfStored = sessionStorage.getItem("cpf");
     if(!cpfStored) return;
-    const r = await fetch("YOUR_POWER_AUTOMATE_URL",
+    const r = await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
       {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:cpfStored})});
     const data = await r.json();
     const aluno = (data.codigo||[]).find(x=>normCPF(x.CPF2||x.CPF)===cpfStored);
@@ -169,7 +166,6 @@ async function loadSeats(){
         grid.appendChild(div);
       });
     });
-    positionCursoEConfirmar();
   } catch(e){ alert("Erro ao carregar layout de assentos."); }
 }
 
@@ -179,18 +175,6 @@ function selectSeat(el){
   if(selected===el){ selected=null; return; }
   el.classList.add("selected");
   selected=el;
-}
-
-// Posiciona cursoBox e confirmarBtn fora do container
-function positionCursoEConfirmar(){
-  const container = $("#busContainer");
-  const cursoBox = $("#cursoBox");
-  const confirmarBtn = $("#confirmarBtn");
-  const rect = container.getBoundingClientRect();
-  cursoBox.style.top = rect.top + "px";
-  cursoBox.style.left = rect.right + "px";
-  confirmarBtn.style.top = rect.bottom + 20 + "px";
-  confirmarBtn.style.left = rect.right - confirmarBtn.offsetWidth + "px";
 }
 </script>
 </body>
