@@ -17,7 +17,7 @@ html, body {
     overflow:hidden;
 }
 
-/* Vídeo de fundo */
+/* ===== VÍDEO DE FUNDO ===== */
 #videoFundo {
     position:absolute;
     top:50%;
@@ -30,41 +30,54 @@ html, body {
     z-index:0;
 }
 
-/* Camada dos elementos */
-.overlay {
+/* Camada escura cinematográfica */
+.cinema-overlay {
     position:absolute;
     inset:0;
+    background:linear-gradient(
+        to bottom,
+        rgba(0,0,0,.55),
+        rgba(0,0,0,.25),
+        rgba(0,0,0,.55)
+    );
     z-index:1;
 }
 
-/* Texto CPF */
-.label-cpf {
+/* ===== CONTEÚDO ===== */
+.overlay {
     position:absolute;
-    top:50vh;
+    inset:0;
+    z-index:2;
+}
+
+/* Grupo CPF (controla espaçamento igual) */
+.cpf-group {
+    position:absolute;
+    top:62vh; /* 🔽 MAIS PARA BAIXO */
     left:50%;
     transform:translateX(-50%);
     width:90%;
     max-width:400px;
+    display:flex;
+    flex-direction:column;
+    gap:10px; /* 🔁 distância igual entre textos e caixa */
+}
+
+/* Texto acima */
+.label-cpf {
     font-size:14px;
-    color:#fff;
-    margin-bottom:6px;
 }
 
 /* Caixa CPF */
 .cpf-field {
-    position:absolute;
-    top:55vh; /* 👈 aqui está o ajuste principal */
-    left:50%;
-    transform:translateX(-50%);
-    width:90%;
-    max-width:400px;
-    height:42px;
-    border-radius:8px;
-    border:1px solid rgba(255,255,255,.15);
-    background:rgba(0,0,0,0.55);
+    height:44px;
+    border-radius:0; /* quadrada */
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.45);
     display:flex;
     align-items:center;
     padding:0 12px;
+    backdrop-filter: blur(4px);
 }
 
 .cpf-field input {
@@ -84,15 +97,25 @@ html, body {
 
 /* Status */
 .status {
-    position:absolute;
-    top:61vh;
-    left:50%;
-    transform:translateX(-50%);
-    width:90%;
-    max-width:400px;
-    font-size:14px;
     min-height:18px;
-    color:#fff;
+    font-size:14px;
+}
+
+/* Botão */
+.btn-primary {
+    display:none;
+    height:44px;
+    border:none;
+    border-radius:0;
+    background:#fff;
+    color:#000;
+    font-size:15px;
+    font-weight:500;
+    cursor:pointer;
+}
+
+.btn-primary:hover {
+    background:#eaeaea;
 }
 </style>
 </head>
@@ -103,18 +126,103 @@ html, body {
     <source src="pina_.mp4" type="video/mp4">
 </video>
 
-<!-- Conteúdo -->
+<div class="cinema-overlay"></div>
+
 <div class="overlay">
 
-    <div class="label-cpf">CPF (somente números)</div>
+    <div class="cpf-group">
+        <div class="label-cpf">CPF (somente números)</div>
 
-    <div class="cpf-field">
-        <input type="text" placeholder="CPF (somente números)" autocomplete="off">
+        <div class="cpf-field">
+            <input id="cpfInput" inputmode="numeric" placeholder="CPF (somente números)">
+        </div>
+
+        <div class="status" id="statusMsg"></div>
+
+        <button class="btn-primary" id="btnDownload">Baixar ingresso</button>
     </div>
 
-    <div class="status">CPF inválido</div>
-
 </div>
+
+<script>
+const cpfInput = document.getElementById("cpfInput");
+const btnDownload = document.getElementById("btnDownload");
+const statusMsg = document.getElementById("statusMsg");
+
+let debounce;
+
+/* ===== CPF ===== */
+const norm = v => v.replace(/\D/g,"").padStart(11,"0");
+const valido = c => {
+    if(/^(\d)\1+$/.test(c)) return false;
+    for(let t=9;t<11;t++){
+        let s=0;
+        for(let i=0;i<t;i++) s+=c[i]*(t+1-i);
+        if(((s*10)%11)%10!=c[t]) return false;
+    }
+    return true;
+};
+
+/* ===== POWER AUTOMATE ===== */
+async function buscarIngresso(cpf){
+    const r = await fetch(
+        "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
+        {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body:JSON.stringify({ cpf })
+        }
+    );
+    const d = await r.json();
+    return (d.codigo||[]).find(x => norm(x.CPF2||"") === cpf && x.GOOGLE);
+}
+
+/* ===== INPUT ===== */
+cpfInput.oninput = () => {
+    cpfInput.value = cpfInput.value.replace(/\D/g,"");
+    btnDownload.style.display="none";
+    statusMsg.textContent="";
+    clearTimeout(debounce);
+
+    if(cpfInput.value.length < 11){
+        statusMsg.textContent="CPF inválido";
+        return;
+    }
+
+    debounce = setTimeout(() => validarCPF(norm(cpfInput.value)), 400);
+};
+
+async function validarCPF(cpf){
+    if(!valido(cpf)){
+        statusMsg.textContent="CPF inválido";
+        return;
+    }
+
+    statusMsg.textContent="Verificando CPF…";
+
+    try{
+        const autorizado = await buscarIngresso(cpf);
+        if(!autorizado) throw 0;
+
+        statusMsg.textContent="CPF localizado";
+        btnDownload.style.display="block";
+
+        const id = autorizado.GOOGLE;
+        btnDownload.onclick = () => {
+            const a = document.createElement("a");
+            a.href = `https://drive.google.com/uc?export=download&id=${id}`;
+            a.download = "ingresso.png";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+    } catch {
+        statusMsg.textContent="CPF não autorizado";
+        btnDownload.style.display="none";
+    }
+}
+</script>
 
 </body>
 </html>
