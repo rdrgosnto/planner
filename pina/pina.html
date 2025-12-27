@@ -3,13 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Pina</title>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#121212">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Pina | Ingresso</title>
 
 <style>
 html,body{
@@ -27,6 +21,7 @@ html,body{
 header{
   margin-top:32px;
   margin-bottom:24px;
+  text-align:center;
 }
 
 header img{
@@ -34,23 +29,28 @@ header img{
   filter:invert(1);
 }
 
-/* ===== INGRESSO ===== */
-#containerIngresso{
+/* ===== CARD ===== */
+#card{
   width:min(90vw,400px);
-  position:relative;
+  background:#1c1c1c;
+  border-radius:12px;
+  padding:16px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
 }
 
+/* ===== SKELETON ===== */
 #skeleton{
   width:100%;
   aspect-ratio:3/4;
-  background:linear-gradient(
-    100deg,
-    #1c1c1c 40%,
-    #2a2a2a 50%,
-    #1c1c1c 60%
-  );
+  background:linear-gradient(100deg, #2a2a2a 40%, #3a3a3a 50%, #2a2a2a 60%);
   background-size:200% 100%;
   animation:shimmer 1.2s infinite;
+  border-radius:8px;
+  margin-bottom:16px;
 }
 
 @keyframes shimmer{
@@ -60,49 +60,62 @@ header img{
 #imgIngresso{
   width:100%;
   display:none;
+  border-radius:8px;
+  margin-bottom:16px;
 }
 
-/* ===== TEXTO ===== */
+/* ===== MENSAGEM ===== */
 #mensagem{
-  width:min(90vw,400px);
-  margin-top:14px;
+  width:100%;
   font-size:14px;
+  color:#eaeaea;
   text-align:left;
   padding-left:1px;
+  margin-bottom:8px;
+  min-height:18px;
 }
 
 /* ===== CPF ===== */
-#boxCPF,
-#btnDownload{
-  width:min(90vw,400px);
+#boxCPF{
+  width:100%;
   height:40px;
   background:#000;
-  color:#eaeaea;
-  margin-top:16px;
   display:flex;
   align-items:center;
-  box-sizing:border-box;
   padding-left:12px;
-}
-
-#boxCPF{
+  box-sizing:border-box;
   position:relative;
   cursor:text;
+  margin-bottom:12px;
+}
+
+#cpfVisual{
+  pointer-events:none;
+  white-space:nowrap;
+  color:#999;
 }
 
 #cpfInput{
   position:absolute;
   inset:0;
   opacity:0;
+  border:none;
+  outline:none;
+  background:transparent;
 }
 
 /* ===== BOTÃO ===== */
 #btnDownload{
+  width:100%;
+  height:40px;
+  background:#000;
+  color:#fff;
   border:none;
-  justify-content:center;
   cursor:pointer;
   display:none;
-  margin-bottom:40px;
+  justify-content:center;
+  font-weight:500;
+  border-radius:8px;
 }
 </style>
 </head>
@@ -113,37 +126,35 @@ header img{
   <img src="pina_.png" alt="Pina">
 </header>
 
-<div id="containerIngresso">
-  <div id="skeleton"></div>
-  <img id="imgIngresso" alt="Ingresso">
-</div>
+<div id="card">
+  <div id="containerIngresso">
+    <div id="skeleton"></div>
+    <img id="imgIngresso" alt="Ingresso">
+  </div>
 
-<div id="mensagem">
-  Digite seu CPF para acessar seu ingresso
-</div>
+  <div id="mensagem">Digite seu CPF para acessar seu ingresso</div>
 
-<div id="boxCPF">
-  <span id="cpfVisual">CPF (somente números)</span>
-  <input
-    id="cpfInput"
-    inputmode="numeric"
-    autocomplete="off"
-    enterkeyhint="done">
-</div>
+  <div id="boxCPF" tabindex="0">
+    <span id="cpfVisual">CPF (somente números)</span>
+    <input id="cpfInput" inputmode="numeric" enterkeyhint="done" autocomplete="off">
+  </div>
 
-<button id="btnDownload">Baixar ingresso</button>
+  <button id="btnDownload">Baixar ingresso</button>
+</div>
 
 <script>
-const cpfInput = document.getElementById("cpfInput");
-const cpfVisual = document.getElementById("cpfVisual");
-const mensagem = document.getElementById("mensagem");
-const imgIngresso = document.getElementById("imgIngresso");
-const skeleton = document.getElementById("skeleton");
-const btnDownload = document.getElementById("btnDownload");
+const cpfInput=document.getElementById("cpfInput");
+const cpfVisual=document.getElementById("cpfVisual");
+const btnDownload=document.getElementById("btnDownload");
+const imgIngresso=document.getElementById("imgIngresso");
+const skeleton=document.getElementById("skeleton");
+const mensagem=document.getElementById("mensagem");
 
-const norm = v => v.replace(/\D/g,"").padStart(11,"0");
+let estado="inicial",debounce;
 
-const valido = c => {
+const norm=v=>v.replace(/\D/g,"").padStart(11,"0");
+
+const valido=c=>{
   if(/^(\d)\1+$/.test(c)) return false;
   for(let t=9;t<11;t++){
     let s=0;
@@ -153,67 +164,87 @@ const valido = c => {
   return true;
 };
 
-cpfInput.oninput = async () => {
-  cpfInput.value = cpfInput.value.replace(/\D/g,"");
-  cpfVisual.textContent = cpfInput.value || "CPF (somente números)";
+function esconderTeclado(){
+  cpfInput.blur();
+  document.body.focus();
+}
 
-  if(cpfInput.value.length !== 11) return;
+async function buscarIngresso(cpf){
+  const r=await fetch(
+    "SUA_API_AQUI",
+    {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({cpf})
+    }
+  );
+  const d=await r.json();
+  return (d.codigo||[]).find(x=>
+    norm(x.CPF2||"")===cpf &&
+    x.GOOGLE
+  );
+}
 
-  const cpf = norm(cpfInput.value);
+document.getElementById("boxCPF").onpointerdown=()=>{
+  if(estado==="carregando") return;
+  cpfInput.focus();
+  cpfVisual.style.color="#999";
+  estado="digitando";
+};
+
+cpfInput.oninput=()=>{
+  cpfInput.value=cpfInput.value.replace(/\D/g,"");
+  cpfVisual.textContent=cpfInput.value||"CPF (somente números)";
+  cpfVisual.style.color=cpfInput.value?"#fff":"#999";
+
+  if(cpfInput.value.length===11){
+    esconderTeclado();
+    clearTimeout(debounce);
+    debounce=setTimeout(()=>validarCPF(norm(cpfInput.value)),400);
+  }
+};
+
+async function validarCPF(cpf){
+  if(estado==="carregando") return;
+  estado="carregando";
 
   if(!valido(cpf)){
-    mensagem.textContent = "CPF inválido";
+    mensagem.textContent="CPF inválido";
+    estado="invalido";
     return;
   }
 
-  mensagem.textContent = "Verificando ingresso...";
-
+  mensagem.textContent="Carregando...";
   try{
-    const r = await fetch("SUA_API_AQUI",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ cpf })
-    });
+    const autorizado=await buscarIngresso(cpf);
+    if(!autorizado) throw 0;
 
-    if(!r.ok) throw 0;
-
-    const d = await r.json();
-    const ingresso = d.codigo?.find(
-      x => norm(x.CPF2||"") === cpf && x.GOOGLE
-    );
-
-    if(!ingresso) throw 0;
-
-    imgIngresso.onload = () => {
+    const id=autorizado.GOOGLE;
+    imgIngresso.onload=()=>{
       skeleton.style.display="none";
       imgIngresso.style.display="block";
 
       setTimeout(()=>{
         btnDownload.style.display="flex";
-      },1500);
+        btnDownload.onclick=()=>download(`https://drive.google.com/uc?export=download&id=${id}`);
+      },700); // delay menor
     };
 
-    imgIngresso.src =
-      `https://drive.google.com/thumbnail?id=${ingresso.GOOGLE}&sz=w1200`;
-
-    mensagem.textContent = "Ingresso disponível";
-
-    btnDownload.onclick = () => {
-      window.location.href =
-        `https://drive.google.com/uc?export=download&id=${ingresso.GOOGLE}`;
-    };
+    imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 
   }catch{
-    mensagem.textContent = "CPF não autorizado";
+    mensagem.textContent="CPF não autorizado";
+    estado="invalido";
   }
-};
-</script>
+}
 
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js");
-  });
+function download(url){
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="ingresso.png";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 </script>
 
