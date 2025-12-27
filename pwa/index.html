@@ -12,7 +12,10 @@
   <h1>Bem-vindo ao Planner PWA!</h1>
   <p>Se você está vendo isso, a PWA está funcionando.</p>
 
+  <!-- Botão de instalação será criado via script -->
+
   <script>
+    // 1. Registrando o Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
@@ -20,6 +23,37 @@
           .catch(err => console.log('Erro ao registrar Service Worker', err));
       });
     }
+
+    // 2. Criando botão de instalação
+    let deferredPrompt;
+    const btnInstall = document.createElement('button');
+    btnInstall.textContent = "Instalar Planner PWA";
+    document.body.appendChild(btnInstall);
+    btnInstall.style.display = 'none';
+    btnInstall.style.padding = '10px 20px';
+    btnInstall.style.fontSize = '1rem';
+    btnInstall.style.marginTop = '20px';
+    btnInstall.style.cursor = 'pointer';
+    btnInstall.style.backgroundColor = '#4CAF50';
+    btnInstall.style.color = '#fff';
+    btnInstall.style.border = 'none';
+    btnInstall.style.borderRadius = '5px';
+    btnInstall.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Previne o prompt automático
+      e.preventDefault();
+      deferredPrompt = e;
+      btnInstall.style.display = 'block';
+
+      btnInstall.addEventListener('click', () => {
+        btnInstall.style.display = 'none';
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          deferredPrompt = null;
+        });
+      });
+    });
   </script>
 </body>
 </html>
