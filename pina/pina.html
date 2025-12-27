@@ -137,15 +137,11 @@ body{
   min-height:18px;
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:flex-start;
   padding-left:3px; /* 2px deslocamento refinado */
   border-radius:6px;
+  color:#fff;
 }
-
-/* cores dinâmicas via JS:
-   - branco para CPF inválido / não autorizado / localizado
-   - preto para carregando
-*/
 
 /* ===== BOTÃO ===== */
 .btn-primary{
@@ -203,7 +199,7 @@ body{
     </div>
 
     <!-- STATUS -->
-    <div class="status" id="statusMsg"></div>
+    <div class="status" id="statusMsg">CPF inválido</div>
 
     <!-- BOTÃO -->
     <button class="btn-primary" id="btnDownload">
@@ -223,7 +219,8 @@ const imgIngresso=document.getElementById("imgIngresso");
 const statusMsg=document.getElementById("statusMsg");
 const loadingImg=document.getElementById("loadingImg");
 
-let estado="inicial", debounce;
+let debounce;
+
 const norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 
 const valido=c=>{
@@ -241,6 +238,7 @@ function esconderTeclado(){
 }
 
 async function buscarIngresso(cpf){
+  // Mantenha sua API do Power Automate
   const r=await fetch(
     "SUA_API_AQUI",
     {
@@ -256,34 +254,28 @@ async function buscarIngresso(cpf){
   );
 }
 
-boxCPF.onpointerdown=()=>{
-  if(estado==="carregando") return;
-  cpfInput.focus();
-};
-
 cpfInput.oninput=()=>{
   cpfInput.value=cpfInput.value.replace(/\D/g,"");
   cpfVisual.textContent=cpfInput.value||"Digite aqui";
   cpfVisual.style.color=cpfInput.value?"#fff":"#9a9a9a";
-  statusMsg.style.color="#fff";
-  statusMsg.textContent="";
   btnDownload.style.display="none";
 
-  if(cpfInput.value.length===11){
-    esconderTeclado();
-    clearTimeout(debounce);
-    debounce=setTimeout(()=>validarCPF(norm(cpfInput.value)),400);
+  if(cpfInput.value.length<11){
+    statusMsg.textContent="CPF inválido";
+    statusMsg.style.color="#fff";
+    return;
   }
+
+  clearTimeout(debounce);
+  debounce=setTimeout(()=>validarCPF(norm(cpfInput.value)),400);
 };
 
 async function validarCPF(cpf){
-  if(estado==="carregando") return;
-  estado="carregando";
+  if(cpf.length!==11) return;
 
   if(!valido(cpf)){
     statusMsg.textContent="CPF inválido";
     statusMsg.style.color="#fff";
-    estado="invalido";
     return;
   }
 
@@ -296,6 +288,8 @@ async function validarCPF(cpf){
     statusMsg.textContent="Carregando" + ".".repeat(dots%4);
   },400);
 
+  loadingImg.classList.add("ativo");
+
   try{
     const autorizado=await buscarIngresso(cpf);
     if(!autorizado) throw 0;
@@ -303,8 +297,8 @@ async function validarCPF(cpf){
     const id=autorizado.GOOGLE;
     imgIngresso.onload=()=>loadingImg.classList.remove("ativo");
     imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
-    loadingImg.classList.add("ativo");
 
+    // CPF localizado
     statusMsg.textContent="CPF localizado";
     statusMsg.style.color="#fff";
 
@@ -322,7 +316,6 @@ async function validarCPF(cpf){
     loadingImg.classList.remove("ativo");
     statusMsg.textContent="CPF não autorizado";
     statusMsg.style.color="#fff";
-    estado="invalido";
   }
 }
 
