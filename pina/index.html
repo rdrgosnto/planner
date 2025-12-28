@@ -2,161 +2,26 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pina | Ingresso</title>
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#121212;color:#fff;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-body{display:flex;justify-content:center;padding:0}
-.app{width:100%;max-width:420px;min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start}
-.card{background:#1c1c1c;border-radius:14px;padding:18px;border:1px solid rgba(255,255,255,.06);box-shadow:0 8px 24px rgba(0,0,0,.4);display:flex;flex-direction:column;min-height:100vh;position:relative}
-.logo{position:absolute;top:24px;left:50%;transform:translateX(-50%);z-index:2}
-.logo img{height:44px;display:block;filter:invert(1) brightness(1.1)}
-.ingresso{position:relative;margin:80px 0 16px}
-.ingresso img{width:100%;display:block;border-radius:10px}
-.loading-img{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:14px;color:#cfcfcf;opacity:0;pointer-events:none;transition:opacity .2s ease}
-.loading-img.ativo{opacity:1}
-.texto{font-size:14px;color:#fff;margin-bottom:10px;padding-left:3px}
-.cpf-field{position:relative;height:42px;width:100%;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:#151515;display:flex;align-items:center;padding:0 12px}
-.cpf-field:focus-within{border-color:#fff}
-#cpfInput{width:100%;height:100%;border:none;outline:none;background:transparent;color:#fff;font-size:14px;padding-left:2px;caret-color:#fff}
-#cpfInput::placeholder{font-size:12px}
-.status{margin-top:8px;font-size:14px;min-height:18px;display:flex;align-items:center;padding-left:3px}
-.btn-primary{margin-top:12px;width:100%;height:42px;border:none;border-radius:8px;background:#fff;color:#000;font-size:15px;font-weight:500;cursor:pointer;display:none}
-.btn-primary:hover{background:#eaeaea}
+*{box-sizing:border-box;margin:0;padding:0}html,body{width:100%;height:100%;background:#000;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#fff;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}#videoFundo{position:absolute;top:50%;left:50%;width:100%;height:100%;transform:translate(-50%,-50%);object-fit:contain;background:#000;z-index:0;transition:filter .9s}#videoFundo.pausado{filter:brightness(.55)}.cinema-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.55),rgba(0,0,0,.2),rgba(0,0,0,.6));z-index:1}.overlay{position:absolute;inset:0;z-index:2}.cpf-group{position:absolute;bottom:clamp(30px,6vh,80px);left:50%;transform:translateX(-50%);width:90%;max-width:400px;display:flex;flex-direction:column;gap:10px}.label-cpf{font-size:14px}.status{min-height:18px;font-size:14px}.cpf-field{height:48px;border-radius:0;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.45);display:flex;align-items:center;padding:0 12px;backdrop-filter:blur(4px)}.cpf-field input{width:100%;border:none;outline:none;background:transparent;color:#fff;font-size:15px;line-height:48px;padding:0;-webkit-user-select:text;user-select:text}.cpf-field input::placeholder{font-size:12px;color:#cfcfcf}.btn-primary{display:none;height:48px;border:none;border-radius:0;background:#fff;color:#000;font-size:15px;font-weight:500;cursor:pointer}.btn-primary:hover{background:#eaeaea}
 </style>
 </head>
 <body>
-
-<main class="app">
-<section class="card">
-
-<div class="logo"><img src="pina_.png" alt="Pina"></div>
-
-<div class="ingresso">
-<img id="imgIngresso" src="https://drive.google.com/thumbnail?id=1-KRVOHrwUy83uttLnP8JVvJmnbmROnVe&sz=w1200">
-<div class="loading-img" id="loadingImg">carregando…</div>
-</div>
-
-<div class="texto">CPF (somente números)</div>
-
-<div class="cpf-field">
-<input id="cpfInput" inputmode="numeric" enterkeyhint="done"
-placeholder="CPF (somente números)" autocomplete="off">
-</div>
-
+<video id="videoFundo" autoplay muted playsinline loop><source src="pina_.mp4" type="video/mp4"></video>
+<div class="cinema-overlay"></div>
+<div class="overlay">
+<div class="cpf-group">
+<div class="label-cpf">CPF (somente números)</div>
+<div class="cpf-field"><input id="cpfInput" inputmode="numeric" placeholder="CPF (somente números)" autocomplete="off"></div>
 <div class="status" id="statusMsg"></div>
 <button class="btn-primary" id="btnDownload">Baixar ingresso</button>
-
-</section>
-</main>
-
+</div>
+</div>
 <script>
-const cpfInput=document.getElementById("cpfInput"),
-      btnDownload=document.getElementById("btnDownload"),
-      imgIngresso=document.getElementById("imgIngresso"),
-      statusMsg=document.getElementById("statusMsg"),
-      loadingImg=document.getElementById("loadingImg");
-
-let debounce;
-
-/* ===== HAPTIC (MESMO DOS OUTROS: 30ms) ===== */
-const vibrar = () => {
-  if (navigator.vibrate) {
-    navigator.vibrate(30);
-  }
-};
-
-const norm=v=>v.replace(/\D/g,"").padStart(11,"0");
-const valido=c=>{
-  if(/^(\d)\1+$/.test(c)) return false;
-  for(let t=9;t<11;t++){
-    let s=0;
-    for(let i=0;i<t;i++) s+=c[i]*(t+1-i);
-    if(((s*10)%11)%10!=c[t]) return false;
-  }
-  return true;
-};
-
-async function buscarIngresso(cpf){
-  const r=await fetch(
-    "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",
-    {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ cpf })
-    }
-  );
-  const d=await r.json();
-  return (d.codigo||[]).find(x=>norm(x.CPF2||"")===cpf && x.GOOGLE);
-}
-
-/* ===== INPUT ===== */
-cpfInput.oninput=()=>{
-  cpfInput.value = cpfInput.value.replace(/\D/g,"");
-  btnDownload.style.display="none";
-
-  /* vibra enquanto digita */
-  vibrar();
-
-  if(cpfInput.value.length < 11){
-    statusMsg.textContent="CPF inválido";
-    return;
-  }
-
-  cpfInput.blur();
-  clearTimeout(debounce);
-  debounce=setTimeout(()=>validarCPF(norm(cpfInput.value)),400);
-};
-
-async function validarCPF(cpf){
-  if(!valido(cpf)){
-    vibrar();
-    statusMsg.textContent="CPF inválido";
-    return;
-  }
-
-  statusMsg.textContent="";
-  loadingImg.classList.add("ativo");
-
-  try{
-    const autorizado=await buscarIngresso(cpf);
-    if(!autorizado) throw 0;
-
-    btnDownload.style.display="block";
-    btnDownload.textContent="carregando…";
-    statusMsg.textContent="CPF localizado";
-
-    const id=autorizado.GOOGLE;
-    imgIngresso.onload=()=>loadingImg.classList.remove("ativo");
-    imgIngresso.src=`https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
-
-    setTimeout(()=>{
-      loadingImg.classList.remove("ativo");
-      btnDownload.textContent="Baixar ingresso";
-      btnDownload.onclick=()=>download(
-        `https://drive.google.com/uc?export=download&id=${id}`
-      );
-      btnDownload.scrollIntoView({behavior:"smooth",block:"center"});
-    },600);
-
-  }catch{
-    vibrar();
-    loadingImg.classList.remove("ativo");
-    btnDownload.style.display="none";
-    statusMsg.textContent="CPF não autorizado";
-  }
-}
-
-function download(url){
-  const a=document.createElement("a");
-  a.href=url;
-  a.download="ingresso.png";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
+const cpf=document.getElementById("cpfInput"),btn=document.getElementById("btnDownload"),status=document.getElementById("statusMsg"),vid=document.getElementById("videoFundo");vid.playbackRate=1;let t,debounce;const norm=v=>v.replace(/\D/g,"").padStart(11,"0"),valido=c=>!/^(\d)\1+$/.test(c)&&[9,10].every(t=>{let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);return((s*10)%11)%10==c[t]});function vib(){navigator.vibrate&&navigator.vibrate(30)}function pausar(){vid.classList.add("pausado");setTimeout(()=>{if(!vid.paused)vid.pause()},450)}function tocar(){vid.play().catch(()=>{});vid.classList.remove("pausado")}let hT=null,emH=false,H=250;function startHold(){if(hT)return;hT=setTimeout(()=>{emH=true;pausar()},H)}function endHold(){clearTimeout(hT);hT=null;if(emH){emH=false;tocar()}}document.addEventListener("touchstart",startHold,{passive:true});document.addEventListener("touchend",endHold);document.addEventListener("touchcancel",endHold);document.addEventListener("mousedown",startHold);document.addEventListener("mouseup",endHold);document.addEventListener("mouseleave",endHold);
+async function buscar(c){const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/8a482c5f6dd04dd3b167d97ea0a07307/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kWvGjXp0sqrlB9TuVb02vSAeLqwEjTU0-dU9J0HqkFE",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});const d=await r.json();return(d.codigo||[]).find(x=>norm(x.CPF2||"")===c&&x.GOOGLE)};cpf.oninput=()=>{cpf.value=cpf.value.replace(/\D/g,"");pausar();btn.style.display="none";status.textContent="";clearTimeout(debounce);if(cpf.value.length<11){status.textContent="CPF inválido";vib();return}cpf.blur();debounce=setTimeout(()=>validar(norm(cpf.value)),400)};async function validar(c){if(!valido(c)){status.textContent="CPF inválido";vib();pausar();return}tocar();try{const a=await buscar(c);if(!a)throw 0;status.textContent="CPF localizado";pausar();btn.style.display="block";btn.onclick=()=>{tocar();const l=document.createElement("a");l.href=`https://drive.google.com/uc?export=download&id=${a.GOOGLE}`;l.download="ingresso.png";document.body.appendChild(l);l.click();document.body.removeChild(l)}}catch{s="CPF não autorizado";status.textContent=s;vib();pausar();btn.style.display="none"}}
 </script>
-
 </body>
 </html>
