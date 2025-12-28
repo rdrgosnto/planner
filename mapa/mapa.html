@@ -96,14 +96,18 @@ const render=l=>{
 
     if(v===null){
       e.className="empty";
-    }else{
+    }
+    else if(v==="white"){
+      e.className="seat white";
+    }
+    else{
       const id=v.toString().padStart(2,"0");
+      e.className="seat";
+      e.textContent=id;
+
       const isMine=userBlockedSeats.includes(id);
       const isRealBlocked=bl.includes(id)&&!isMine;
       const isFake=fakeBlockedSeats.includes(id);
-
-      e.className="seat";
-      e.textContent=id;
 
       if(isMine){
         e.classList.add("mine");
@@ -131,13 +135,9 @@ const render=l=>{
 
 (async()=>{
   currentUserCPF=normCPF(sessionStorage.getItem("cpf"));
-  const r=await fetch(GET,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({cpf:currentUserCPF})
-  }).then(r=>r.json());
+  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentUserCPF})}).then(r=>r.json());
 
-  const lista=r.lista||[], cod=r.codigo||[];
+  const lista=r.lista||[],cod=r.codigo||[];
   const aluno=cod.find(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF);
   currentCurso=aluno.CODIGO;
   q("#cursoText").textContent=currentCurso;
@@ -159,15 +159,7 @@ const render=l=>{
 
 q("#confirmarBtn").onclick=async()=>{
   if(!sel){alert("Selecione uma poltrona");return}
-  await fetch(POST,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      poltrona:sel.textContent,
-      CURSO:currentCurso,
-      cpf:currentUserCPF
-    })
-  });
+  await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
   location.reload(true);
 };
 </script>
