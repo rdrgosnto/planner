@@ -17,9 +17,9 @@ label{font-size:16px;color:#333;margin:0 0 6px 2px}
 .row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc}
 .row.err{border-color:#e53935}
 .row.ok{border-color:#4CAF50}
-input{flex:1 1 auto;min-width:0;border:0;padding:10px 2px;font-size:18px;background:0;outline:0}
+input{flex:1;border:0;padding:12px 6px;font-size:18px;background:0;outline:0}
 input::placeholder{font-size:16px;color:#999}
-button{flex:0 0 auto;max-width:35%;padding:6px 12px;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:14px;font-weight:bold;white-space:nowrap}
+button{flex:0 0 auto;max-width:40%;padding:8px 14px;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:14px;font-weight:bold;white-space:nowrap;touch-action:manipulation}
 button.ready{background:#4CAF50;color:#fff;border-color:#4CAF50;cursor:pointer}
 button.ready:active{background:#43a047;transform:scale(.97)}
 .errmsg{font-size:13px;color:#e53935;margin:14px 0 0 2px;display:none}
@@ -40,19 +40,10 @@ button.ready:active{background:#43a047;transform:scale(.97)}
 
 <script>
 setTimeout(()=>{splash.remove();$(".app").style.visibility="visible"},1600);
-
-const $=s=>document.querySelector(s),
-cpf=$("#cpf"),btn=$("#btn"),err=$("#err"),row=$(".row"),
-norm=v=>v.replace(/\D/g,"").padStart(11,"0");
-
-const DEBOUNCE=400;
+const $=s=>document.querySelector(s),cpf=$("#cpf"),btn=$("#btn"),err=$("#err"),row=$(".row"),norm=v=>v.replace(/\D/g,"").padStart(11,"0");
 let timer;
-
-const valido=c=>!/^(\d)\1+$/.test(c)&&[9,10].every(t=>{
-  let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);
-  return((s*10)%11)%10==c[t];
-});
-
+const DEBOUNCE=400;
+const valido=c=>!/^(\d)\1+$/.test(c)&&[9,10].every(t=>{let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);return((s*10)%11)%10==c[t]});
 const setRow=s=>{row.className="row";if(s)row.classList.add(s)};
 const reset=()=>{btn.disabled=1;btn.className="";setRow();err.style.display="none"};
 
@@ -63,15 +54,8 @@ cpf.oninput=()=>{
   if(!cpf.value)return;
   if(cpf.value.length===11)cpf.blur();
   if(cpf.value.length<11)return;
-
   const v=norm(cpf.value);
-  if(!valido(v)){
-    err.textContent="CPF inválido";
-    err.style.display="block";
-    setRow("err");
-    return;
-  }
-
+  if(!valido(v)){err.textContent="CPF inválido";err.style.display="block";setRow("err");return;}
   timer=setTimeout(async()=>{
     try{
       const r=await fetch(
@@ -82,20 +66,12 @@ cpf.oninput=()=>{
       if(!(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)===v&&String(x.ID).trim()==="#"))throw 0;
       btn.disabled=0;btn.classList.add("ready");setRow("ok");
     }catch{
-      err.textContent="CPF não autorizado";
-      err.style.display="block";
-      setRow("err");
-      btn.disabled=1;
+      err.textContent="CPF não autorizado";err.style.display="block";setRow("err");btn.disabled=1;
     }
   },DEBOUNCE);
 };
 
-btn.onclick=()=>{
-  if(btn.disabled)return;
-  sessionStorage.setItem("cpf",norm(cpf.value));
-  sessionStorage.setItem("authMapa",1);
-  location.href="mapa/index.html";
-};
+btn.onclick=()=>{if(btn.disabled)return;sessionStorage.setItem("cpf",norm(cpf.value));sessionStorage.setItem("authMapa",1);location.href="mapa/index.html"};
 </script>
 </body>
 </html>
