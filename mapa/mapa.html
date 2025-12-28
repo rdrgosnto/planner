@@ -46,8 +46,6 @@ const q=(s,d=document)=>d.querySelector(s);
 const normCPF=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"";
 
 let sel=null;
-let selectedSeatId=null;
-
 let bl=[], userBlockedSeats=[], fakeBlockedSeats=[];
 let currentUserCPF="", currentCurso="", layout=[];
 
@@ -62,6 +60,7 @@ const horariosValidos=()=>{
 
 const aplicarFake=l=>{
   if(!horariosValidos()) return [];
+
   const total=l.flat().filter(v=>typeof v==="number").length;
   const lot=bl.length/total;
   let perc=lot<=0.25?0.5:lot<=0.75?0.25:0;
@@ -70,7 +69,7 @@ const aplicarFake=l=>{
   const pares=[];
   for(const row of l){
     for(let i=0;i<row.length-1;i++){
-      if(typeof row[i]==="number"&&typeof row[i+1]==="number"){
+      if(typeof row[i]==="number" && typeof row[i+1]==="number"){
         const a=row[i].toString().padStart(2,"0"),
               b=row[i+1].toString().padStart(2,"0");
         if(!bl.includes(a)&&!bl.includes(b)&&
@@ -79,7 +78,11 @@ const aplicarFake=l=>{
       }
     }
   }
-  return pares.sort(()=>Math.random()-.5).slice(0,Math.max(1,Math.min(5,pares.length))).flat();
+
+  return pares
+    .sort(()=>Math.random()-.5)
+    .slice(0,Math.max(1,Math.min(5,pares.length)))
+    .flat();
 };
 
 const render=l=>{
@@ -95,33 +98,30 @@ const render=l=>{
       e.className="empty";
     }else{
       const id=v.toString().padStart(2,"0");
+      const isMine=userBlockedSeats.includes(id);
+      const isRealBlocked=bl.includes(id)&&!isMine;
+      const isFake=fakeBlockedSeats.includes(id);
+
       e.className="seat";
       e.textContent=id;
 
-      if(userBlockedSeats.includes(id)){
+      if(isMine){
         e.classList.add("mine");
       }
-      else if(bl.includes(id) || fakeBlockedSeats.includes(id)){
+      else if(isRealBlocked||isFake){
         e.classList.add("white");
       }
       else{
         e.onclick=()=>{
-          if(selectedSeatId===id){
+          if(sel===e){
             e.classList.remove("selected");
-            selectedSeatId=null;
             sel=null;
           }else{
             sel?.classList.remove("selected");
-            selectedSeatId=id;
             sel=e;
             e.classList.add("selected");
           }
         };
-      }
-
-      if(selectedSeatId===id){
-        e.classList.add("selected");
-        sel=e;
       }
     }
     g.appendChild(e);
@@ -131,28 +131,43 @@ const render=l=>{
 
 (async()=>{
   currentUserCPF=normCPF(sessionStorage.getItem("cpf"));
-  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentUserCPF})}).then(r=>r.json());
+  const r=await fetch(GET,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({cpf:currentUserCPF})
+  }).then(r=>r.json());
 
-  const lista=r.lista||[],cod=r.codigo||[];
+  const lista=r.lista||[], cod=r.codigo||[];
   const aluno=cod.find(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF);
   currentCurso=aluno.CODIGO;
   q("#cursoText").textContent=currentCurso;
 
   const rows=lista.filter(x=>x.CURSO===currentCurso);
   bl=[...new Set(rows.map(x=>x.ID.toString().padStart(2,"0")))];
-  userBlockedSeats=rows.filter(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF).map(x=>x.ID.toString().padStart(2,"0"));
+  userBlockedSeats=rows
+    .filter(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF)
+    .map(x=>x.ID.toString().padStart(2,"0"));
 
   const cfg=await fetch(`../configs/${map[currentCurso]}.json`).then(r=>r.json());
   layout=cfg.layout;
-  fakeBlockedSeats=aplicarFake(layout);
 
+  fakeBlockedSeats=aplicarFake(layout);
   render(layout);
+
   q("#bus-wrapper").style.display="block";
 })();
 
 q("#confirmarBtn").onclick=async()=>{
-  if(!selectedSeatId){alert("Selecione uma poltrona");return}
-  await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:selectedSeatId,CURSO:currentCurso,cpf:currentUserCPF})});
+  if(!sel){alert("Selecione uma poltrona");return}
+  await fetch(POST,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      poltrona:sel.textContent,
+      CURSO:currentCurso,
+      cpf:currentUserCPF
+    })
+  });
   location.reload(true);
 };
 </script>
