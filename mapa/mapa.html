@@ -60,7 +60,6 @@ const horariosValidos=()=>{
 
 const aplicarFake=l=>{
   if(!horariosValidos()) return [];
-
   const total=l.flat().filter(v=>typeof v==="number").length;
   const lot=bl.length/total;
   let perc=lot<=0.25?0.5:lot<=0.75?0.25:0;
@@ -91,28 +90,31 @@ const render=l=>{
   const g=document.createElement("div");
   g.className="grid";
 
-  for(const row of l)for(const v of row){
-    const e=document.createElement("div");
+  for(const row of l){
+    for(const v of row){
+      const e=document.createElement("div");
 
-    if(v===null){
-      e.className="empty";
-    }
-    else if(v==="white"){
-      e.className="seat white";
-    }
-    else{
+      if(v===null){
+        e.className="empty";
+        g.appendChild(e);
+        continue;
+      }
+
+      if(v==="white"){
+        e.className="seat white";
+        e.textContent="";
+        g.appendChild(e);
+        continue;
+      }
+
       const id=v.toString().padStart(2,"0");
       e.className="seat";
       e.textContent=id;
 
-      const isMine=userBlockedSeats.includes(id);
-      const isRealBlocked=bl.includes(id)&&!isMine;
-      const isFake=fakeBlockedSeats.includes(id);
-
-      if(isMine){
+      if(userBlockedSeats.includes(id)){
         e.classList.add("mine");
       }
-      else if(isRealBlocked||isFake){
+      else if(bl.includes(id) || fakeBlockedSeats.includes(id)){
         e.classList.add("white");
       }
       else{
@@ -127,18 +129,26 @@ const render=l=>{
           }
         };
       }
+
+      g.appendChild(e);
     }
-    g.appendChild(e);
   }
   w.appendChild(g);
 };
 
 (async()=>{
   currentUserCPF=normCPF(sessionStorage.getItem("cpf"));
-  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentUserCPF})}).then(r=>r.json());
 
-  const lista=r.lista||[],cod=r.codigo||[];
+  const r=await fetch(GET,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({cpf:currentUserCPF})
+  }).then(r=>r.json());
+
+  const lista=r.lista||[], cod=r.codigo||[];
   const aluno=cod.find(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF);
+  if(!aluno) return;
+
   currentCurso=aluno.CODIGO;
   q("#cursoText").textContent=currentCurso;
 
@@ -153,15 +163,23 @@ const render=l=>{
 
   fakeBlockedSeats=aplicarFake(layout);
   render(layout);
-
   q("#bus-wrapper").style.display="block";
 })();
 
 q("#confirmarBtn").onclick=async()=>{
   if(!sel){alert("Selecione uma poltrona");return}
-  await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
+  await fetch(POST,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      poltrona:sel.textContent,
+      CURSO:currentCurso,
+      cpf:currentUserCPF
+    })
+  });
   location.reload(true);
 };
 </script>
+
 </body>
 </html>
