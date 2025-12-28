@@ -57,6 +57,7 @@ let currentUserCPF="", currentCurso="", layout=[];
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
+
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
 const horariosValidos=()=>{
@@ -83,7 +84,6 @@ const aplicarFake=l=>{
       }
     }
   }
-
   return pares.sort(()=>Math.random()-.5).slice(0,5).flat();
 };
 
@@ -149,6 +149,40 @@ const render=l=>{
   render(layout);
   q("#bus-wrapper").style.display="block";
 })();
+
+/* ✅ BOTÃO CONFIRMAR — SEGURO E FUNCIONAL */
+q("#confirmarBtn").onclick=async()=>{
+  if(!sel){
+    alert("Selecione uma poltrona primeiro.");
+    return;
+  }
+
+  const poltrona=sel.textContent;
+  q("#confirmarBtn").disabled=true;
+
+  try{
+    const r=await fetch(POST,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        poltrona,
+        CURSO:currentCurso,
+        cpf:currentUserCPF
+      })
+    });
+
+    if(r.ok){
+      alert("Poltrona confirmada!");
+      location.reload();
+    }else{
+      alert("Poltrona já ocupada.");
+      q("#confirmarBtn").disabled=false;
+    }
+  }catch{
+    alert("Erro de comunicação.");
+    q("#confirmarBtn").disabled=false;
+  }
+};
 </script>
 
 </body>
