@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0"/>
 
 <script>
-/* redireciona acesso direto sem login */
+/* redireciona acesso direto sem CPF */
 if (!sessionStorage.getItem("cpf")) {
   location.replace("https://rdrgosnto.github.io/planner/");
 }
@@ -83,8 +83,11 @@ let sel=null;
 let bl=[], userBlockedSeats=[], fakeBlockedSeats=[];
 let currentUserCPF="", currentCurso="", layout=[];
 
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1";
-const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1";
+/* URLs COMPLETOS – iguais ao último funcional */
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+
+const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
+
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
 const horariosValidos=()=>{
