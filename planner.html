@@ -17,7 +17,6 @@ label{font-size:16px;color:#333;margin:0 0 6px 2px}
 .row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc;padding:4px 0}
 .row.err{border-color:#e53935}
 .row.ok{border-color:#4CAF50}
-/* Ajuste apenas para alinhar placeholder com o label */
 input{flex:1 1 auto;min-width:0;border:0;padding:12px 6px 12px 2px;font-size:18px;background:0;outline:0}
 input::placeholder{font-size:16px;color:#999}
 button{flex:0 0 auto;width:70px;padding:6px 0;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center;white-space:nowrap}
@@ -27,9 +26,7 @@ button.ready:active{background:#43a047;transform:scale(.97)}
 </style>
 </head>
 <body>
-
 <div id="splash"><b>Planner</b><i></i></div>
-
 <div class="app">
 <label>CPF</label>
 <div class="row">
@@ -38,36 +35,25 @@ button.ready:active{background:#43a047;transform:scale(.97)}
 </div>
 <div class="errmsg" id="err"></div>
 </div>
-
 <script>
 setTimeout(()=>{splash.remove();$(".app").style.visibility="visible"},1600);
 const $=s=>document.querySelector(s),cpf=$("#cpf"),btn=$("#btn"),err=$("#err"),row=$(".row"),norm=v=>v.replace(/\D/g,"").padStart(11,"0");
-let timer;const DEBOUNCE=400;
+let timer,DEBOUNCE=400;
 const valido=c=>!/^(\d)\1+$/.test(c)&&[9,10].every(t=>{let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);return((s*10)%11)%10==c[t]});
 const setRow=s=>{row.className="row";if(s)row.classList.add(s)};
 const reset=()=>{btn.disabled=1;btn.className="";setRow();err.style.display="none"};
 
 cpf.oninput=()=>{
-  cpf.value=cpf.value.replace(/\D/g,"");
-  if(timer)clearTimeout(timer);
-  reset();
-  if(!cpf.value)return;
-  if(cpf.value.length===11)cpf.blur();
-  if(cpf.value.length<11)return;
+  cpf.value=cpf.value.replace(/\D/g,"");if(timer)clearTimeout(timer);reset();if(!cpf.value)return;if(cpf.value.length===11)cpf.blur();if(cpf.value.length<11)return;
   const v=norm(cpf.value);
   if(!valido(v)){err.textContent="CPF inválido";err.style.display="block";setRow("err");return;}
   timer=setTimeout(async()=>{
     try{
-      const r=await fetch(
-        "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:v})}
-      );
+      const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:v})});
       const d=await r.json();
       if(!(d.codigo||[]).find(x=>norm(x.CPF2||x.CPF)===v&&String(x.ID).trim()==="#"))throw 0;
       btn.disabled=0;btn.classList.add("ready");setRow("ok");
-    }catch{
-      err.textContent="CPF não autorizado";err.style.display="block";setRow("err");btn.disabled=1;
-    }
+    }catch{err.textContent="CPF não autorizado";err.style.display="block";setRow("err");btn.disabled=1;}
   },DEBOUNCE);
 };
 
