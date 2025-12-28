@@ -17,115 +17,115 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer}
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
 .seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default!important;pointer-events:none!important}
-.seat.white::after{border-color:#8c96b2!important}
 .seat.selected{background:#e74c3c;border-color:#e74c3c}
 .seat.mine{background:#e74c3c!important;border-color:#e74c3c!important;color:#fff!important;cursor:default!important;pointer-events:none!important}
 .empty{background:0 0}
-.seat.lost{background:#b0b0b0!important;border-color:#b0b0b0!important;color:transparent!important;pointer-events:none!important}
-.seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
-#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 </style>
 </head>
 <body>
+
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
     <button id="confirmarBtn">CONFIRMAR</button>
   </div>
 </div>
-<div id="progress-bar-container"><div id="progress-bar"></div></div>
-<script>
-(() => { if(!sessionStorage.getItem("cacheStamp")) sessionStorage.setItem("cacheStamp",Date.now()) })();
-const q=(s,d=document)=>d.querySelector(s),
-normCPF=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
-cSeat=v=>{const e=document.createElement("div");return v===null?e.className="empty":v==="white"?e.className="seat white":(e.className="seat",e.textContent=v.toString().padStart(2,"0")),e},
-selSeat=e=>{if(e.classList.contains("white")||e.classList.contains("lost")||e.classList.contains("mine"))return;sel?.classList.remove("selected");sel=e!==sel?(e.classList.add("selected"),e):null};
 
-let sel=null,bl=[],rb=[],rbSet=new Set(),userBlockedSeats=[],fakeBlockedSeats=[],currentUserCPF=null,currentCurso="",currentBus="",layout=[];
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
+<script>
+const q=(s,d=document)=>d.querySelector(s),
+normCPF=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"";
+
+let sel=null, bl=[], rbSet=new Set(), userBlockedSeats=[], fakeBlockedSeats=[];
+let currentUserCPF="", currentCurso="", layout=[];
+
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1",
+POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1",
 map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-const fetchJSON=async u=>{const c=new AbortController(),id=setTimeout(()=>c.abort(),5e3);try{return await(await fetch(u+"?v="+Date.now(),{signal:c.signal})).json()}finally{clearTimeout(id)}},
-anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()},
-getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
+const horariosValidos=()=> {
+  const h=new Date().getHours();
+  return (h>=6&&h<9)||(h>=12&&h<15)||(h>=18&&h<21);
+};
 
-const cpfStored=sessionStorage.getItem("cpf");
-if(!cpfStored){location.href="https://rdrgosnto.github.io/planner";throw""}
-currentUserCPF=normCPF(cpfStored);
+const aplicarFake=l=>{
+  if(!horariosValidos()) return [];
+
+  const total=l.flat().filter(v=>typeof v==="number").length;
+  const ocupadas=bl.length;
+  const lot=ocupadas/total;
+
+  let perc=lot<=.25?.5:lot<=.75?.25:0;
+  if(!perc) return [];
+
+  const livres=l.flat().filter(v=>typeof v==="number"&&!bl.includes(v.toString().padStart(2,"0"))&&!userBlockedSeats.includes(v.toString().padStart(2,"0")));
+  let pares=Math.floor((livres.length*perc)/2);
+  pares=Math.max(1,Math.min(5,pares));
+
+  const candidatos=[];
+  for(const row of l){
+    for(let i=0;i<row.length-1;i++){
+      if(typeof row[i]==="number"&&typeof row[i+1]==="number"){
+        const a=row[i].toString().padStart(2,"0"),b=row[i+1].toString().padStart(2,"0");
+        if(!bl.includes(a)&&!bl.includes(b)&&!userBlockedSeats.includes(a)&&!userBlockedSeats.includes(b))
+          candidatos.push([a,b]);
+      }
+    }
+  }
+  return candidatos.sort(()=>Math.random()-.5).slice(0,pares).flat();
+};
 
 const render=l=>{
   const w=q(".bus-container");
   w.querySelector(".grid")?.remove();
   const g=document.createElement("div");
   g.className="grid";
-  const frag=document.createDocumentFragment();
 
   for(const row of l)for(const v of row){
-    const e=cSeat(v);
-    if(v!==null&&v!=="white"){
+    const e=document.createElement("div");
+    if(v===null){e.className="empty";}
+    else{
       const id=v.toString().padStart(2,"0");
-      e.dataset.seat=id;
-
-      if(userBlockedSeats.includes(id)){
-        e.classList.add("mine");
-      }
-      else if(bl.includes(id)||fakeBlockedSeats.includes(id)||rbSet.has(id)){
-        e.classList.add("white");
-      }
-      else{
-        e.onclick=()=>selSeat(e);
-      }
+      e.className="seat"; e.textContent=id;
+      if(userBlockedSeats.includes(id)) e.classList.add("mine");
+      else if(bl.includes(id)||fakeBlockedSeats.includes(id)||rbSet.has(currentUserCPF)) e.classList.add("white");
+      else e.onclick=()=>{sel?.classList.remove("selected");sel=e;e.classList.add("selected")};
     }
-    frag.appendChild(e);
+    g.appendChild(e);
   }
-  g.appendChild(frag);
   w.appendChild(g);
 };
 
-const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,json:r.ok?await r.json():null}}catch(e){return{ok:0}}};
+const fetchJSON=async(u,c)=>await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})}).then(r=>r.json());
 
-const load=async()=>{
-  anim(20);
-  const r=await fetchFlow(GET,currentUserCPF);
-  if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}
+(async()=>{
+  currentUserCPF=normCPF(sessionStorage.getItem("cpf"));
+  const r=await fetchJSON(GET,currentUserCPF);
 
-  const lista=r.json.poltronas||r.json.lista||[],
-        cod=r.json.codigo||r.json.cursos||[];
-
-  const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
-  if(!aluno){alert("CPF não encontrado.");return}
-
-  currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+  const lista=r.lista||[],cod=r.codigo||[];
+  const aluno=cod.find(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF);
+  currentCurso=aluno.CODIGO;
   q("#cursoText").textContent=currentCurso;
 
-  const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
-  bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-  rb=cursoRows.map(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))).filter(Boolean);
-  rbSet=new Set(rb);
-  userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","Cpf2","cpf2","CPF","cpf"))===currentUserCPF)
-    .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+  const rows=lista.filter(x=>x.CURSO===currentCurso);
+  bl=[...new Set(rows.map(x=>x.ID.toString().padStart(2,"0")))];
+  rbSet=new Set(rows.map(x=>normCPF(x.CPF2||x.CPF)));
+  userBlockedSeats=rows.filter(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF).map(x=>x.ID.toString().padStart(2,"0"));
 
-  const cfg=await fetchJSON(`../configs/${map[currentCurso]||"0046"}.json`);
-  render(cfg.layout);
-
+  const cfg=await fetch(`../configs/${map[currentCurso]}.json`).then(r=>r.json());
+  layout=cfg.layout;
+  fakeBlockedSeats=aplicarFake(layout);
+  render(layout);
   q("#bus-wrapper").style.display="block";
-};
+})();
 
 q("#confirmarBtn").onclick=async()=>{
-  if(!sel){alert("Selecione uma poltrona.");return}
-  if(rbSet.has(currentUserCPF)){alert("Usuário já possui reserva.");return}
-  try{
-    await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
-    location.reload(true);
-  }catch{alert("Erro de comunicação.")}
+  if(!sel){alert("Selecione uma poltrona");return}
+  await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
+  location.reload();
 };
-
-load();
 </script>
 </body>
 </html>
