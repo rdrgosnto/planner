@@ -15,121 +15,21 @@ if(location.pathname.endsWith("index.html"))
 </script>
 
 <style>
-body{
-  font-family:Arial;
-  margin:0;
-  padding:0;
-  display:flex;
-  flex-direction:column;
-  min-height:100vh;
-  justify-content:center;
-  background:#fff
-}
-#bus-wrapper{
-  transform:scale(.8);
-  transform-origin:top center;
-  display:none
-}
-.bus-container{
-  padding:20px;
-  border:3px solid #b0b0b0;
-  border-radius:16px;
-  width:fit-content;
-  margin:20px auto;
-  position:relative;
-  display:flex;
-  justify-content:center
-}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(5,54px);
-  gap:14px 10px;
-  justify-content:center;
-  justify-items:center
-}
-.seat,.empty{
-  width:54px;
-  height:54px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:12px;
-  position:relative
-}
-.seat{
-  background:#4CAF50;
-  border:3px solid #4CAF50;
-  color:#fff;
-  font-weight:bold;
-  cursor:pointer
-}
-.seat::after{
-  content:"";
-  position:absolute;
-  bottom:-8px;
-  left:50%;
-  transform:translateX(-50%);
-  width:32px;
-  height:14px;
-  border-radius:8px;
-  background:#fff;
-  border:3px solid #8c96b2
-}
-.seat.white{
-  background:#fff!important;
-  border:3px solid #8c96b2!important;
-  color:transparent!important;
-  cursor:default!important;
-  pointer-events:none!important
-}
-.seat.selected{
-  background:#e74c3c;
-  border-color:#e74c3c
-}
-.seat.mine{
-  background:#e74c3c!important;
-  border-color:#e74c3c!important;
-  color:#fff!important;
-  cursor:default!important;
-  pointer-events:none!important
-}
+body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
+#bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
+.bus-container{padding:20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
+.grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
+.seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
+.seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer}
+.seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
+.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default!important;pointer-events:none!important}
+.seat.selected{background:#e74c3c;border-color:#e74c3c}
+.seat.mine{background:#e74c3c!important;border-color:#e74c3c!important;color:#fff!important;cursor:default!important;pointer-events:none!important}
 .empty{background:none}
 
-#confirmarBtn{
-  width:112px;
-  height:54px;
-  background:#4CAF50;
-  color:#fff;
-  border:none;
-  font-size:16px;
-  font-weight:bold;
-  border-radius:12px;
-  cursor:pointer;
-  position:absolute;
-  bottom:-64px;
-  right:20px
-}
-#cursoBox{
-  position:absolute;
-  top:60px;
-  left:100%;
-  width:40px;
-  height:122px;
-  background:#4CAF50;
-  color:#fff;
-  font-weight:bold;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-  overflow:hidden;
-  pointer-events:none
-}
-#cursoText{
-  transform:rotate(-90deg);
-  font-size:18px;
-  white-space:nowrap
-}
+#confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999}
+#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 </style>
 </head>
 
@@ -143,73 +43,52 @@ body{
 </div>
 
 <script>
-/* ================= UTIL ================= */
 const q=(s,d=document)=>d.querySelector(s);
 const normCPF=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"";
 
-/* ================= ESTADO ================= */
 let sel=null;
-let bl=[];
-let userBlockedSeats=[];
-let fakeBlockedSeats=[];
-let rbSet=new Set();
+let bl=[], userBlockedSeats=[], fakeBlockedSeats=[];
+let currentUserCPF="", currentCurso="", layout=[];
 
-let currentUserCPF="";
-let currentCurso="";
-let layout=[];
-
-/* ================= FLOWS ================= */
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
-
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
-
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-/* ================= HORÁRIOS ================= */
 const horariosValidos=()=>{
   const h=new Date().getHours();
   return (h>=6&&h<9)||(h>=12&&h<15)||(h>=18&&h<21);
 };
 
-/* ================= FAKE ================= */
 const aplicarFake=l=>{
   if(!horariosValidos()) return [];
 
   const total=l.flat().filter(v=>typeof v==="number").length;
-  const ocupadas=bl.length;
-  const lot=ocupadas/total;
-
-  let perc = lot<=0.25 ? 0.5 : lot<=0.75 ? 0.25 : 0;
+  const lot=bl.length/total;
+  let perc=lot<=0.25?0.5:lot<=0.75?0.25:0;
   if(!perc) return [];
 
-  const candidatos=[];
+  const pares=[];
   for(const row of l){
     for(let i=0;i<row.length-1;i++){
-      if(typeof row[i]==="number" && typeof row[i+1]==="number"){
-        const a=row[i].toString().padStart(2,"0");
-        const b=row[i+1].toString().padStart(2,"0");
+      if(typeof row[i]==="number"&&typeof row[i+1]==="number"){
+        const a=row[i].toString().padStart(2,"0"),
+              b=row[i+1].toString().padStart(2,"0");
         if(!bl.includes(a)&&!bl.includes(b)&&
-           !userBlockedSeats.includes(a)&&!userBlockedSeats.includes(b)){
-          candidatos.push([a,b]);
-        }
+           !userBlockedSeats.includes(a)&&!userBlockedSeats.includes(b))
+          pares.push([a,b]);
       }
     }
   }
 
-  let pares=Math.floor((candidatos.length*perc));
-  pares=Math.max(1,Math.min(5,pares));
-
-  return candidatos
+  return pares
     .sort(()=>Math.random()-.5)
-    .slice(0,pares)
+    .slice(0,Math.max(1,Math.min(5,pares.length)))
     .flat();
 };
 
-/* ================= RENDER ================= */
 const render=l=>{
   const w=q(".bus-container");
   w.querySelector(".grid")?.remove();
-
   const g=document.createElement("div");
   g.className="grid";
 
@@ -231,9 +110,14 @@ const render=l=>{
       }
       else{
         e.onclick=()=>{
-          sel?.classList.remove("selected");
-          sel=e;
-          e.classList.add("selected");
+          if(sel===e){
+            e.classList.remove("selected");
+            sel=null;
+          }else{
+            sel?.classList.remove("selected");
+            sel=e;
+            e.classList.add("selected");
+          }
         };
       }
     }
@@ -242,59 +126,30 @@ const render=l=>{
   w.appendChild(g);
 };
 
-/* ================= INIT ================= */
 (async()=>{
   currentUserCPF=normCPF(sessionStorage.getItem("cpf"));
-  if(!currentUserCPF){
-    location.href="https://rdrgosnto.github.io/planner";
-    return;
-  }
+  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentUserCPF})}).then(r=>r.json());
 
-  const r=await fetch(GET,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({cpf:currentUserCPF})
-  }).then(r=>r.json());
-
-  const lista=r.lista||r.poltronas||[];
-  const cod=r.codigo||r.cursos||[];
-
+  const lista=r.lista||[],cod=r.codigo||[];
   const aluno=cod.find(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF);
-  if(!aluno){ alert("CPF não encontrado"); return; }
-
-  currentCurso=aluno.CODIGO.toString().trim().toUpperCase();
+  currentCurso=aluno.CODIGO;
   q("#cursoText").textContent=currentCurso;
 
   const rows=lista.filter(x=>x.CURSO===currentCurso);
   bl=[...new Set(rows.map(x=>x.ID.toString().padStart(2,"0")))];
-  rbSet=new Set(rows.map(x=>normCPF(x.CPF2||x.CPF)));
-  userBlockedSeats=rows
-    .filter(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF)
-    .map(x=>x.ID.toString().padStart(2,"0"));
+  userBlockedSeats=rows.filter(x=>normCPF(x.CPF2||x.CPF)===currentUserCPF).map(x=>x.ID.toString().padStart(2,"0"));
 
-  const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
+  const cfg=await fetch(`../configs/${map[currentCurso]}.json`).then(r=>r.json());
   layout=cfg.layout;
-
   fakeBlockedSeats=aplicarFake(layout);
-  render(layout);
 
+  render(layout);
   q("#bus-wrapper").style.display="block";
 })();
 
-/* ================= CONFIRMAR ================= */
 q("#confirmarBtn").onclick=async()=>{
   if(!sel){alert("Selecione uma poltrona");return}
-  if(rbSet.has(currentUserCPF)){alert("Usuário já possui reserva");return}
-
-  await fetch(POST,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      poltrona:sel.textContent,
-      CURSO:currentCurso,
-      cpf:currentUserCPF
-    })
-  });
+  await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
   location.reload(true);
 };
 </script>
