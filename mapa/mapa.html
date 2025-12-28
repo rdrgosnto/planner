@@ -10,8 +10,15 @@
 <meta http-equiv="Expires" content="0"/>
 
 <script>
-if(location.pathname.endsWith("index.html"))
-  location.replace(location.pathname.replace("index.html",""));
+const BASE="/planner";
+if(
+  location.pathname.endsWith("/mapa.html") ||
+  location.pathname.endsWith("/mapa/mapa.html")
+){
+  if(!sessionStorage.getItem("cpf")){
+    location.replace(BASE);
+  }
+}
 </script>
 
 <style>
@@ -54,10 +61,10 @@ const getField=(o,...n)=>{
 let sel=null;
 let bl=[], userBlockedSeats=[], fakeBlockedSeats=[];
 let currentUserCPF="", currentCurso="", layout=[];
+let usuarioJaTemPoltrona=false;
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
-
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
 const horariosValidos=()=>{
@@ -96,21 +103,34 @@ const render=l=>{
   for(const row of l){
     for(const v of row){
       const e=document.createElement("div");
-
       if(v===null){e.className="empty";g.appendChild(e);continue;}
-      if(v==="white"){e.className="seat white";g.appendChild(e);continue;}
 
       const id=v.toString().padStart(2,"0");
       e.className="seat";
       e.textContent=id;
 
-      if(userBlockedSeats.includes(id)) e.classList.add("mine");
-      else if(bl.includes(id)||fakeBlockedSeats.includes(id)) e.classList.add("white");
-      else e.onclick=()=>{
-        if(sel===e){e.classList.remove("selected");sel=null;}
-        else{sel?.classList.remove("selected");sel=e;e.classList.add("selected");}
-      };
-
+      if(userBlockedSeats.includes(id)){
+        e.classList.add("mine");
+      }
+      else if(bl.includes(id)||fakeBlockedSeats.includes(id)){
+        e.classList.add("white");
+      }
+      else{
+        e.onclick=()=>{
+          if(usuarioJaTemPoltrona){
+            alert("Você já possui uma poltrona selecionada.");
+            return;
+          }
+          if(sel===e){
+            e.classList.remove("selected");
+            sel=null;
+          }else{
+            sel?.classList.remove("selected");
+            sel=e;
+            e.classList.add("selected");
+          }
+        };
+      }
       g.appendChild(e);
     }
   }
@@ -130,7 +150,7 @@ const render=l=>{
   const cod=r.codigo||r.cursos||[];
 
   const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF","cpf"))===currentUserCPF);
-  if(!aluno) return;
+  if(!aluno){location.replace("/planner");return;}
 
   currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim();
   q("#cursoText").textContent=currentCurso;
@@ -142,6 +162,8 @@ const render=l=>{
     .filter(x=>normCPF(getField(x,"CPF2","CPF","cpf"))===currentUserCPF)
     .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
 
+  usuarioJaTemPoltrona=userBlockedSeats.length>0;
+
   const cfg=await fetch(`../configs/${map[currentCurso]}.json`).then(r=>r.json());
   layout=cfg.layout;
 
@@ -150,38 +172,25 @@ const render=l=>{
   q("#bus-wrapper").style.display="block";
 })();
 
-/* ✅ BOTÃO CONFIRMAR — SEGURO E FUNCIONAL */
 q("#confirmarBtn").onclick=async()=>{
-  if(!sel){
-    alert("Selecione uma poltrona primeiro.");
+  if(usuarioJaTemPoltrona){
+    alert("Você já possui uma poltrona confirmada.");
     return;
   }
-
-  const poltrona=sel.textContent;
-  q("#confirmarBtn").disabled=true;
-
-  try{
-    const r=await fetch(POST,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        poltrona,
-        CURSO:currentCurso,
-        cpf:currentUserCPF
-      })
-    });
-
-    if(r.ok){
-      alert("Poltrona confirmada!");
-      location.reload();
-    }else{
-      alert("Poltrona já ocupada.");
-      q("#confirmarBtn").disabled=false;
-    }
-  }catch{
-    alert("Erro de comunicação.");
-    q("#confirmarBtn").disabled=false;
+  if(!sel){
+    alert("Selecione uma poltrona.");
+    return;
   }
+  await fetch(POST,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      poltrona:sel.textContent,
+      CURSO:currentCurso,
+      cpf:currentUserCPF
+    })
+  });
+  location.reload(true);
 };
 </script>
 
