@@ -71,7 +71,7 @@ const render=l=>{
     if(v && v!=="white"){
       const id = e.dataset.seat;
       if(userSeats.includes(id)) e.classList.add("mine");      // vermelha usuário
-      else if(lostSeats.includes(id)) e.classList.add("lost"); // cinza usuário perdeu
+      else if(lostSeats.includes(id)) e.classList.add("lost"); // cinza perdido
       else if(bl.includes(id)) e.classList.add("white");       // branca outros usuários / última fileira
       else e.onclick=()=>selSeat(e);                            // disponível
     }
@@ -99,12 +99,13 @@ const load=async()=>{
   const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
   layout=cfg.layout;
 
-  // garantir que a última fileira fique branca
+  // garantir que a última fileira fique branca e padronizar todos os IDs
   const lastRow = layout[layout.length-1];
   lastRow.forEach(v=>{
-    if(v && !userSeats.includes(v.toString().padStart(2,"0"))) bl.push(v.toString().padStart(2,"0"));
+    if(v && !userSeats.includes(v.toString().padStart(2,"0"))) 
+      bl.push(v.toString().padStart(2,"0"));
   });
-  bl = [...new Set(bl)];
+  bl = [...new Set(bl.map(v => v.toString().padStart(2,"0")))]; // padroniza todos
 
   render(layout);
   anim(100);
