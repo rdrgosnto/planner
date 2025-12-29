@@ -61,7 +61,7 @@ const render=l=>{
       const id = e.dataset.seat;
       if(userSeats.includes(id)) e.classList.add("mine");
       else if(lostSeats.includes(id)) e.classList.add("lost");
-      else if(bl.includes(id)) e.classList.add("white");
+      else if(bl.includes(id)) e.classList.add("white"); // branco bloqueado
       else e.onclick=()=>selSeat(e);
     }
     g.appendChild(e);
@@ -131,14 +131,13 @@ q("#confirmarBtn").onclick=async()=>{
       alert("Poltrona selecionada!");
       sel.classList.add("mine");
       sel.classList.remove("selected");
-      userSeats.push(last);
+      userSeats.push(last)
     }else{
       alert("Poltrona já foi selecionada por outro usuário.");
       sel.classList.remove("selected");
       sel.classList.add("lost");
       lostSeats.push(last);
 
-      // depois de 1 minuto, transforma em branca bloqueada
       setTimeout(()=>{
         const index = lostSeats.indexOf(last);
         if(index > -1) lostSeats.splice(index,1);
@@ -148,7 +147,7 @@ q("#confirmarBtn").onclick=async()=>{
           seatElem.classList.add("white");
           seatElem.style.pointerEvents = "none";
         }
-      },60000);
+      },60000); // 1 minuto
     }
 
     setTimeout(()=>{
