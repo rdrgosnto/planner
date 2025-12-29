@@ -43,8 +43,6 @@ let sel=null,userSeats=[],lostSeats=[],blockedSeats=[],last=null,currentCPF=null
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 
-const map={AAL:"0046",ALI:"0046",QUI:"0046"};
-
 const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
 const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,status:r.status,json:r.ok?await r.json():null}}catch{return{ok:0,status:0}}};
 
@@ -89,12 +87,12 @@ const load=async()=>{
 
   userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
 
-  // outras poltronas já selecionadas por outros usuários
   blockedSeats=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(id=>!userSeats.includes(id)))];
 
-  // última fileira bloqueada
   const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
   layout=cfg.layout;
+
+  // última fileira sempre bloqueada
   const lastRow = layout[layout.length-1];
   lastRow.forEach(v=>{
     if(v) blockedSeats.push(v.toString().padStart(2,"0"));
