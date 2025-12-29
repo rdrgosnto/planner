@@ -4,16 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
-
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
-
 <script>
 if(location.pathname.endsWith("index.html"))
   location.replace(location.pathname.replace("index.html",""));
 </script>
-
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
@@ -23,95 +20,91 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer}
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
 .seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default!important;pointer-events:none!important}
+.seat.white::after{border-color:#8c96b2!important}
 .seat.selected{background:#e74c3c;border-color:#e74c3c}
 .seat.mine{background:#e74c3c!important;border-color:#e74c3c!important;color:#fff!important;cursor:default!important;pointer-events:none!important}
-.empty{background:none}
+.seat.lost{background:#b0b0b0!important;border-color:#b0b0b0!important;color:transparent!important;pointer-events:none!important}
+.seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.empty{background:0 0}
+#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
+#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 </style>
 </head>
-
 <body>
-
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
     <button id="confirmarBtn">CONFIRMAR</button>
   </div>
 </div>
-
+<div id="progress-bar-container"><div id="progress-bar"></div></div>
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
-
 const q=(s,d=document)=>d.querySelector(s);
 const normCPF=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"";
 const getField=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k) return o[k]}};
 
-let sel=null, bl=[], userBlockedSeats=[], fakeBlockedSeats=[];
-let currentUserCPF="", currentCurso="", layout=[];
+let sel=null, bl=[], userBlockedSeats=[], fakeBlockedSeats=[], lastAttempt=null;
+let currentUserCPF=null, currentCurso="", layout=[], currentBus="";
 
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1";
-const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1";
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
 const horariosValidos=()=>{const h=new Date().getHours();return (h>=6&&h<9)||(h>=12&&h<15)||(h>=18&&h<21);};
 
-// Redireciona se não tiver CPF
-const cpfStored = sessionStorage.getItem("cpf");
-if(!cpfStored){
-  location.href="https://rdrgosnto.github.io/planner/";
-  return;
-}
-currentUserCPF = normCPF(cpfStored);
+const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
 
-// Função fake
+const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,status:r.status,json:r.ok?await r.json():null}}catch(e){return{ok:0,status:0,error:e}}};
+
 const aplicarFake=l=>{
   if(!horariosValidos()) return [];
   const total=l.flat().filter(v=>typeof v==="number").length;
   const lot=bl.length/total;
   let perc=lot<=0.25?0.5:lot<=0.75?0.25:0;
   if(!perc) return [];
-
   const pares=[];
   for(const row of l){
     for(let i=0;i<row.length-1;i++){
-      if(typeof row[i]==="number"&&typeof row[i+1]==="number"){
+      if(typeof row[i]==="number" && typeof row[i+1]==="number"){
         const a=row[i].toString().padStart(2,"0"), b=row[i+1].toString().padStart(2,"0");
-        if(!bl.includes(a)&&!bl.includes(b)&&!userBlockedSeats.includes(a)&&!userBlockedSeats.includes(b))
-          pares.push([a,b]);
+        if(!bl.includes(a)&&!bl.includes(b)&&!userBlockedSeats.includes(a)&&!userBlockedSeats.includes(b)) pares.push([a,b]);
       }
     }
   }
   return pares.sort(()=>Math.random()-.5).slice(0,5).flat();
 };
 
-// Renderiza mapa
-const render=l=>{
-  const w=q(".bus-container");
-  w.querySelector(".grid")?.remove();
-  const g=document.createElement("div");
-  g.className="grid";
+const cSeat=(v)=>{
+  const e=document.createElement("div");
+  if(v===null){e.className="empty";return e;}
+  if(v==="white"){e.className="seat white";return e;}
+  const id=v.toString().padStart(2,"0");
+  e.className="seat";
+  e.dataset.seat=id;
+  e.textContent=id;
+  return e;
+};
 
+const selSeat=e=>{
+  if(e.classList.contains("white")||e.classList.contains("lost")||e.classList.contains("mine")) return;
+  if(sel===e){e.classList.remove("selected"); sel=null;}
+  else{sel?.classList.remove("selected"); sel=e; e.classList.add("selected");}
+};
+
+const render=l=>{
+  const w=q(".bus-container"); w.querySelector(".grid")?.remove();
+  const g=document.createElement("div"); g.className="grid";
   for(const row of l){
     for(const v of row){
-      const e=document.createElement("div");
-      if(v===null){e.className="empty"; g.appendChild(e); continue;}
-      if(v==="white"){e.className="seat white"; g.appendChild(e); continue;}
-
-      const id=v.toString().padStart(2,"0");
-      e.className="seat";
-      e.textContent=id;
-
-      if(userBlockedSeats.includes(id)){
-        e.classList.add("mine");
-      }else if(bl.includes(id)||fakeBlockedSeats.includes(id)){
-        e.classList.add("white");
-      }else{
-        e.onclick=()=>{
-          if(sel===e){e.classList.remove("selected"); sel=null;}
-          else{sel?.classList.remove("selected"); sel=e; e.classList.add("selected");}
-        };
+      const e=cSeat(v);
+      if(v!==null && v!=="white"){
+        const id=e.dataset.seat;
+        if(userBlockedSeats.includes(id)) e.classList.add("mine");
+        else if(bl.includes(id)||fakeBlockedSeats.includes(id)) e.classList.add("white");
+        else e.onclick=()=>selSeat(e);
       }
       g.appendChild(e);
     }
@@ -119,47 +112,55 @@ const render=l=>{
   w.appendChild(g);
 };
 
-// Fetch dados
-try{
-  const r = await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentUserCPF})}).then(r=>r.json());
-  const lista = r.poltronas||r.lista||[];
-  const cod = r.codigo||r.cursos||[];
-  const aluno = cod.find(x=>normCPF(getField(x,"CPF2","CPF","cpf"))===currentUserCPF);
-  if(!aluno) return;
-  currentCurso = getField(aluno,"CODIGO","Codigo","codigo").toString().trim();
-  q("#cursoText").textContent = currentCurso;
-
-  const rows = lista.filter(x=>getField(x,"CURSO","Curso","curso")==currentCurso);
-
-  bl = [...new Set(rows.map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0")))];
-  userBlockedSeats = rows.filter(x=>normCPF(getField(x,"CPF2","CPF","cpf"))===currentUserCPF)
-                        .map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
-
-  const cfg = await fetch(`../configs/${map[currentCurso]}.json`).then(r=>r.json());
-  layout = cfg.layout;
-
-  fakeBlockedSeats = aplicarFake(layout);
-
+const load=async()=>{
+  const cpfStored=sessionStorage.getItem("cpf");
+  if(!cpfStored){location.href="https://rdrgosnto.github.io/planner"; return;}
+  currentUserCPF=normCPF(cpfStored);
+  anim(20);
+  const r=await fetchFlow(GET,currentUserCPF);
+  if(!r.ok || !r.json){alert("Erro ao consultar fluxo.");return;}
+  anim(50);
+  const lista=r.json.poltronas||r.json.lista||[], cod=r.json.codigo||r.json.cursos||[];
+  const aluno=cod.find(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF);
+  if(!aluno){alert("CPF não encontrado."); return;}
+  currentCurso=getField(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+  q("#cursoText").textContent=currentCurso;
+  const cursoRows=lista.filter(x=>getField(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+  bl=[...new Set(cursoRows.map(x=>getField(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+  userBlockedSeats=cursoRows.filter(x=>normCPF(getField(x,"CPF2","CPF"))===currentUserCPF).map(x=>getField(x,"ID","Id","id").toString().padStart(2,"0"));
+  const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
+  layout=cfg.layout;
+  fakeBlockedSeats=aplicarFake(layout);
   render(layout);
+  anim(100);
+  setTimeout(()=>q("#progress-bar-container").remove(),600);
   q("#bus-wrapper").style.display="block";
-}catch(e){console.error("Erro ao carregar mapa:", e)}
-
-// Botão CONFIRMAR
-q("#confirmarBtn").onclick=async()=>{
-  if(!sel){alert("Selecione uma poltrona"); return;}
-  // Checa se usuário já tem poltrona
-  if(userBlockedSeats.length>0){
-    alert("Você já possui poltrona selecionada!");
-    return;
-  }
-  try{
-    await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:sel.textContent,CURSO:currentCurso,cpf:currentUserCPF})});
-    // Aguarda 4 segundos antes de recarregar
-    setTimeout(()=>location.reload(true),4000);
-  }catch(e){alert("Erro ao confirmar poltrona"); console.error(e);}
 };
 
-});
+q("#confirmarBtn").onclick=async()=>{
+  if(!sel){alert("Selecione uma poltrona."); return;}
+  document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
+  q("#confirmarBtn").disabled=true;
+
+  if(userBlockedSeats.length>0){
+    alert("Você já possui poltrona selecionada!");
+    setTimeout(()=>{sel?.classList.remove("selected"); sel=null; document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto"); q("#confirmarBtn").disabled=false;},4000);
+    return;
+  }
+
+  lastAttempt=sel.dataset.seat||sel.textContent;
+  sessionStorage.setItem("lastAttempt", lastAttempt);
+  try{
+    const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:lastAttempt,CURSO:currentCurso,cpf:currentUserCPF})});
+    alert(r.ok?"Poltrona selecionada!":"Poltrona já foi selecionada por outro usuário.");
+    setTimeout(()=>location.reload(true),4000);
+  }catch{
+    alert("Erro de comunicação.");
+    setTimeout(()=>location.reload(true),4000);
+  }
+};
+
+load();
 </script>
 </body>
 </html>
