@@ -16,13 +16,12 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none}
 .seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;color:#fff;cursor:default}
-.seat.white,.seat.lost{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important;cursor:default!important;pointer-events:none!important}
-.seat.lost-temp {
-    background: #b0b0b0 !important;  /* cinza */
-    border-color: #8c96b2 !important;
-    color: transparent !important;
-    cursor: default !important;
-    pointer-events: none !important; /* bloqueada */
+.seat.white,.seat.lost,.seat.lost-temp {
+    background:#fff!important; /* fundo branco */
+    border:3px solid #8c96b2!important;
+    color:transparent!important;
+    cursor:default!important;
+    pointer-events:none!important; /* continua bloqueada */
 }
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
 .seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
@@ -58,7 +57,7 @@ const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"
 
 const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v&&v!=="white"){e.dataset.seat=v.toString().padStart(2,"0");e.textContent=e.dataset.seat}return e};
 const selSeat=e=>{if(isLocked) return; if(!e.classList.contains("white")&&!e.classList.contains("lost")&&!e.classList.contains("mine")){sel?.classList.remove("selected");sel=sel===e?null:e;e.classList.toggle("selected",sel===e)}};
-const render=l=>{const w=q(".bus-container");w.querySelector(".grid")?.remove();const g=document.createElement("div");g.className="grid";l.forEach(r=>r.forEach(v=>{const e=cSeat(v);if(v&&v!=="white"){const id=e.dataset.seat;if(userSeats.includes(id))e.classList.add("mine");else if(bl.includes(id))e.classList.add("white");else e.onclick=()=>selSeat(e);}g.appendChild(e);}));w.appendChild(g)};
+const render=l=>{const w=q(".bus-container");w.querySelector(".grid")?.remove();const g=document.createElement("div");g.className="grid";l.forEach(r=>r.forEach(v=>{const e=cSeat(v);if(v&&v!=="white"){const id=e.dataset.seat;if(userSeats.includes(id)) e.classList.add("mine"); else if(bl.includes(id)) e.classList.add("white"); else e.onclick=()=>selSeat(e);} g.appendChild(e);})); w.appendChild(g)};
 const load=async()=>{const cpf=sessionStorage.getItem("cpf");if(!cpf){location.href="https://rdrgosnto.github.io/planner";return}currentCPF=norm(cpf);anim(20);const r=await fetchFlow(GET,currentCPF);if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}anim(50);const lista=r.json.poltronas||r.json.lista||[],cod=r.json.codigo||r.json.cursos||[],aluno=cod.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF);if(!aluno){alert("CPF não encontrado.");return}currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();q("#cursoText").textContent=currentCurso;const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());layout=cfg.layout;render(layout);anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block"};
 
 q("#confirmarBtn").onclick=async()=>{
@@ -99,18 +98,10 @@ q("#confirmarBtn").onclick=async()=>{
             alert("Poltrona já foi selecionada por outro usuário.");
 
             if(sel){
-                // Fica cinza e bloqueada
-                sel.classList.add("lost-temp");
+                // Mantém bloqueio, mas visual branca
+                sel.classList.add("white");
                 sel.classList.remove("selected");
-
-                // Após 1 minuto, muda visual para branca, mas continua bloqueada
-                setTimeout(()=>{
-                    sel.classList.remove("lost-temp");
-                    sel.classList.add("white");
-                    sel.style.pointerEvents = "none"; // continua bloqueada
-                },60000);
             }
-
             sel = null;
         }
 
