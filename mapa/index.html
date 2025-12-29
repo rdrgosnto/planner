@@ -70,10 +70,10 @@ const render=l=>{
     const e=cSeat(v);
     if(v && v!=="white"){
       const id = e.dataset.seat;
-      if(lostSeats.includes(id)) e.classList.add("lost");       // poltrona que o usuário perdeu
-      else if(userSeats.includes(id)) e.classList.add("mine");  // poltrona confirmada pelo usuário
-      else if(bl.includes(id)) e.classList.add("white");        // poltrona ocupada por outro usuário
-      else e.onclick=()=>selSeat(e);                             // poltrona disponível
+      if(userSeats.includes(id)) e.classList.add("mine");      // vermelha usuário
+      else if(bl.includes(id)) e.classList.add("white");       // branca outros usuários / última fileira
+      else if(lostSeats.includes(id)) e.classList.add("lost"); // cinza usuário perdeu
+      else e.onclick=()=>selSeat(e);                            // disponível
     }
     g.appendChild(e);
   }));
@@ -117,10 +117,9 @@ q("#confirmarBtn").onclick=async()=>{
 
       // após 1 minuto, transforma em branca
       setTimeout(()=>{
-        sel.classList.remove("lost");
-        sel.classList.add("white");
-        const idx = lostSeats.indexOf(last);
-        if(idx > -1) lostSeats.splice(idx,1);
+        const index = lostSeats.indexOf(last);
+        if(index > -1) lostSeats.splice(index,1);
+        render(layout); // força atualização visual
       },60000);
     }
 
