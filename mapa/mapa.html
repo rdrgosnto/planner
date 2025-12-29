@@ -53,7 +53,7 @@ const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powe
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-const horariosValidos=()=>{const h=new Date().getHours();return (h>=6&&h<9)||(h>=12&&h<15)||(h>=18&&h<22);};
+const horariosValidos=()=>{const h=new Date().getHours();return (h>=6&&h<9)||(h>=12&&h<15)||(h>=18&&h<21);};
 
 const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
 
