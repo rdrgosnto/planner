@@ -71,15 +71,47 @@ const render=l=>{
     if(v && v!=="white"){
       const id = e.dataset.seat;
       if(userSeats.includes(id)) e.classList.add("mine");      // vermelha usuário
-      else if(bl.includes(id)) e.classList.add("white");       // branca outros usuários / última fileira
       else if(lostSeats.includes(id)) e.classList.add("lost"); // cinza usuário perdeu
+      else if(bl.includes(id)) e.classList.add("white");       // branca outros usuários / última fileira
       else e.onclick=()=>selSeat(e);                            // disponível
     }
     g.appendChild(e);
   }));
   w.appendChild(g);
 };
-const load=async()=>{const cpf=sessionStorage.getItem("cpf");if(!cpf){location.href="https://rdrgosnto.github.io/planner";return}currentCPF=norm(cpf);anim(20);const r=await fetchFlow(GET,currentCPF);if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}anim(50);const lista=r.json.poltronas||r.json.lista||[],cod=r.json.codigo||r.json.cursos||[],aluno=cod.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF);if(!aluno){alert("CPF não encontrado.");return}currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();q("#cursoText").textContent=currentCurso;const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());layout=cfg.layout;render(layout);anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block"};
+const load=async()=>{
+  const cpf=sessionStorage.getItem("cpf");
+  if(!cpf){location.href="https://rdrgosnto.github.io/planner";return}
+  currentCPF=norm(cpf);
+  anim(20);
+  const r=await fetchFlow(GET,currentCPF);
+  if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}
+  anim(50);
+  const lista=r.json.poltronas||r.json.lista||[],
+        cod=r.json.codigo||r.json.cursos||[],
+        aluno=cod.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF);
+  if(!aluno){alert("CPF não encontrado.");return}
+  currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+  q("#cursoText").textContent=currentCurso;
+  const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
+  bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
+  userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
+  const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
+  layout=cfg.layout;
+
+  // garantir que a última fileira fique branca
+  const lastRow = layout[layout.length-1];
+  lastRow.forEach(v=>{
+    if(v && !userSeats.includes(v.toString().padStart(2,"0"))) bl.push(v.toString().padStart(2,"0"));
+  });
+  bl = [...new Set(bl)];
+
+  render(layout);
+  anim(100);
+  setTimeout(()=>q("#progress-bar-container").remove(),600);
+  q("#bus-wrapper").style.display="block";
+};
+
 q("#confirmarBtn").onclick=async()=>{
   if(isLocked) return;
   if(!sel){alert("Selecione uma poltrona.");return}
@@ -143,6 +175,7 @@ q("#confirmarBtn").onclick=async()=>{
     },4000);
   }
 };
+
 load();
 </script>
 </body>
