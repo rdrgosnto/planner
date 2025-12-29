@@ -90,7 +90,7 @@ const load=async()=>{
   const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
   layout=cfg.layout;
 
-  // garante última fileira branca
+  // última fileira bloqueada
   const lastRow = layout[layout.length-1];
   lastRow.forEach(v=>{
     if(v && !userSeats.includes(v.toString().padStart(2,"0"))) bl.push(v.toString().padStart(2,"0"));
@@ -151,7 +151,6 @@ q("#confirmarBtn").onclick=async()=>{
       },60000);
     }
 
-    // desbloqueia após 4 segundos
     setTimeout(()=>{
       document.querySelectorAll(".seat").forEach(s=>{
         if(!s.classList.contains("mine")&&!s.classList.contains("lost")) s.style.pointerEvents="auto";
