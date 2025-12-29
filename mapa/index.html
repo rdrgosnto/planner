@@ -38,7 +38,7 @@ const q=s=>document.querySelector(s),
 norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
 gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k) return o[k]}};
 
-let sel=null,bl=[],userSeats=[],lostSeats=[],last=null,currentCPF=null,currentCurso="",layout=[],isLocked=false;
+let sel=null,userSeats=[],lostSeats=[],blockedSeats=[],last=null,currentCPF=null,currentCurso="",layout=[],isLocked=false;
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
 const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
@@ -63,7 +63,7 @@ const render=l=>{
       const id = e.dataset.seat;
       if(userSeats.includes(id)) e.classList.add("mine");
       else if(lostSeats.includes(id)) e.classList.add("lost");
-      else if(bl.includes(id)) e.classList.add("white");
+      else if(blockedSeats.includes(id)) e.classList.add("white");
       else e.onclick=()=>selSeat(e);
     }
     g.appendChild(e);
@@ -87,18 +87,19 @@ const load=async()=>{
   q("#cursoText").textContent=currentCurso;
   const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
 
-  bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
   userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
 
+  // outras poltronas já selecionadas por outros usuários
+  blockedSeats=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(id=>!userSeats.includes(id)))];
+
+  // última fileira bloqueada
   const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
   layout=cfg.layout;
-
-  // bloquear última fileira
   const lastRow = layout[layout.length-1];
   lastRow.forEach(v=>{
-    if(v && !userSeats.includes(v.toString().padStart(2,"0"))) bl.push(v.toString().padStart(2,"0"));
+    if(v) blockedSeats.push(v.toString().padStart(2,"0"));
   });
-  bl=[...new Set(bl)];
+  blockedSeats=[...new Set(blockedSeats)];
 
   render(layout);
   anim(100);
@@ -144,6 +145,7 @@ q("#confirmarBtn").onclick=async()=>{
       setTimeout(()=>{
         const index = lostSeats.indexOf(last);
         if(index > -1) lostSeats.splice(index,1);
+        blockedSeats.push(last);
         const seatElem = document.querySelector(`.seat[data-seat="${last}"]`);
         if(seatElem){
           seatElem.classList.remove("lost");
