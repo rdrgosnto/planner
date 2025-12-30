@@ -27,7 +27,7 @@ body {
 
 .bus-container {
     padding: 20px 20px 24px 20px;
-    border: 3px solid #283639; /* borda escura */
+    border: 3px solid #283639; /* borda do container */
     border-radius: 16px;
     width: fit-content;
     margin: 20px auto;
@@ -58,7 +58,7 @@ body {
 
 .seat {
     background: #BF1622; /* assento normal */
-    border: 3px solid #A92B47; /* borda */
+    border: 3px solid #A92B47; /* borda dos assentos */
     color: #fff;
     font-weight: bold;
     cursor: pointer;
@@ -121,7 +121,7 @@ body {
 #confirmarBtn {
     width: 112px;
     height: 54px;
-    background: #283639;
+    background: #283639; /* botão normal */
     color: #CDCDC6;
     border: none;
     font-size: 16px;
@@ -132,10 +132,11 @@ body {
     bottom: -64px;
     right: 20px;
     user-select: none;
+    transition: background 0.3s;
 }
 
 #confirmarBtn.trocar {
-    background: #BF1622;
+    background: #BF1622; /* botão ao trocar */
     color: #fff;
 }
 
@@ -145,7 +146,7 @@ body {
     left: 100%;
     width: 40px;
     height: 122px;
-    background: #A92B47;
+    background: #A92B47; /* caixa do curso */
     color: #fff;
     font-weight: bold;
     display: flex;
@@ -168,14 +169,14 @@ body {
     left: 0;
     width: 100%;
     height: 8px;
-    background: #0001;
+    background: #753F32; /* fundo da barra de progresso */
     z-index: 9999;
 }
 
 #progress-bar {
     width: 0;
     height: 100%;
-    background: #BF1622;
+    background: #BF1622; /* progresso */
     transition: width .1s linear;
 }
 </style>
