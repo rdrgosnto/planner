@@ -3,63 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Planner | Mapa</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
+<title>Planner | Mapa Fake</title>
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
-#bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
-.bus-container{padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
+#bus-wrapper{transform:scale(.8);transform-origin:top center;display:block}
+.bus-container{padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center;background:#fff}
 .grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none}
-.seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;cursor:default}
-.seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;cursor:default!important;pointer-events:none!important}
-.seat.white{background:#fff!important;border:3px solid #8c96b2!important}
-.seat.lost-temp{background:#aaa!important;border-color:#777!important}
-.seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
-.seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-.empty{background:0 0}
+.seat.selected{background:#e74c3c;border-color:#e74c3c}
+.seat.white{background:#fff;border:3px solid #8c96b2;color:transparent;pointer-events:none}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;user-select:none}
-#confirmarBtn.trocar{background:#4CAF50;color:#fff}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
-#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
-#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
-#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
-
-/* Painel de cores */
-#colorPanel{
-    position:fixed;
-    top:10px;
-    left:10px;
-    background:#fff;
-    padding:15px;
-    border-radius:12px;
-    box-shadow:0 0 10px #0002;
-    max-width:260px;
-    font-size:14px;
-    z-index:1000;
-}
+#colorPanel{position:fixed;top:10px;left:10px;background:#fff;padding:15px;border-radius:12px;box-shadow:0 0 10px #0002;max-width:260px;font-size:14px;z-index:1000}
 .color-row{margin-bottom:10px}
 .color-label{margin-bottom:4px;font-weight:bold}
-.color-options button{
-    width:28px;
-    height:28px;
-    margin-right:4px;
-    border:none;
-    border-radius:4px;
-    cursor:pointer;
-}
-#resetBtn{
-    margin-top:8px;
-    padding:5px 10px;
-    background:#bbb;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-weight:bold;
-}
+.color-options button{width:28px;height:28px;margin-right:4px;border:none;border-radius:4px;cursor:pointer}
+#resetBtn{margin-top:8px;padding:5px 10px;background:#bbb;border:none;border-radius:6px;cursor:pointer;font-weight:bold}
 </style>
 </head>
 <body>
@@ -76,122 +35,56 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
             <button style="background:#261311" onclick="setColor('seat','#261311')"></button>
         </div>
     </div>
-    <div class="color-row">
-        <div class="color-label">Contorno da Poltrona</div>
-        <div class="color-options">
-            <button style="background:#D9D9D9" onclick="setColor('border','#D9D9D9')"></button>
-            <button style="background:#BFBFBF" onclick="setColor('border','#BFBFBF')"></button>
-            <button style="background:#8C8B88" onclick="setColor('border','#8C8B88')"></button>
-            <button style="background:#59514C" onclick="setColor('border','#59514C')"></button>
-            <button style="background:#261311" onclick="setColor('border','#261311')"></button>
-        </div>
-    </div>
-    <div class="color-row">
-        <div class="color-label">Poltrona Selecionada</div>
-        <div class="color-options">
-            <button style="background:#D9D9D9" onclick="setColor('selected','#D9D9D9')"></button>
-            <button style="background:#BFBFBF" onclick="setColor('selected','#BFBFBF')"></button>
-            <button style="background:#8C8B88" onclick="setColor('selected','#8C8B88')"></button>
-            <button style="background:#59514C" onclick="setColor('selected','#59514C')"></button>
-            <button style="background:#261311" onclick="setColor('selected','#261311')"></button>
-        </div>
-    </div>
-    <div class="color-row">
-        <div class="color-label">Caixa da Turma</div>
-        <div class="color-options">
-            <button style="background:#D9D9D9" onclick="setColor('box','#D9D9D9')"></button>
-            <button style="background:#BFBFBF" onclick="setColor('box','#BFBFBF')"></button>
-            <button style="background:#8C8B88" onclick="setColor('box','#8C8B88')"></button>
-            <button style="background:#59514C" onclick="setColor('box','#59514C')"></button>
-            <button style="background:#261311" onclick="setColor('box','#261311')"></button>
-        </div>
-    </div>
-    <div class="color-row">
-        <div class="color-label">Botão Confirmar</div>
-        <div class="color-options">
-            <button style="background:#D9D9D9" onclick="setColor('button','#D9D9D9')"></button>
-            <button style="background:#BFBFBF" onclick="setColor('button','#BFBFBF')"></button>
-            <button style="background:#8C8B88" onclick="setColor('button','#8C8B88')"></button>
-            <button style="background:#59514C" onclick="setColor('button','#59514C')"></button>
-            <button style="background:#261311" onclick="setColor('button','#261311')"></button>
-        </div>
-    </div>
-    <div class="color-row">
-        <div class="color-label">Fundo do Mapa</div>
-        <div class="color-options">
-            <button style="background:#D9D9D9" onclick="setColor('map','#D9D9D9')"></button>
-            <button style="background:#BFBFBF" onclick="setColor('map','#BFBFBF')"></button>
-            <button style="background:#8C8B88" onclick="setColor('map','#8C8B88')"></button>
-            <button style="background:#59514C" onclick="setColor('map','#59514C')"></button>
-            <button style="background:#261311" onclick="setColor('map','#261311')"></button>
-        </div>
-    </div>
-    <div class="color-row">
-        <div class="color-label">Fundo da Página</div>
-        <div class="color-options">
-            <button style="background:#D9D9D9" onclick="setColor('bg','#D9D9D9')"></button>
-            <button style="background:#BFBFBF" onclick="setColor('bg','#BFBFBF')"></button>
-            <button style="background:#8C8B88" onclick="setColor('bg','#8C8B88')"></button>
-            <button style="background:#59514C" onclick="setColor('bg','#59514C')"></button>
-            <button style="background:#261311" onclick="setColor('bg','#261311')"></button>
-        </div>
-    </div>
     <button id="resetBtn" onclick="resetColors()">Resetar</button>
 </div>
 
 <div id="bus-wrapper">
-  <div class="bus-container">
-    <div id="cursoBox"><div id="cursoText"></div></div>
+  <div class="bus-container" id="busContainer">
     <button id="confirmarBtn">CONFIRMAR</button>
   </div>
 </div>
-<div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
 // Cores originais
-const originalColors = {
-    seat:'#4CAF50',
-    border:'#4CAF50',
-    selected:'#e74c3c',
-    box:'#4CAF50',
-    button:'#4CAF50',
-    map:'#fff',
-    bg:'#fff'
+const originalColors = {seat:'#4CAF50', selected:'#e74c3c'};
+
+// Criar mapa fake 46 poltronas
+const busContainer = document.getElementById('busContainer');
+const grid = document.createElement('div');
+grid.className = 'grid';
+for(let i=1;i<=46;i++){
+    const seat = document.createElement('div');
+    seat.className = 'seat';
+    seat.textContent = i.toString().padStart(2,'0');
+    seat.dataset.seat = i.toString().padStart(2,'0');
+    seat.onclick = ()=>selectSeat(seat);
+    grid.appendChild(seat);
+}
+busContainer.appendChild(grid);
+
+let selectedSeat = null;
+function selectSeat(seat){
+    if(seat.classList.contains('white')) return;
+    if(selectedSeat) selectedSeat.classList.remove('selected');
+    selectedSeat = seat===selectedSeat?null:seat;
+    if(selectedSeat) selectedSeat.classList.add('selected');
+}
+
+// Botão confirmar
+document.getElementById('confirmarBtn').onclick = ()=>{
+    if(!selectedSeat){ alert("Selecione uma poltrona."); return; }
+    alert("Poltrona selecionada: "+selectedSeat.dataset.seat);
 };
 
-// Funções de cores
+// Painel de cores
 function setColor(target,color){
     if(target==='seat') document.querySelectorAll('.seat').forEach(s=>{if(!s.classList.contains('selected')) s.style.background=color});
-    if(target==='selected') document.querySelectorAll('.seat.selected').forEach(s=>s.style.background=color);
-    if(target==='border') document.querySelectorAll('.seat').forEach(s=>s.style.borderColor=color);
-    if(target==='box') document.getElementById('cursoBox').style.background=color;
-    if(target==='button') document.getElementById('confirmarBtn').style.background=color;
-    if(target==='map') document.querySelector('.bus-container').style.background=color;
-    if(target==='bg') document.body.style.background=color;
+    if(target==='selected' && selectedSeat) selectedSeat.style.background=color;
 }
 function resetColors(){
-    setColor('seat',originalColors.seat);
-    setColor('selected',originalColors.selected);
-    setColor('border',originalColors.border);
-    setColor('box',originalColors.box);
-    setColor('button',originalColors.button);
-    setColor('map',originalColors.map);
-    setColor('bg',originalColors.bg);
+    document.querySelectorAll('.seat').forEach(s=>{s.style.background=originalColors.seat;s.classList.remove('selected')});
+    selectedSeat=null;
 }
 </script>
-
-<!-- Script original do planner -->
-<script>
-const q=s=>document.querySelector(s),
-norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
-gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
-let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
-POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg",
-map={AAL:"0046",ALI:"0046",QUI:"0046"};
-// restante do script do planner permanece igual (load, render, etc.)
-</script>
-
 </body>
 </html>
