@@ -148,46 +148,53 @@ const load=async()=>{
   q("#bus-wrapper").style.display="block";
 };
 
-q("#confirmarBtn").onclick=async()=>{
+q("#confirmarBtn").onclick = async () => {
   if(isLocked) return;
   if(!sel){ alert("Selecione uma poltrona."); return }
 
-  isLocked=true;
-  document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
-  q("#confirmarBtn").disabled=true;
+  isLocked = true;
+  document.querySelectorAll(".seat").forEach(s => s.style.pointerEvents = "none");
+  q("#confirmarBtn").disabled = true;
 
   const nova = sel.dataset.seat;
   const antiga = userSeats[0] || null;
 
-  try{
+  try {
     const url = antiga ? POST_TROCAR : POST;
     const payload = antiga
       ? { cpf: currentCPF, curso: currentCurso, current: antiga, select: nova }
       : { poltrona: nova, CURSO: currentCurso, cpf: currentCPF };
 
-    const r = await fetch(url, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
     if(r.ok){
-      // Remove a antiga do bl, se necessário
-      if(antiga) bl = bl.filter(x => x !== antiga);
-
       // Atualiza userSeats
       userSeats = [nova];
 
-      // Atualiza todas as poltronas
-      document.querySelectorAll(".seat").forEach(s=>{
+      // Atualiza visual das poltronas
+      document.querySelectorAll(".seat").forEach(s => {
         const id = s.dataset.seat;
 
-        s.classList.remove("mine","white","lost-temp","selected");
+        // Remove classes temporárias
+        s.classList.remove("mine", "white", "lost-temp", "selected");
 
         if(userSeats.includes(id)){
-            s.classList.add("mine");
-            s.style.pointerEvents = "none";
-        } else if(bl.includes(id) || s.dataset.white==="true"){
-            s.classList.add("white");
-            s.style.pointerEvents = "none";
+          s.classList.add("mine");
+          s.style.pointerEvents = "none";
+        } else if(bl.includes(id)){
+          // Bloqueadas por outros usuários
+          s.classList.add("white");
+          s.style.pointerEvents = "none";
+        } else if(s.dataset.white === "true"){
+          // Poltronas bloqueadas pelo layout original → liberadas se já foram ocupadas
+          s.classList.remove("white");
+          s.style.pointerEvents = "auto";
         } else {
-            s.style.pointerEvents = "auto";
+          s.style.pointerEvents = "auto";
         }
       });
 
@@ -203,6 +210,7 @@ q("#confirmarBtn").onclick=async()=>{
         lostSeat.classList.add("white");
       },10000);
     }
+
   } catch {
     alert("Erro de comunicação.");
   }
@@ -210,10 +218,11 @@ q("#confirmarBtn").onclick=async()=>{
   sel = null;
   setTimeout(()=>{
     document.querySelectorAll(".seat").forEach(s=>{
-        if(!s.classList.contains("mine")&&!s.classList.contains("white")) s.style.pointerEvents="auto"
+      if(!s.classList.contains("mine") && !s.classList.contains("white")) 
+        s.style.pointerEvents = "auto"
     });
-    q("#confirmarBtn").disabled=false;
-    isLocked=false;
+    q("#confirmarBtn").disabled = false;
+    isLocked = false;
   },4000);
 };
 
