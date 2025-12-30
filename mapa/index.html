@@ -174,10 +174,15 @@ q("#confirmarBtn").onclick = async () => {
     if(r.ok){
       userSeats = [nova];
 
-      // ✅ Correção: poltrona antiga volta verde e clicável
+      // ✅ Correção definitiva: remove dataset.white da poltrona antiga para ficar verde e clicável
+      if(antiga) {
+        const antigaElem = document.querySelector(`.seat[data-seat="${antiga}"]`);
+        if(antigaElem) delete antigaElem.dataset.white;
+      }
+
       document.querySelectorAll(".seat").forEach(s => {
         const id = s.dataset.seat;
-        s.classList.remove("mine", "white", "lost-temp", "selected");
+        s.classList.remove("mine","white","lost-temp","selected");
 
         if(userSeats.includes(id)){
           s.classList.add("mine");
@@ -189,8 +194,7 @@ q("#confirmarBtn").onclick = async () => {
           s.classList.add("white");
           s.style.pointerEvents = "none";
         } else {
-          // poltrona antiga fica verde e clicável
-          s.style.pointerEvents = "auto";
+          s.style.pointerEvents = "auto"; // poltronas livres, incluindo a antiga
         }
       });
 
