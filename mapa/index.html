@@ -71,7 +71,28 @@ const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"
 
 const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v&&v!=="white"){e.dataset.seat=v.toString().padStart(2,"0");e.textContent=e.dataset.seat}return e};
 const selSeat=e=>{if(isLocked)return;if(!e.classList.contains("white")&&!e.classList.contains("lost")&&!e.classList.contains("mine")&&!e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel=sel===e?null:e;e.classList.toggle("selected",sel===e)}};
-const render=l=>{const w=q(".bus-container");w.querySelector(".grid")?.remove();const g=document.createElement("div");g.className="grid";l.forEach(r=>r.forEach(v=>{const e=cSeat(v);if(v&&v!=="white"){const id=e.dataset.seat;if(userSeats.includes(id))e.classList.add("mine");else if(bl.includes(id))e.classList.add("white");else e.onclick=()=>selSeat(e)}g.appendChild(e)}));w.appendChild(g)};
+
+const render=l=>{
+    const w=q(".bus-container");
+    w.querySelector(".grid")?.remove();
+    const g=document.createElement("div");
+    g.className="grid";
+    l.forEach(row=>row.forEach(v=>{
+        const e=cSeat(v);
+        if(v && v!=="white"){
+            const id=e.dataset.seat;
+
+            // Poltronas extras da última fileira podem ser marcadas no layout com atributo "invalid"
+            if(v==="invalid") e.dataset.invalid="true";
+
+            if(userSeats.includes(id)) e.classList.add("mine");
+            else if(bl.includes(id)) e.classList.add("white");
+            else e.onclick=()=>selSeat(e);
+        }
+        g.appendChild(e);
+    }));
+    w.appendChild(g);
+};
 
 const updateButtonState=()=>{
   const btn=q("#confirmarBtn");
@@ -140,15 +161,17 @@ q("#confirmarBtn").onclick=async()=>{
       // Atualiza userSeats
       userSeats = [nova];
 
-      // Atualiza todas as poltronas de acordo com userSeats e bl
+      // Atualiza todas as poltronas de acordo com userSeats, bl e poltronas extras (invalid)
       document.querySelectorAll(".seat").forEach(s=>{
         const id = s.dataset.seat;
+
+        // Remove classes temporárias
         s.classList.remove("mine","white","lost-temp","selected");
 
         if(userSeats.includes(id)){
           s.classList.add("mine");
           s.style.pointerEvents = "none";
-        } else if(bl.includes(id)){
+        } else if(bl.includes(id) || s.dataset.invalid==="true"){
           s.classList.add("white");
           s.style.pointerEvents = "none";
         } else {
@@ -174,7 +197,9 @@ q("#confirmarBtn").onclick=async()=>{
 
   sel = null;
   setTimeout(()=>{
-    document.querySelectorAll(".seat").forEach(s=>{if(!s.classList.contains("mine")&&!s.classList.contains("white")) s.style.pointerEvents="auto"});
+    document.querySelectorAll(".seat").forEach(s=>{
+        if(!s.classList.contains("mine")&&!s.classList.contains("white")) s.style.pointerEvents="auto"
+    });
     q("#confirmarBtn").disabled=false;
     isLocked=false;
   },4000);
