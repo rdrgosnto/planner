@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
@@ -12,10 +15,11 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none}
 .seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;cursor:default}
-.seat.white,.seat.lost-temp{color:transparent!important;cursor:default!important;pointer-events:none!important}
+.seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;cursor:default!important;pointer-events:none!important}
 .seat.white{background:#fff!important;border:3px solid #8c96b2!important}
 .seat.lost-temp{background:#aaa!important;border-color:#777!important}
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
+.seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 .empty{background:0 0}
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
@@ -33,21 +37,23 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 </div>
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 <script>
-if(location.pathname.endsWith("/index.html"))location.replace(location.pathname.replace("/index.html","/"));
-const q=s=>document.querySelector(s),
-n=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
-g=(o,...a)=>{for(const x of a){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
-let sel=null,bl=[],us=[],last=null,cpf=null,curso="",layout=[],lock=false;
+const q=s=>document.querySelector(s), norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"", gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k) return o[k]}};
+
+let sel=null, bl=[], userSeats=[], last=null, currentCPF=null, currentCurso="", layout=[], isLocked=false;
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
 POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
 map={AAL:"0046",ALI:"0046",QUI:"0046"};
+
 const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
-const f=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,status:r.status,json:r.ok?await r.json():null}}catch{return{ok:0,status:0}}};
-const seat=v=>{let e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v&&v!=="white"){e.dataset.seat=v.toString().padStart(2,"0");e.textContent=e.dataset.seat}return e};
-const selSeat=e=>{if(lock)return;if(!e.classList.contains("white")&&!e.classList.contains("mine")&&!e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel=sel===e?null:e;e.classList.toggle("selected",sel===e)}};
-const render=l=>{let w=q(".bus-container");w.querySelector(".grid")?.remove();let g=document.createElement("div");g.className="grid";l.forEach(r=>r.forEach(v=>{let e=seat(v);if(v&&v!=="white"){let id=e.dataset.seat;if(us.includes(id))e.classList.add("mine");else if(bl.includes(id))e.classList.add("white");else e.onclick=()=>selSeat(e);}g.appendChild(e);}));w.appendChild(g)};
-const load=async()=>{cpf=n(sessionStorage.getItem("cpf"));if(!cpf){location.href="https://rdrgosnto.github.io/planner";return}anim(20);let r=await f(GET,cpf);if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}anim(50);let l=r.json.poltronas||r.json.lista||[],cursos=r.json.codigo||r.json.cursos||[],a=cursos.find(x=>n(g(x,"CPF2","CPF"))===cpf);if(!a){alert("CPF não encontrado.");return}curso=g(a,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();q("#cursoText").textContent=curso;let rows=l.filter(x=>g(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===curso);bl=[...new Set(rows.map(x=>g(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];us=rows.filter(x=>n(g(x,"CPF2","CPF"))===cpf).map(x=>g(x,"ID","Id","id").toString().padStart(2,"0"));let cfg=await fetch(`../configs/${map[curso]||"0046"}.json`).then(r=>r.json());layout=cfg.layout;render(layout);anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block"};
-q("#confirmarBtn").onclick=async()=>{if(lock)return;if(!sel){alert("Selecione uma poltrona.");return}lock=true;document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");q("#confirmarBtn").disabled=true;if(us.length>0){alert("CPF possui poltrona selecionada!");setTimeout(()=>{sel?.classList.remove("selected");sel=null;document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");q("#confirmarBtn").disabled=false;lock=false},4000);return}last=sel.dataset.seat||sel.textContent;sessionStorage.setItem("lastAttempt",last);try{let r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:last,CURSO:curso,cpf:cpf})});if(r.ok){alert("Poltrona selecionada!");sel.classList.add("mine");sel.classList.remove("selected");us.push(last)}else{alert("Poltrona selecionada por outro usuário.");if(sel){sel.classList.remove("selected");sel.classList.add("lost-temp");let ls=sel;setTimeout(()=>{ls.classList.remove("lost-temp");ls.classList.add("white")},9000)}sel=null}setTimeout(()=>{document.querySelectorAll(".seat").forEach(s=>{if(!s.classList.contains("mine"))s.style.pointerEvents="auto"});q("#confirmarBtn").disabled=false;lock=false},4000)}catch{alert("Erro de comunicação.");setTimeout(()=>{document.querySelectorAll(".seat").forEach(s=>{if(!s.classList.contains("mine"))s.style.pointerEvents="auto"});q("#confirmarBtn").disabled=false;lock=false},4000)}};
+const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,status:r.status,json:r.ok?await r.json():null}}catch{return{ok:0,status:0}}};
+
+const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v&&v!=="white"){e.dataset.seat=v.toString().padStart(2,"0");e.textContent=e.dataset.seat}return e};
+const selSeat=e=>{if(isLocked) return; if(!e.classList.contains("white")&&!e.classList.contains("lost")&&!e.classList.contains("mine")&&!e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel=sel===e?null:e;e.classList.toggle("selected",sel===e)}};
+const render=l=>{const w=q(".bus-container");w.querySelector(".grid")?.remove();const g=document.createElement("div");g.className="grid";l.forEach(r=>r.forEach(v=>{const e=cSeat(v);if(v&&v!=="white"){const id=e.dataset.seat;if(userSeats.includes(id)) e.classList.add("mine"); else if(bl.includes(id)) e.classList.add("white"); else e.onclick=()=>selSeat(e);} g.appendChild(e);})); w.appendChild(g)};
+const load=async()=>{const cpf=sessionStorage.getItem("cpf");if(!cpf){location.href="https://rdrgosnto.github.io/planner";return}currentCPF=norm(cpf);anim(20);const r=await fetchFlow(GET,currentCPF);if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}anim(50);const lista=r.json.poltronas||r.json.lista||[],cod=r.json.codigo||r.json.cursos||[],aluno=cod.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF);if(!aluno){alert("CPF não encontrado.");return}currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();q("#cursoText").textContent=currentCurso;const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());layout=cfg.layout;render(layout);anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block"};
+
+q("#confirmarBtn").onclick=async()=>{if(isLocked) return;if(!sel){alert("Selecione uma poltrona.");return}isLocked=true;document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");q("#confirmarBtn").disabled=true;if(userSeats.length>0){alert("CPF possui poltrona selecionada!");setTimeout(()=>{sel?.classList.remove("selected");sel=null;document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");q("#confirmarBtn").disabled=false;isLocked=false},4000);return}last=sel.dataset.seat||sel.textContent;sessionStorage.setItem("lastAttempt",last);try{const r=await fetch(POST,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({poltrona:last,CURSO:currentCurso,cpf:currentCPF})});if(r.ok){alert("Poltrona selecionada!");sel.classList.add("mine");sel.classList.remove("selected");userSeats.push(last)}else{alert("Poltrona selecionada por outro usuário.");if(sel){sel.classList.remove("selected");sel.classList.add("lost-temp");const lostSeat=sel; setTimeout(()=>{lostSeat.classList.remove("lost-temp");lostSeat.classList.add("white")},10000)}sel=null}setTimeout(()=>{document.querySelectorAll(".seat").forEach(s=>{if(!s.classList.contains("mine")) s.style.pointerEvents="auto"});q("#confirmarBtn").disabled=false;isLocked=false},4000)}catch{alert("Erro de comunicação.");setTimeout(()=>{document.querySelectorAll(".seat").forEach(s=>{if(!s.classList.contains("mine")) s.style.pointerEvents="auto"});q("#confirmarBtn").disabled=false;isLocked=false},4000)}};
+
 load();
 </script>
 </body>
