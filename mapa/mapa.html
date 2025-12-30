@@ -56,6 +56,15 @@ const load=async()=>{const cpf=sessionStorage.getItem("cpf");if(!cpf){location.h
 q("#confirmarBtn").onclick = async () => {
   if(isLocked) return;
   if(!sel){ alert("Selecione uma poltrona."); return }
+
+  // === Confirmação nativa ===
+  const ok = confirm("Confirma a poltrona selecionada?");
+  if(!ok){
+    sel.classList.remove("selected");
+    sel.style.pointerEvents = "auto";
+    return;
+  }
+
   isLocked = true;
   document.querySelectorAll(".seat").forEach(s => s.style.pointerEvents = "none");
   q("#confirmarBtn").disabled = true;
