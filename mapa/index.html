@@ -172,10 +172,9 @@ q("#confirmarBtn").onclick = async () => {
     });
 
     if(r.ok){
-      // Atualiza userSeats
       userSeats = [nova];
 
-      // Atualiza visual das poltronas
+      // ✅ Atualização visual corrigida
       document.querySelectorAll(".seat").forEach(s => {
         const id = s.dataset.seat;
         s.classList.remove("mine", "white", "lost-temp", "selected");
@@ -183,10 +182,12 @@ q("#confirmarBtn").onclick = async () => {
         if(userSeats.includes(id)){
           s.classList.add("mine");
           s.style.pointerEvents = "none";
-        } else if(bl.includes(id) || (s.dataset.white === "true" && id !== antiga)){
+        } else if(bl.includes(id) || (s.dataset.white === "true" && id !== nova)){
+          // Poltronas bloqueadas por outros ou layout original continuam brancas
           s.classList.add("white");
           s.style.pointerEvents = "none";
         } else {
+          // Poltrona antiga e outras livres ficam verdes e clicáveis
           s.style.pointerEvents = "auto";
         }
       });
