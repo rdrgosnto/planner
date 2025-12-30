@@ -69,8 +69,22 @@ map={AAL:"0046",ALI:"0046",QUI:"0046"};
 const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
 const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,json:r.ok?await r.json():null}}catch{return{ok:0}}};
 
-const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v&&v!=="white"){e.dataset.seat=v.toString().padStart(2,"0");e.textContent=e.dataset.seat}return e};
-const selSeat=e=>{if(isLocked)return;if(!e.classList.contains("white")&&!e.classList.contains("lost")&&!e.classList.contains("mine")&&!e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel=sel===e?null:e;e.classList.toggle("selected",sel===e)}};
+const cSeat=v=>{
+    const e=document.createElement("div");
+    e.className=v===null?"empty":v==="white"?"seat white":"seat";
+    if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat}
+    if(v==="white") e.dataset.white="true"; // marca poltronas bloqueadas do layout
+    return e;
+};
+
+const selSeat=e=>{
+    if(isLocked) return;
+    if(!e.classList.contains("white") && !e.classList.contains("lost") && !e.classList.contains("mine") && !e.classList.contains("lost-temp")){
+        sel?.classList.remove("selected");
+        sel = sel===e?null:e;
+        e.classList.toggle("selected", sel===e);
+    }
+};
 
 const render=l=>{
     const w=q(".bus-container");
@@ -81,10 +95,6 @@ const render=l=>{
         const e=cSeat(v);
         if(v && v!=="white"){
             const id=e.dataset.seat;
-
-            // Poltronas extras da última fileira podem ser marcadas no layout com atributo "invalid"
-            if(v==="invalid") e.dataset.invalid="true";
-
             if(userSeats.includes(id)) e.classList.add("mine");
             else if(bl.includes(id)) e.classList.add("white");
             else e.onclick=()=>selSeat(e);
@@ -99,7 +109,7 @@ const updateButtonState=()=>{
   if(userSeats.length>0){
     btn.textContent="CONFIRMAR";
     btn.classList.add("trocar");
-  }else{
+  } else {
     btn.textContent="CONFIRMAR";
     btn.classList.remove("trocar");
   }
@@ -158,24 +168,26 @@ q("#confirmarBtn").onclick=async()=>{
     const r = await fetch(url, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
 
     if(r.ok){
+      // Remove a antiga do bl, se necessário
+      if(antiga) bl = bl.filter(x => x !== antiga);
+
       // Atualiza userSeats
       userSeats = [nova];
 
-      // Atualiza todas as poltronas de acordo com userSeats, bl e poltronas extras (invalid)
+      // Atualiza todas as poltronas
       document.querySelectorAll(".seat").forEach(s=>{
         const id = s.dataset.seat;
 
-        // Remove classes temporárias
         s.classList.remove("mine","white","lost-temp","selected");
 
         if(userSeats.includes(id)){
-          s.classList.add("mine");
-          s.style.pointerEvents = "none";
-        } else if(bl.includes(id) || s.dataset.invalid==="true"){
-          s.classList.add("white");
-          s.style.pointerEvents = "none";
+            s.classList.add("mine");
+            s.style.pointerEvents = "none";
+        } else if(bl.includes(id) || s.dataset.white==="true"){
+            s.classList.add("white");
+            s.style.pointerEvents = "none";
         } else {
-          s.style.pointerEvents = "auto";
+            s.style.pointerEvents = "auto";
         }
       });
 
