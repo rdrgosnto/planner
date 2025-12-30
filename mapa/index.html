@@ -56,7 +56,7 @@ const anim=t=>{
   (function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})();
 };
 
-/* FETCH ROBUSTO */
+/* 🔒 BLINDAGEM TOTAL DO PARSE JSON */
 const f=async(u,c)=>{
   try{
     const r=await fetch(u,{
@@ -64,8 +64,14 @@ const f=async(u,c)=>{
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({cpf:c})
     });
+
+    const text=await r.text();   // ← SEMPRE TEXTO
     let data=null;
-    try{ data=await r.json(); }catch{}
+
+    if(text){
+      try{ data=JSON.parse(text); }catch{}
+    }
+
     return{ok:r.ok,status:r.status,data};
   }catch{
     return{ok:false,status:0,data:null};
@@ -154,7 +160,13 @@ q("#confirmarBtn").onclick=async()=>{
 
   if(us.length>0){
     alert("CPF possui poltrona selecionada!");
-    setTimeout(()=>{sel?.classList.remove("selected");sel=null;document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");q("#confirmarBtn").disabled=false;lock=false},4000);
+    setTimeout(()=>{
+      sel?.classList.remove("selected");
+      sel=null;
+      document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
+      q("#confirmarBtn").disabled=false;
+      lock=false;
+    },4000);
     return;
   }
 
