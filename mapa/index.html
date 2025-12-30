@@ -44,7 +44,7 @@ const q=s=>document.querySelector(s),
       n=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
       g=(o,...a)=>{for(const x of a){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 
-let sel=null,bl=[],us=[],last=null,cpf=null,curso="",layout=[],lock=false;
+let sel=null,bl=[],us=[],cpf=null,curso="",layout=[],lock=false;
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
       POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
@@ -56,7 +56,7 @@ const anim=t=>{
   (function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})();
 };
 
-/* 🔒 BLINDAGEM TOTAL DO PARSE JSON */
+/* 🔒 FETCH COM PARSE BLINDADO */
 const f=async(u,c)=>{
   try{
     const r=await fetch(u,{
@@ -65,7 +65,7 @@ const f=async(u,c)=>{
       body:JSON.stringify({cpf:c})
     });
 
-    const text=await r.text();   // ← SEMPRE TEXTO
+    const text=await r.text();
     let data=null;
 
     if(text){
@@ -78,70 +78,33 @@ const f=async(u,c)=>{
   }
 };
 
-const seat=v=>{
-  let e=document.createElement("div");
-  e.className=v===null?"empty":v==="white"?"seat white":"seat";
-  if(v&&v!=="white"){
-    e.dataset.seat=v.toString().padStart(2,"0");
-    e.textContent=e.dataset.seat;
-  }
-  return e;
-};
-
-const selSeat=e=>{
-  if(lock)return;
-  if(!e.classList.contains("white")&&!e.classList.contains("mine")&&!e.classList.contains("lost-temp")){
-    sel?.classList.remove("selected");
-    sel=sel===e?null:e;
-    e.classList.toggle("selected",sel===e);
-  }
-};
-
-const render=l=>{
-  let w=q(".bus-container");
-  w.querySelector(".grid")?.remove();
-  let g=document.createElement("div");
-  g.className="grid";
-  l.forEach(r=>r.forEach(v=>{
-    let e=seat(v);
-    if(v&&v!=="white"){
-      let id=e.dataset.seat;
-      if(us.includes(id))e.classList.add("mine");
-      else if(bl.includes(id))e.classList.add("white");
-      else e.onclick=()=>selSeat(e);
-    }
-    g.appendChild(e);
-  }));
-  w.appendChild(g);
-};
-
 const load=async()=>{
   cpf=n(sessionStorage.getItem("cpf"));
   if(!cpf){ location.href="https://rdrgosnto.github.io/planner"; return; }
 
   anim(20);
 
-  let r=await f(GET,cpf);
+  const r=await f(GET,cpf);
   if(!r.ok){ alert("Erro ao consultar fluxo."); return; }
 
   const data=r.data||{};
   anim(50);
 
-  let l=data.poltronas||data.lista||[],
-      cursos=data.codigo||data.cursos||[];
+  const l=data.poltronas||data.lista||[],
+        cursos=data.codigo||data.cursos||[];
 
-  let a=cursos.find(x=>n(g(x,"CPF2","CPF"))===cpf);
+  const a=cursos.find(x=>n(g(x,"CPF2","CPF"))===cpf);
   if(!a){ alert("CPF não encontrado."); return; }
 
-  curso=g(a,"CODIGO","Codigo","codigo").toString().trim().toUpperCase();
+  curso=g(a,"CODIGO","Codigo","codigo").toUpperCase();
   q("#cursoText").textContent=curso;
 
-  let rows=l.filter(x=>g(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===curso);
+  const rows=l.filter(x=>g(x,"CURSO","Curso","curso")?.toUpperCase()===curso);
 
   bl=[...new Set(rows.map(x=>g(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
-  us=rows.filter(x=>n(g(x,"CPF2","CPF"))===cpf).map(x=>g(x,"ID","Id","id").toString().padStart(2,"0"));
+  us=rows.filter(x=>n(g(x,"CPF2","CPF"))===cpf).map(x=>g(x,"ID","Id","id").padStart(2,"0"));
 
-  let cfg=await fetch(`../configs/${map[curso]||"0046"}.json`).then(r=>r.json());
+  const cfg=await fetch(`../configs/${map[curso]||"0046"}.json`).then(r=>r.json());
   layout=cfg.layout;
 
   render(layout);
@@ -149,59 +112,6 @@ const load=async()=>{
 
   setTimeout(()=>q("#progress-bar-container").remove(),600);
   q("#bus-wrapper").style.display="block";
-};
-
-q("#confirmarBtn").onclick=async()=>{
-  if(lock)return;
-  if(!sel){alert("Selecione uma poltrona.");return;}
-  lock=true;
-  document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
-  q("#confirmarBtn").disabled=true;
-
-  if(us.length>0){
-    alert("CPF possui poltrona selecionada!");
-    setTimeout(()=>{
-      sel?.classList.remove("selected");
-      sel=null;
-      document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="auto");
-      q("#confirmarBtn").disabled=false;
-      lock=false;
-    },4000);
-    return;
-  }
-
-  last=sel.dataset.seat;
-  sessionStorage.setItem("lastAttempt",last);
-
-  try{
-    let r=await fetch(POST,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({poltrona:last,CURSO:curso,cpf})
-    });
-
-    if(r.ok){
-      alert("Poltrona selecionada!");
-      sel.classList.add("mine");
-      sel.classList.remove("selected");
-      us.push(last);
-    }else{
-      alert("Poltrona selecionada por outro usuário.");
-      sel.classList.remove("selected");
-      sel.classList.add("lost-temp");
-      let ls=sel;
-      setTimeout(()=>{ls.classList.remove("lost-temp");ls.classList.add("white")},9000);
-    }
-    sel=null;
-  }catch{
-    alert("Erro de comunicação.");
-  }
-
-  setTimeout(()=>{
-    document.querySelectorAll(".seat").forEach(s=>{if(!s.classList.contains("mine"))s.style.pointerEvents="auto"});
-    q("#confirmarBtn").disabled=false;
-    lock=false;
-  },4000);
 };
 
 load();
