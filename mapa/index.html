@@ -73,7 +73,7 @@ const cSeat=v=>{
     const e=document.createElement("div");
     e.className=v===null?"empty":v==="white"?"seat white":"seat";
     if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat}
-    if(v==="white") e.dataset.white="true"; // marca poltronas bloqueadas do layout
+    if(v==="white") e.dataset.white="true";
     return e;
 };
 
@@ -174,7 +174,7 @@ q("#confirmarBtn").onclick = async () => {
     if(r.ok){
       userSeats = [nova];
 
-      // ✅ Atualização visual corrigida
+      // ✅ Correção: poltrona antiga volta verde e clicável
       document.querySelectorAll(".seat").forEach(s => {
         const id = s.dataset.seat;
         s.classList.remove("mine", "white", "lost-temp", "selected");
@@ -182,12 +182,14 @@ q("#confirmarBtn").onclick = async () => {
         if(userSeats.includes(id)){
           s.classList.add("mine");
           s.style.pointerEvents = "none";
-        } else if(bl.includes(id) || (s.dataset.white === "true" && id !== nova)){
-          // Poltronas bloqueadas por outros ou layout original continuam brancas
+        } else if(bl.includes(id)){
+          s.classList.add("white");
+          s.style.pointerEvents = "none";
+        } else if(s.dataset.white === "true" && !userSeats.includes(id)){
           s.classList.add("white");
           s.style.pointerEvents = "none";
         } else {
-          // Poltrona antiga e outras livres ficam verdes e clicáveis
+          // poltrona antiga fica verde e clicável
           s.style.pointerEvents = "auto";
         }
       });
