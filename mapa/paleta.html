@@ -3,20 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Planner | Mapa</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
+<title>Planner | Teste de Cores Avançado</title>
 <style>
 body {
     font-family: Arial;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    justify-content: center;
-    background: #D9D9D9; /* fundo da página padrão */
+    background: #D9D9D9;
 }
 
 #bus-wrapper {
@@ -28,11 +21,11 @@ body {
 
 .bus-container {
     padding: 20px;
-    border: 3px solid #8C8B88; /* borda padrão */
+    border: 3px solid #8C8B88;
     border-radius: 16px;
     display: flex;
     justify-content: center;
-    background: #BFBFBF; /* fundo do mapa padrão */
+    background: #BFBFBF;
     position: relative;
 }
 
@@ -50,21 +43,21 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #D9D9D9; /* poltrona padrão */
-    border: 3px solid #8C8B88; /* contorno padrão */
+    background: #D9D9D9;
+    border: 3px solid #8C8B88;
     cursor: pointer;
     font-weight: bold;
-    color: #261311; /* texto poltrona */
+    color: #261311;
 }
 
 .seat.selected {
-    background: #59514C; /* poltrona selecionada padrão */
+    background: #59514C;
     border-color: #261311;
     color: #D9D9D9;
 }
 
 .seat.blocked {
-    background: #BFBFBF; /* poltrona bloqueada padrão */
+    background: #BFBFBF;
     border-color: #8C8B88;
     color: #59514C;
 }
@@ -75,7 +68,7 @@ body {
     left: 100%;
     width: 50px;
     height: 100px;
-    background: #8C8B88; /* caixa da turma padrão */
+    background: #8C8B88;
     color: #D9D9D9;
     display: flex;
     align-items: center;
@@ -90,7 +83,7 @@ body {
     bottom: -70px;
     right: 20px;
     padding: 10px 20px;
-    background: #59514C; /* botão confirmar padrão */
+    background: #59514C;
     color: #D9D9D9;
     border: none;
     border-radius: 8px;
@@ -98,16 +91,16 @@ body {
     font-weight: bold;
 }
 
-/* Painel de cores à esquerda */
+/* Painel de cores avançado */
 #colorPanel {
     position: fixed;
     top: 10px;
-    left: 10px; /* mudado de right para left */
+    left: 10px;
     background: #fff;
     padding: 15px;
     border-radius: 12px;
     box-shadow: 0 0 10px #0002;
-    max-width: 220px;
+    max-width: 240px;
     font-size: 14px;
     z-index: 1000;
 }
@@ -141,48 +134,52 @@ body {
   </div>
 </div>
 
-<!-- Painel de cores à esquerda -->
+<!-- Painel de cores avançado -->
 <div id="colorPanel">
   <div class="color-row">
-    <div class="color-label">Poltrona</div>
+    <div class="color-label">Poltrona Disponível</div>
     <div class="color-options">
-      <button style="background:#D9D9D9" onclick="setColor('seat','#D9D9D9')"></button>
-      <button style="background:#BFBFBF" onclick="setColor('seat','#BFBFBF')"></button>
-      <button style="background:#8C8B88" onclick="setColor('seat','#8C8B88')"></button>
-      <button style="background:#59514C" onclick="setColor('seat','#59514C')"></button>
-      <button style="background:#261311" onclick="setColor('seat','#261311')"></button>
+      <button style="background:#D9D9D9" onclick="setColor('seat', '#D9D9D9', 'available')"></button>
+      <button style="background:#BFBFBF" onclick="setColor('seat', '#BFBFBF', 'available')"></button>
+      <button style="background:#8C8B88" onclick="setColor('seat', '#8C8B88', 'available')"></button>
+      <button style="background:#59514C" onclick="setColor('seat', '#59514C', 'available')"></button>
+      <button style="background:#261311" onclick="setColor('seat', '#261311', 'available')"></button>
     </div>
   </div>
-  <div class="color-row">
-    <div class="color-label">Contorno da Poltrona</div>
-    <div class="color-options">
-      <button style="background:#D9D9D9" onclick="setColor('border','#D9D9D9')"></button>
-      <button style="background:#BFBFBF" onclick="setColor('border','#BFBFBF')"></button>
-      <button style="background:#8C8B88" onclick="setColor('border','#8C8B88')"></button>
-      <button style="background:#59514C" onclick="setColor('border','#59514C')"></button>
-      <button style="background:#261311" onclick="setColor('border','#261311')"></button>
-    </div>
-  </div>
+
   <div class="color-row">
     <div class="color-label">Poltrona Selecionada</div>
     <div class="color-options">
-      <button style="background:#D9D9D9" onclick="setColor('selected','#D9D9D9')"></button>
-      <button style="background:#BFBFBF" onclick="setColor('selected','#BFBFBF')"></button>
-      <button style="background:#8C8B88" onclick="setColor('selected','#8C8B88')"></button>
-      <button style="background:#59514C" onclick="setColor('selected','#59514C')"></button>
-      <button style="background:#261311" onclick="setColor('selected','#261311')"></button>
+      <button style="background:#D9D9D9" onclick="setColor('seat', '#D9D9D9', 'selected')"></button>
+      <button style="background:#BFBFBF" onclick="setColor('seat', '#BFBFBF', 'selected')"></button>
+      <button style="background:#8C8B88" onclick="setColor('seat', '#8C8B88', 'selected')"></button>
+      <button style="background:#59514C" onclick="setColor('seat', '#59514C', 'selected')"></button>
+      <button style="background:#261311" onclick="setColor('seat', '#261311', 'selected')"></button>
     </div>
   </div>
+
   <div class="color-row">
     <div class="color-label">Poltrona Bloqueada</div>
     <div class="color-options">
-      <button style="background:#D9D9D9" onclick="setColor('blocked','#D9D9D9')"></button>
-      <button style="background:#BFBFBF" onclick="setColor('blocked','#BFBFBF')"></button>
-      <button style="background:#8C8B88" onclick="setColor('blocked','#8C8B88')"></button>
-      <button style="background:#59514C" onclick="setColor('blocked','#59514C')"></button>
-      <button style="background:#261311" onclick="setColor('blocked','#261311')"></button>
+      <button style="background:#D9D9D9" onclick="setColor('seat', '#D9D9D9', 'blocked')"></button>
+      <button style="background:#BFBFBF" onclick="setColor('seat', '#BFBFBF', 'blocked')"></button>
+      <button style="background:#8C8B88" onclick="setColor('seat', '#8C8B88', 'blocked')"></button>
+      <button style="background:#59514C" onclick="setColor('seat', '#59514C', 'blocked')"></button>
+      <button style="background:#261311" onclick="setColor('seat', '#261311', 'blocked')"></button>
     </div>
   </div>
+
+  <div class="color-row">
+    <div class="color-label">Contorno</div>
+    <div class="color-options">
+      <button style="background:#D9D9D9" onclick="setColor('border', '#D9D9D9')"></button>
+      <button style="background:#BFBFBF" onclick="setColor('border', '#BFBFBF')"></button>
+      <button style="background:#8C8B88" onclick="setColor('border', '#8C8B88')"></button>
+      <button style="background:#59514C" onclick="setColor('border', '#59514C')"></button>
+      <button style="background:#261311" onclick="setColor('border', '#261311')"></button>
+    </div>
+  </div>
+
   <div class="color-row">
     <div class="color-label">Caixa da Turma</div>
     <div class="color-options">
@@ -193,6 +190,7 @@ body {
       <button style="background:#261311" onclick="setColor('box','#261311')"></button>
     </div>
   </div>
+
   <div class="color-row">
     <div class="color-label">Botão Confirmar</div>
     <div class="color-options">
@@ -203,8 +201,9 @@ body {
       <button style="background:#261311" onclick="setColor('button','#261311')"></button>
     </div>
   </div>
+
   <div class="color-row">
-    <div class="color-label">Fundo do Mapa do Ônibus</div>
+    <div class="color-label">Fundo do Mapa</div>
     <div class="color-options">
       <button style="background:#D9D9D9" onclick="setColor('map','#D9D9D9')"></button>
       <button style="background:#BFBFBF" onclick="setColor('map','#BFBFBF')"></button>
@@ -213,6 +212,7 @@ body {
       <button style="background:#261311" onclick="setColor('map','#261311')"></button>
     </div>
   </div>
+
   <div class="color-row">
     <div class="color-label">Fundo da Página</div>
     <div class="color-options">
@@ -235,19 +235,21 @@ for(let i=1;i<=20;i++){
   grid.appendChild(seat);
 }
 
-// Função para aplicar cor
-function setColor(target, color){
+// Função para aplicar cor, com suporte a tipos diferentes
+function setColor(target, color, type){
   if(target==='seat'){
-    document.querySelectorAll('.seat').forEach(s=>{ if(!s.classList.contains('selected') && !s.classList.contains('blocked')) s.style.background=color });
+    if(type==='available'){
+      document.querySelectorAll('.seat:not(.selected):not(.blocked)').forEach(s=>s.style.background=color);
+    }
+    if(type==='selected'){
+      document.querySelectorAll('.seat.selected').forEach(s=>s.style.background=color);
+    }
+    if(type==='blocked'){
+      document.querySelectorAll('.seat.blocked').forEach(s=>s.style.background=color);
+    }
   }
   if(target==='border'){
     document.querySelectorAll('.seat').forEach(s=>s.style.borderColor=color);
-  }
-  if(target==='selected'){
-    document.querySelectorAll('.seat.selected').forEach(s=>s.style.background=color);
-  }
-  if(target==='blocked'){
-    document.querySelectorAll('.seat.blocked').forEach(s=>s.style.background=color);
   }
   if(target==='box'){
     document.getElementById('cursoBox').style.background=color;
