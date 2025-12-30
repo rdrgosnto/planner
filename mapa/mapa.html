@@ -31,9 +31,8 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   position:absolute;bottom:-64px;right:20px;user-select:none
 }
 
-/* Estado TROCAR */
 #confirmarBtn.trocar{
-  background:#4CAF50; /* verde */
+  background:#4CAF50;
   color:#fff;
 }
 
@@ -44,7 +43,6 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 </style>
 </head>
-
 <body>
 
 <div id="bus-wrapper">
@@ -61,7 +59,7 @@ const q=s=>document.querySelector(s),
 norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
 gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 
-let sel=null, bl=[], userSeats=[], last=null, currentCPF=null, currentCurso="", layout=[], isLocked=false;
+let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
 POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
@@ -71,16 +69,47 @@ map={AAL:"0046",ALI:"0046",QUI:"0046"};
 const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
 const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,json:r.ok?await r.json():null}}catch{return{ok:0}}};
 
-const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v&&v!=="white"){e.dataset.seat=v.toString().padStart(2,"0");e.textContent=e.dataset.seat}return e};
-const selSeat=e=>{if(isLocked)return;if(!e.classList.contains("white")&&!e.classList.contains("lost")&&!e.classList.contains("mine")&&!e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel=sel===e?null:e;e.classList.toggle("selected",sel===e)}};
-const render=l=>{const w=q(".bus-container");w.querySelector(".grid")?.remove();const g=document.createElement("div");g.className="grid";l.forEach(r=>r.forEach(v=>{const e=cSeat(v);if(v&&v!=="white"){const id=e.dataset.seat;if(userSeats.includes(id))e.classList.add("mine");else if(bl.includes(id))e.classList.add("white");else e.onclick=()=>selSeat(e)}g.appendChild(e)}));w.appendChild(g)};
+const cSeat=v=>{
+    const e=document.createElement("div");
+    e.className=v===null?"empty":v==="white"?"seat white":"seat";
+    if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat}
+    if(v==="white") e.dataset.white="true"; // marca poltronas bloqueadas do layout
+    return e;
+};
+
+const selSeat=e=>{
+    if(isLocked) return;
+    if(!e.classList.contains("white") && !e.classList.contains("lost") && !e.classList.contains("mine") && !e.classList.contains("lost-temp")){
+        sel?.classList.remove("selected");
+        sel = sel===e?null:e;
+        e.classList.toggle("selected", sel===e);
+    }
+};
+
+const render=l=>{
+    const w=q(".bus-container");
+    w.querySelector(".grid")?.remove();
+    const g=document.createElement("div");
+    g.className="grid";
+    l.forEach(row=>row.forEach(v=>{
+        const e=cSeat(v);
+        if(v && v!=="white"){
+            const id=e.dataset.seat;
+            if(userSeats.includes(id)) e.classList.add("mine");
+            else if(bl.includes(id)) e.classList.add("white");
+            else e.onclick=()=>selSeat(e);
+        }
+        g.appendChild(e);
+    }));
+    w.appendChild(g);
+};
 
 const updateButtonState=()=>{
   const btn=q("#confirmarBtn");
   if(userSeats.length>0){
     btn.textContent="CONFIRMAR";
     btn.classList.add("trocar");
-  }else{
+  } else {
     btn.textContent="CONFIRMAR";
     btn.classList.remove("trocar");
   }
@@ -120,48 +149,69 @@ const load=async()=>{
 };
 
 q("#confirmarBtn").onclick=async()=>{
-  if(isLocked)return;
-  if(!sel){alert("Selecione uma poltrona.");return}
+  if(isLocked) return;
+  if(!sel){ alert("Selecione uma poltrona."); return }
 
   isLocked=true;
   document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
   q("#confirmarBtn").disabled=true;
 
-  const nova=sel.dataset.seat;
-  const antiga=userSeats[0]||null;
+  const nova = sel.dataset.seat;
+  const antiga = userSeats[0] || null;
 
   try{
-    const url=antiga?POST_TROCAR:POST;
-    const payload=antiga
-      ?{cpf:currentCPF,curso:currentCurso,current:antiga,select:nova}
-      :{poltrona:nova,CURSO:currentCurso,cpf:currentCPF};
+    const url = antiga ? POST_TROCAR : POST;
+    const payload = antiga
+      ? { cpf: currentCPF, curso: currentCurso, current: antiga, select: nova }
+      : { poltrona: nova, CURSO: currentCurso, cpf: currentCPF };
 
-    const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const r = await fetch(url, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
 
     if(r.ok){
-      if(antiga){
-        document.querySelector(".seat.mine")?.classList.remove("mine");
-        userSeats=[];
-      }
-      sel.classList.add("mine");
-      sel.classList.remove("selected");
-      userSeats.push(nova);
+      // Remove a antiga do bl, se necessário
+      if(antiga) bl = bl.filter(x => x !== antiga);
+
+      // Atualiza userSeats
+      userSeats = [nova];
+
+      // Atualiza todas as poltronas
+      document.querySelectorAll(".seat").forEach(s=>{
+        const id = s.dataset.seat;
+
+        s.classList.remove("mine","white","lost-temp","selected");
+
+        if(userSeats.includes(id)){
+            s.classList.add("mine");
+            s.style.pointerEvents = "none";
+        } else if(bl.includes(id) || s.dataset.white==="true"){
+            s.classList.add("white");
+            s.style.pointerEvents = "none";
+        } else {
+            s.style.pointerEvents = "auto";
+        }
+      });
+
       updateButtonState();
-      alert(antiga?"Poltrona trocada com sucesso!":"Poltrona selecionada!");
-    }else{
+      alert(antiga ? "Poltrona trocada com sucesso!" : "Poltrona selecionada!");
+    } else {
       alert("Poltrona selecionada por outro usuário.");
       sel.classList.remove("selected");
       sel.classList.add("lost-temp");
-      const lostSeat=sel;
-      setTimeout(()=>{lostSeat.classList.remove("lost-temp");lostSeat.classList.add("white")},10000);
+      const lostSeat = sel;
+      setTimeout(()=>{
+        lostSeat.classList.remove("lost-temp");
+        lostSeat.classList.add("white");
+      },10000);
     }
-  }catch{
+  } catch {
     alert("Erro de comunicação.");
   }
 
-  sel=null;
+  sel = null;
   setTimeout(()=>{
-    document.querySelectorAll(".seat").forEach(s=>{if(!s.classList.contains("mine"))s.style.pointerEvents="auto"});
+    document.querySelectorAll(".seat").forEach(s=>{
+        if(!s.classList.contains("mine")&&!s.classList.contains("white")) s.style.pointerEvents="auto"
+    });
     q("#confirmarBtn").disabled=false;
     isLocked=false;
   },4000);
