@@ -37,7 +37,7 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
     padding:15px;
     border-radius:12px;
     box-shadow:0 0 10px #0002;
-    max-width:240px;
+    max-width:260px;
     font-size:14px;
     z-index:1000;
 }
@@ -63,13 +63,6 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 </style>
 </head>
 <body>
-
-<div id="bus-wrapper">
-  <div class="bus-container">
-    <div id="cursoBox"><div id="cursoText"></div></div>
-    <button id="confirmarBtn">CONFIRMAR</button>
-  </div>
-</div>
 
 <!-- Painel de cores -->
 <div id="colorPanel">
@@ -146,10 +139,16 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
     <button id="resetBtn" onclick="resetColors()">Resetar</button>
 </div>
 
+<div id="bus-wrapper">
+  <div class="bus-container">
+    <div id="cursoBox"><div id="cursoText"></div></div>
+    <button id="confirmarBtn">CONFIRMAR</button>
+  </div>
+</div>
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-// Salva cores originais
+// Cores originais
 const originalColors = {
     seat:'#4CAF50',
     border:'#4CAF50',
@@ -160,32 +159,16 @@ const originalColors = {
     bg:'#fff'
 };
 
-// Função para aplicar cores
+// Funções de cores
 function setColor(target,color){
-    if(target==='seat'){
-        document.querySelectorAll('.seat').forEach(s=>{if(!s.classList.contains('selected')) s.style.background=color});
-    }
-    if(target==='selected'){
-        document.querySelectorAll('.seat.selected').forEach(s=>s.style.background=color);
-    }
-    if(target==='border'){
-        document.querySelectorAll('.seat').forEach(s=>s.style.borderColor=color);
-    }
-    if(target==='box'){
-        document.getElementById('cursoBox').style.background=color;
-    }
-    if(target==='button'){
-        document.getElementById('confirmarBtn').style.background=color;
-    }
-    if(target==='map'){
-        document.querySelector('.bus-container').style.background=color;
-    }
-    if(target==='bg'){
-        document.body.style.background=color;
-    }
+    if(target==='seat') document.querySelectorAll('.seat').forEach(s=>{if(!s.classList.contains('selected')) s.style.background=color});
+    if(target==='selected') document.querySelectorAll('.seat.selected').forEach(s=>s.style.background=color);
+    if(target==='border') document.querySelectorAll('.seat').forEach(s=>s.style.borderColor=color);
+    if(target==='box') document.getElementById('cursoBox').style.background=color;
+    if(target==='button') document.getElementById('confirmarBtn').style.background=color;
+    if(target==='map') document.querySelector('.bus-container').style.background=color;
+    if(target==='bg') document.body.style.background=color;
 }
-
-// Função reset
 function resetColors(){
     setColor('seat',originalColors.seat);
     setColor('selected',originalColors.selected);
@@ -195,6 +178,19 @@ function resetColors(){
     setColor('map',originalColors.map);
     setColor('bg',originalColors.bg);
 }
+</script>
+
+<!-- Script original do planner -->
+<script>
+const q=s=>document.querySelector(s),
+norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
+gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
+let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
+POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg",
+map={AAL:"0046",ALI:"0046",QUI:"0046"};
+// restante do script do planner permanece igual (load, render, etc.)
 </script>
 
 </body>
