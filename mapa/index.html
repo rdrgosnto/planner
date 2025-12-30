@@ -172,10 +172,9 @@ q("#confirmarBtn").onclick = async () => {
     });
 
     if(r.ok){
-      // ✅ Atualiza poltrona do usuário
       userSeats = [nova];
 
-      // ✅ Remove antiga de bloqueadas e dataset.white
+      // Remove antiga de bloqueadas e dataset.white
       if(antiga) {
         bl = bl.filter(x => x !== antiga);
         const antigaElem = document.querySelector(`.seat[data-seat="${antiga}"]`);
@@ -190,14 +189,18 @@ q("#confirmarBtn").onclick = async () => {
         if(userSeats.includes(id)){
           s.classList.add("mine");
           s.style.pointerEvents = "none";
+          s.onclick = null;
         } else if(bl.includes(id)){
           s.classList.add("white");
           s.style.pointerEvents = "none";
+          s.onclick = null;
         } else if(s.dataset.white === "true" && !userSeats.includes(id)){
           s.classList.add("white");
           s.style.pointerEvents = "none";
+          s.onclick = null;
         } else {
-          s.style.pointerEvents = "auto"; // poltrona antiga verde e clicável
+          s.style.pointerEvents = "auto";       // poltrona verde e clicável
+          s.onclick = () => selSeat(s);          // reaplica clique
         }
       });
 
