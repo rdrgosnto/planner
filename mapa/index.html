@@ -178,21 +178,14 @@ q("#confirmarBtn").onclick = async () => {
       // Atualiza visual das poltronas
       document.querySelectorAll(".seat").forEach(s => {
         const id = s.dataset.seat;
-
-        // Remove classes temporárias
         s.classList.remove("mine", "white", "lost-temp", "selected");
 
         if(userSeats.includes(id)){
           s.classList.add("mine");
           s.style.pointerEvents = "none";
-        } else if(bl.includes(id)){
-          // Bloqueadas por outros usuários
+        } else if(bl.includes(id) || (s.dataset.white === "true" && id !== antiga)){
           s.classList.add("white");
           s.style.pointerEvents = "none";
-        } else if(s.dataset.white === "true"){
-          // Poltronas bloqueadas pelo layout original → liberadas se já foram ocupadas
-          s.classList.remove("white");
-          s.style.pointerEvents = "auto";
         } else {
           s.style.pointerEvents = "auto";
         }
