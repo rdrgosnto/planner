@@ -172,14 +172,17 @@ q("#confirmarBtn").onclick = async () => {
     });
 
     if(r.ok){
+      // ✅ Atualiza poltrona do usuário
       userSeats = [nova];
 
-      // ✅ Correção definitiva: remove dataset.white da poltrona antiga para ficar verde e clicável
+      // ✅ Remove antiga de bloqueadas e dataset.white
       if(antiga) {
+        bl = bl.filter(x => x !== antiga);
         const antigaElem = document.querySelector(`.seat[data-seat="${antiga}"]`);
         if(antigaElem) delete antigaElem.dataset.white;
       }
 
+      // Atualiza visualização das poltronas
       document.querySelectorAll(".seat").forEach(s => {
         const id = s.dataset.seat;
         s.classList.remove("mine","white","lost-temp","selected");
@@ -194,7 +197,7 @@ q("#confirmarBtn").onclick = async () => {
           s.classList.add("white");
           s.style.pointerEvents = "none";
         } else {
-          s.style.pointerEvents = "auto"; // poltronas livres, incluindo a antiga
+          s.style.pointerEvents = "auto"; // poltrona antiga verde e clicável
         }
       });
 
