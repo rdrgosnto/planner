@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
@@ -20,10 +23,12 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .empty{background:0 0}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;user-select:none}
 #confirmarBtn.trocar{background:#4CAF50;color:#fff}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
+#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 
-/* Card centralizado com animação */
+/* Estilos do Card */
 #seatCard {
   position: fixed;
   width: calc(54px * 4 + 10px * 3);
@@ -56,13 +61,14 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 </style>
 </head>
 <body>
-
 <div id="bus-wrapper">
   <div class="bus-container">
+    <div id="cursoBox"><div id="cursoText"></div></div>
     <button id="confirmarBtn">CONFIRMAR</button>
   </div>
 </div>
 
+<!-- Card das poltronas -->
 <div id="seatCard">
   <div class="seat-info">
     <div class="seat-number" id="cardSeatNum"></div>
@@ -85,84 +91,48 @@ const q=s=>document.querySelector(s),
 norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
 gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 
-let userSeats=[], layout=[], isLocked=false, blData=[], pressTimer=null;
-const card = q("#seatCard");
+let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false, pressTimer=null;
+const seatCard = q("#seatCard");
+const cardSeatNum = q("#cardSeatNum");
+const cardName = q("#cardName");
+const cardCPF = q("#cardCPF");
 
 // Funções do Card
 function showSeatCard(seatId){
-  const dados = blData.find(x => gf(x,"ID","Id","id")?.toString().padStart(2,"0") === seatId);
-  q("#cardSeatNum").textContent = seatId;
-  q("#cardName").textContent = dados ? gf(dados,"NOME","Nome","nome") : "—";
-  q("#cardCPF").textContent = dados ? gf(dados,"CPF2","CPF","cpf") : "";
-  card.style.display="block";
-  setTimeout(()=>card.classList.add("show"),10);
+  const dados = (window.lista || []).find(x => gf(x,"ID","Id","id")?.toString().padStart(2,"0") === seatId);
+  cardSeatNum.textContent = seatId;
+  cardName.textContent = dados ? gf(dados,"NOME","Nome","nome") : "—";
+  cardCPF.textContent = dados ? gf(dados,"CPF2","CPF","cpf") : "";
+  seatCard.style.display="block";
+  setTimeout(()=>seatCard.classList.add("show"),10);
 }
-function hideSeatCard(){
-  card.classList.remove("show");
-  setTimeout(()=>card.style.display="none",250);
+function hideSeatCard(){ 
+  seatCard.classList.remove("show"); 
+  setTimeout(()=>seatCard.style.display="none",250); 
 }
-card.querySelector(".no").onclick = hideSeatCard;
-card.querySelector(".yes").onclick = () => {};
-document.addEventListener("click", e => {
-  if(card.classList.contains("show") && !card.contains(e.target) && !e.target.classList.contains("seat")){
+seatCard.querySelector(".no").onclick = hideSeatCard;
+seatCard.querySelector(".yes").onclick = ()=>{};
+
+// Fecha ao clicar fora
+document.addEventListener("click", e=>{
+  if(seatCard.classList.contains("show") && !seatCard.contains(e.target) && !e.target.classList.contains("seat")){
     hideSeatCard();
   }
 });
 
-// Função de renderização
-function render(layout){
-  const container = q(".bus-container");
-  const g = document.createElement("div"); g.className="grid";
-  layout.forEach(row=>row.forEach(v=>{
-    const e = document.createElement("div");
-    e.className="seat";
-    e.dataset.seat = v.toString().padStart(2,"0");
-    e.textContent = e.dataset.seat;
-
-    e.addEventListener("mousedown", ()=>{ pressTimer=setTimeout(()=>showSeatCard(e.dataset.seat),600); });
-    e.addEventListener("mouseup", ()=>clearTimeout(pressTimer));
-    e.addEventListener("mouseleave", ()=>clearTimeout(pressTimer));
-
-    g.appendChild(e);
-  }));
-  container.appendChild(g);
-}
-
-// Simulação inicial caso API falhe
-const layoutExemplo = [
-  [1,2,3,4,5],
-  [6,7,8,9,10],
-  [11,12,13,14,15],
-  [16,17,18,19,20],
-  [21,22,23,24,25]
-];
-blData = layoutExemplo.map(n => ({ID:n.toString().padStart(2,"0"),NOME:"Aluno "+n,CPF2:"000.000.000-"+n}));
-render(layoutExemplo);
-q("#bus-wrapper").style.display="block";
-
-// === Integração com API real ===
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
-
-async function loadAPI(){
-  try{
-    const cpf = sessionStorage.getItem("cpf") || "";
-    const r = await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:cpf})});
-    if(!r.ok) return;
-    const data = await r.json();
-    if(!data?.lista) return;
-    blData = data.lista.map(x=>({
-      ID: gf(x,"ID","Id","id").toString().padStart(2,"0"),
-      NOME: gf(x,"NOME","Nome","nome"),
-      CPF2: gf(x,"CPF2","CPF","cpf")
-    }));
-    const polts = blData.map(x=>parseInt(x.ID));
-    layout = [polts.slice(0,5), polts.slice(5,10), polts.slice(10,15), polts.slice(15,20), polts.slice(20,25)];
-    q(".grid")?.remove();
-    render(layout);
-  }catch(e){console.error("API falhou", e);}
-}
-
-loadAPI();
+// Adiciona clique longo às poltronas após renderização
+const originalRender = render;
+render = l=>{
+  originalRender(l);
+  document.querySelectorAll(".seat").forEach(e=>{
+    if(!e.dataset.cardListener){
+      e.dataset.cardListener="true";
+      e.addEventListener("mousedown", ()=>{ pressTimer = setTimeout(()=>showSeatCard(e.dataset.seat),600); });
+      e.addEventListener("mouseup", ()=>clearTimeout(pressTimer));
+      e.addEventListener("mouseleave", ()=>clearTimeout(pressTimer));
+    }
+  });
+};
 </script>
 </body>
 </html>
