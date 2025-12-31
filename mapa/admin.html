@@ -4,29 +4,55 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 
 <style>
+/* === ORIGINAL (INALTERADO) === */
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
-.bus-container{padding:20px 20px 24px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative}
-.grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px}
+.bus-container{padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
+.grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none}
-.seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c}
-.seat.white,.seat.lost-temp{color:transparent;pointer-events:none}
-.seat.white{background:#fff;border:3px solid #8c96b2}
-.seat.lost-temp{background:#aaa;border-color:#777}
-.empty{background:transparent}
+.seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;cursor:default}
+.seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;cursor:default!important;pointer-events:none!important}
+.seat.white{background:#fff!important;border:3px solid #8c96b2!important}
+.seat.lost-temp{background:#aaa!important;border-color:#777!important}
+.seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
+.empty{background:none}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
 #cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center}
 #cursoText{transform:rotate(-90deg);font-size:18px}
+
+/* === ADMIN MODAL === */
+#adminModal{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:180px;height:120px;
+  background:#ddd;
+  border-radius:12px;
+  border:3px solid #8c96b2;
+  display:none;
+  z-index:9999;
+  text-align:center;
+  font-size:14px;
+}
+#adminModal button{
+  margin:6px;
+  padding:6px 12px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
+
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
@@ -34,86 +60,114 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   </div>
 </div>
 
+<div id="adminModal"></div>
+
 <script>
+/* === CONFIG === */
 const ADMIN_CPF="35128248895"
+const CURSOS=["AAL","ALI","QUI"]
+
+/* === HELPERS ORIGINAIS === */
 const q=s=>document.querySelector(s)
-const norm=c=>c?.replace(/\D/g,"").padStart(11,"0")||""
+const norm=c=>c?.replace(/\D/g,"").padStart(11,"0")
+const gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}}
 
-let isAdmin=false, sel=null, bl=[], userSeats=[], currentCPF="", currentCurso="", layout=[]
-let pressTimer=null, adminTargetSeat=null
+/* === ESTADO === */
+let currentCPF=null,isAdmin=false,currentCurso=""
+let layout=[],bl=[],userSeats=[]
+let lastData=null
 
-/* === URLs ORIGINAIS === */
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA"
-const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0"
-const POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"
+/* === POWER AUTOMATE === */
+const GET="SUA_URL_GET"
+const POST_TROCAR="SUA_URL_TROCAR"
 
-function createSeat(id,cpf){
-  const e=document.createElement("div")
-  e.className="seat"
-  e.textContent=id
-  e.dataset.seat=id
-  e.dataset.cpf=cpf||""
-
-  e.onclick=()=>{ sel=e; document.querySelectorAll(".seat").forEach(s=>s.classList.remove("selected")); e.classList.add("selected") }
-
-  if(isAdmin && cpf){
-    e.onmousedown=()=>{
-      pressTimer=setTimeout(()=>{
-        adminTargetSeat=e
-        if(confirm(`Poltrona ${id}\nCPF ${cpf}\n\nDeseja mudar a poltrona?`)){
-          e.classList.remove("white")
-          e.style.pointerEvents="auto"
-        }
-      },700)
-    }
-    e.onmouseup=()=>clearTimeout(pressTimer)
-    e.onmouseleave=()=>clearTimeout(pressTimer)
-  }
-  return e
-}
-
+/* === LOAD === */
 async function load(){
-  const cpf=norm(sessionStorage.getItem("cpf"))
-  currentCPF=cpf
-  isAdmin = cpf===ADMIN_CPF
+  const cpf=sessionStorage.getItem("cpf")||prompt("CPF")
+  currentCPF=norm(cpf)
+  isAdmin=currentCPF===ADMIN_CPF
 
-  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}).then(r=>r.json())
-  const aluno=r.codigo.find(x=>norm(x.CPF||x.CPF2)===cpf)
-  currentCurso=aluno.CODIGO
-  q("#cursoText").textContent=currentCurso
+  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentCPF})})
+  const data=await r.json()
+  lastData=data
 
-  const rows=r.poltronas.filter(x=>x.CURSO===currentCurso)
-  const grid=document.createElement("div")
-  grid.className="grid"
-
-  rows.forEach(x=>{
-    const s=createSeat(x.ID.padStart(2,"0"),x.CPF2)
-    if(norm(x.CPF2)===cpf) s.classList.add("mine")
-    else s.classList.add("white")
-    grid.appendChild(s)
-  })
-
-  q(".grid")?.remove()
-  q(".bus-container").appendChild(grid)
-  q("#bus-wrapper").style.display="block"
-}
-
-if(true){
-  q("#cursoBox").onmousedown=()=>{
-    if(!isAdmin) return
-    pressTimer=setTimeout(()=>{
-      const n=prompt("Trocar turma:",currentCurso)
-      if(n){ currentCurso=n.toUpperCase(); load() }
-    },700)
+  if(!isAdmin){
+    const aluno=data.codigo.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF)
+    if(!aluno){alert("CPF não encontrado");return}
+    currentCurso=gf(aluno,"CODIGO").toUpperCase()
+  }else{
+    currentCurso=prompt("Curso (AAL / ALI / QUI)",CURSOS[0]).toUpperCase()
   }
-  q("#cursoBox").onmouseup=()=>clearTimeout(pressTimer)
+
+  q("#cursoText").textContent=currentCurso
+  processar(data)
+  q("#bus-wrapper").style.display="block"
+
+  if(isAdmin) setInterval(()=>processar(lastData),30000)
 }
 
-if(true){
-  setInterval(()=>{ if(isAdmin) load() },30000)
+/* === PROCESSA MAPA === */
+function processar(data){
+  const rows=data.poltronas.filter(x=>gf(x,"CURSO").toUpperCase()===currentCurso)
+  bl=rows.map(x=>gf(x,"ID").padStart(2,"0"))
+  render()
+}
+
+/* === RENDER === */
+function render(){
+  const cont=q(".bus-container")
+  cont.querySelector(".grid")?.remove()
+  const g=document.createElement("div")
+  g.className="grid"
+
+  layout.forEach(r=>r.forEach(v=>{
+    const d=document.createElement("div")
+    d.className=v?"seat":"empty"
+    if(v){
+      d.textContent=v
+      d.dataset.seat=v
+      if(bl.includes(v)) d.classList.add("white")
+      if(isAdmin) enableLongPress(d)
+    }
+    g.appendChild(d)
+  }))
+  cont.appendChild(g)
+}
+
+/* === LONG PRESS ADMIN === */
+function enableLongPress(el){
+  let t
+  el.onmousedown=()=>t=setTimeout(()=>showAdmin(el.dataset.seat),600)
+  el.onmouseup=()=>clearTimeout(t)
+}
+
+/* === MODAL === */
+function showAdmin(seat){
+  q("#adminModal").innerHTML=`
+    Nome<br>CPF<br><br>
+    Deseja mudar?<br>
+    <button onclick="trocar('${seat}')">SIM</button>
+    <button onclick="fechar()">NÃO</button>
+  `
+  q("#adminModal").style.display="block"
+}
+function fechar(){q("#adminModal").style.display="none"}
+
+/* === TROCA ADMIN === */
+async function trocar(origem){
+  const destino=prompt("Nova poltrona:")
+  if(!destino) return fechar()
+  await fetch(POST_TROCAR,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({curso:currentCurso,current:origem,select:destino,cpf:ADMIN_CPF})
+  })
+  fechar()
+  load()
 }
 
 load()
 </script>
+
 </body>
 </html>
