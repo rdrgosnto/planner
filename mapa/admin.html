@@ -28,13 +28,65 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 
-/* --- Modal poltrona --- */
-#seatModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:10000}
-#seatCard{background:#fff;padding:24px;border-radius:16px;min-width:280px;position:relative;box-shadow:0 4px 16px rgba(0,0,0,0.3);text-align:center}
-#seatCard h2,#seatCard p{margin:8px 0}
-#seatCard button{padding:8px 16px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
-#modalYes{background:#4CAF50;color:#fff;margin-right:12px}
-#modalNo{background:#ccc;color:#000}
+/* --- Modal poltrona refinado --- */
+#seatModal{
+  display:none;
+  position:fixed;
+  top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.5);
+  justify-content:center;
+  align-items:center;
+  z-index:10000;
+}
+#seatCard{
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+  padding:16px;
+  border-radius:16px;
+  min-width:240px;
+  min-height:300px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  font-family:Arial;
+}
+
+/* Linha do quadrado + dados */
+#seatCard .seat-info-row{
+  display:flex;
+  align-items:flex-start;
+  margin-bottom:12px;
+}
+#seatCard .seat-square{
+  width:54px;
+  height:54px;
+  background:#ccc;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  margin-right:12px;
+}
+#seatCard .seat-details{
+  display:flex;
+  flex-direction:column;
+}
+
+/* Espaço antes da pergunta */
+#seatCard .spacer{height:16px;}
+
+/* Pergunta e botões */
+#seatCard .question{margin-bottom:12px;}
+#seatCard .buttons{display:flex;justify-content:space-between;}
+#seatCard button{
+  padding:6px 12px;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+#modalYes{background:#4CAF50;color:#fff;}
+#modalNo{background:#ccc;color:#000;}
 </style>
 </head>
 <body>
@@ -46,14 +98,19 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   </div>
 </div>
 
-<!-- Modal poltrona -->
+<!-- Modal poltrona refinado -->
 <div id="seatModal">
   <div id="seatCard">
-    <h2 id="modalSeatNumber">Poltrona: --</h2>
-    <p id="modalName">Nome: --</p>
-    <p id="modalCPF">CPF: --</p>
-    <p>Deseja alterar a poltrona?</p>
-    <div style="display:flex;justify-content:space-around;margin-top:16px">
+    <div class="seat-info-row">
+      <div class="seat-square"><span id="modalSeatNumber">01</span></div>
+      <div class="seat-details">
+        <span id="modalName">Nome: --</span>
+        <span id="modalCPF">CPF: --</span>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="question">Deseja alterar a poltrona?</div>
+    <div class="buttons">
       <button id="modalYes">SIM</button>
       <button id="modalNo">NÃO</button>
     </div>
@@ -80,7 +137,7 @@ const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"
 const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat}if(v==="white") e.dataset.white="true";return e};
 const selSeat=e=>{if(isLocked) return;if(!e.classList.contains("white") && !e.classList.contains("lost") && !e.classList.contains("mine") && !e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel = sel===e?null:e;e.classList.toggle("selected", sel===e)}};
 
-// --- render() adaptado com long press ---
+// --- render() com long press ---
 const render=l=>{
   const w=q(".bus-container"); w.querySelector(".grid")?.remove();
   const g=document.createElement("div"); g.className="grid";
@@ -97,7 +154,7 @@ const render=l=>{
       const longPressDuration=600;
       const showModalSeat=()=>{
         const info = lista.find(x=>x.ID?.toString().padStart(2,"0")===id)||{};
-        q("#modalSeatNumber").textContent=`Poltrona: ${id}`;
+        q("#modalSeatNumber").textContent=`${id}`;
         q("#modalName").textContent=`Nome: ${gf(info,"NOME","Nome")||"--"}`;
         q("#modalCPF").textContent=`CPF: ${gf(info,"CPF2","CPF")||"--"}`;
         q("#seatModal").style.display="flex";
