@@ -30,31 +30,38 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 
 /* --- Modal poltrona refinado --- */
 #seatModal{
-  display:none;
+  display:flex; /* já usa flex para centralizar */
   position:fixed;
-  top:0;left:0;width:100%;height:100%;
+  top:0; left:0;
+  width:100%; height:100%;
   background:rgba(0,0,0,0.5);
   justify-content:center;
   align-items:center;
   z-index:10000;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity 0.2s ease;
+}
+#seatModal.show{
+  opacity:1;
+  pointer-events:auto;
 }
 #seatCard{
   background:#fff;
   display:flex;
   flex-direction:column;
+  align-items:flex-start;
   padding:16px;
   border-radius:16px;
   min-width:240px;
   min-height:300px;
   box-shadow:0 4px 16px rgba(0,0,0,0.3);
   font-family:Arial;
+  transform:scale(0.9);
+  transition: transform 0.2s ease;
 }
-
-/* Linha do quadrado + dados */
-#seatCard .seat-info-row{
-  display:flex;
-  align-items:flex-start;
-  margin-bottom:12px;
+#seatModal.show #seatCard{
+  transform:scale(1);
 }
 #seatCard .seat-square{
   width:54px;
@@ -65,19 +72,28 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   align-items:center;
   justify-content:center;
   font-weight:bold;
-  margin-right:12px;
+  margin-bottom:12px;
 }
 #seatCard .seat-details{
   display:flex;
   flex-direction:column;
+  align-items:flex-start;
+  margin-bottom:16px;
 }
-
-/* Espaço antes da pergunta */
-#seatCard .spacer{height:16px;}
-
-/* Pergunta e botões */
-#seatCard .question{margin-bottom:12px;}
-#seatCard .buttons{display:flex;justify-content:space-between;}
+#seatCard .seat-details span{
+  margin-bottom:4px;
+}
+#seatCard .question{
+  text-align:center;
+  margin-bottom:12px;
+  width:100%;
+}
+#seatCard .buttons{
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  width:100%;
+}
 #seatCard button{
   padding:6px 12px;
   border:none;
@@ -101,14 +117,11 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 <!-- Modal poltrona refinado -->
 <div id="seatModal">
   <div id="seatCard">
-    <div class="seat-info-row">
-      <div class="seat-square"><span id="modalSeatNumber">01</span></div>
-      <div class="seat-details">
-        <span id="modalName">Nome: --</span>
-        <span id="modalCPF">CPF: --</span>
-      </div>
+    <div class="seat-square"><span id="modalSeatNumber">01</span></div>
+    <div class="seat-details">
+      <span id="modalName">Nome: --</span>
+      <span id="modalCPF">CPF: --</span>
     </div>
-    <div class="spacer"></div>
     <div class="question">Deseja alterar a poltrona?</div>
     <div class="buttons">
       <button id="modalYes">SIM</button>
@@ -137,44 +150,54 @@ const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"
 const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat}if(v==="white") e.dataset.white="true";return e};
 const selSeat=e=>{if(isLocked) return;if(!e.classList.contains("white") && !e.classList.contains("lost") && !e.classList.contains("mine") && !e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel = sel===e?null:e;e.classList.toggle("selected", sel===e)}};
 
-// --- render() com long press ---
-const render=l=>{
-  const w=q(".bus-container"); w.querySelector(".grid")?.remove();
-  const g=document.createElement("div"); g.className="grid";
-  l.forEach(row=>row.forEach(v=>{
-    const e=cSeat(v);
-    if(v && v!=="white"){
-      const id=e.dataset.seat;
+// --- render() com long press para todas as poltronas ---
+const render = l => {
+  const w = q(".bus-container");
+  w.querySelector(".grid")?.remove();
+  const g = document.createElement("div");
+  g.className = "grid";
+
+  l.forEach(row => row.forEach(v => {
+    const e = cSeat(v);
+    if(v){
+      const id = e.dataset.seat;
+
+      // classes visuais
       if(userSeats.includes(id)) e.classList.add("mine");
       else if(bl.includes(id)) e.classList.add("white");
-      else e.onclick=()=>selSeat(e);
 
-      // LONG PRESS para modal
-      let longPressTimer=null;
-      const longPressDuration=600;
-      const showModalSeat=()=>{
-        const info = lista.find(x=>x.ID?.toString().padStart(2,"0")===id)||{};
-        q("#modalSeatNumber").textContent=`${id}`;
-        q("#modalName").textContent=`Nome: ${gf(info,"NOME","Nome")||"--"}`;
-        q("#modalCPF").textContent=`CPF: ${gf(info,"CPF2","CPF")||"--"}`;
-        q("#seatModal").style.display="flex";
+      // LONG PRESS
+      let longPressTimer = null;
+      const longPressDuration = 600;
+      const showModalSeat = () => {
+        const info = lista.find(x=>x.ID?.toString().padStart(2,"0")===id) || {};
+        q("#modalSeatNumber").textContent = `${id}`;
+        q("#modalName").textContent = `Nome: ${gf(info,"NOME","Nome")||"--"}`;
+        q("#modalCPF").textContent = `CPF: ${gf(info,"CPF2","CPF")||"--"}`;
+        q("#seatModal").classList.add("show");
       };
-      e.addEventListener("mousedown",()=>{longPressTimer=setTimeout(showModalSeat,longPressDuration)});
-      e.addEventListener("mouseup",()=>clearTimeout(longPressTimer));
-      e.addEventListener("mouseleave",()=>clearTimeout(longPressTimer));
-      e.addEventListener("touchstart",()=>{longPressTimer=setTimeout(showModalSeat,longPressDuration)});
-      e.addEventListener("touchend",()=>clearTimeout(longPressTimer));
-      e.addEventListener("touchcancel",()=>clearTimeout(longPressTimer));
+
+      e.addEventListener("mousedown", ()=>{longPressTimer=setTimeout(showModalSeat,longPressDuration)});
+      e.addEventListener("mouseup", ()=>clearTimeout(longPressTimer));
+      e.addEventListener("mouseleave", ()=>clearTimeout(longPressTimer));
+      e.addEventListener("touchstart", ()=>{longPressTimer=setTimeout(showModalSeat,longPressDuration)});
+      e.addEventListener("touchend", ()=>clearTimeout(longPressTimer));
+      e.addEventListener("touchcancel", ()=>clearTimeout(longPressTimer));
+
+      if(!userSeats.includes(id) && !bl.includes(id)){
+        e.onclick = () => selSeat(e);
+      }
     }
     g.appendChild(e);
   }));
+
   w.appendChild(g);
 };
 
 // --- modal ---
 const modal=q("#seatModal"), modalYes=q("#modalYes"), modalNo=q("#modalNo");
-modalYes.onclick=modalNo.onclick=()=>modal.style.display="none";
-modal.onclick=e=>{if(e.target===modal) modal.style.display="none"};
+modalYes.onclick=modalNo.onclick=()=>modal.classList.remove("show");
+modal.onclick=e=>{if(e.target===modal) modal.classList.remove("show")};
 
 const updateButtonState=()=>{const btn=q("#confirmarBtn");btn.textContent=userSeats.length>0?"CONFIRMAR":"CONFIRMAR";btn.classList.toggle("trocar",userSeats.length>0)};
 
