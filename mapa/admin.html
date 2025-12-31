@@ -73,6 +73,12 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   justify-content:center;
   font-weight:bold;
   margin-bottom:12px;
+  box-shadow:0 0 0 rgba(0,0,0,0);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+#seatModal.show #seatCard .seat-square{
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  transform:scale(1.05);
 }
 #seatCard .seat-details{
   display:flex;
@@ -169,7 +175,7 @@ const render = l => {
       let longPressTimer = null;
       const longPressDuration = 600;
       const showModalSeat = () => {
-        const info = lista.find(x=>x.ID?.toString().padStart(2,"0")===id) || {};
+        const info = lista.find(x => x.ID?.toString().padStart(2,"0") === id) || {};
         q("#modalSeatNumber").textContent = `${id}`;
         q("#modalName").textContent = `Nome: ${gf(info,"NOME","Nome")||"--"}`;
         q("#modalCPF").textContent = `CPF: ${gf(info,"CPF2","CPF")||"--"}`;
@@ -233,12 +239,8 @@ q("#confirmarBtn").onclick = async ()=>{
     if(r.ok){
       userSeats=[nova];
       if(antiga){bl=bl.filter(x=>x!==antiga);const antigaElem=document.querySelector(`.seat[data-seat="${antiga}"]`);if(antigaElem) delete antigaElem.dataset.white;}
-      document.querySelectorAll(".seat").forEach(s=>{
-        const id=s.dataset.seat;
-        if(id===nova){s.classList.add("mine");s.classList.remove("white","lost-temp","selected");s.style.pointerEvents="none";s.onclick=null}
-        else if(id===antiga){s.classList.remove("mine","lost-temp","selected");s.classList.add("seat");s.style.pointerEvents="auto";s.onclick=()=>selSeat(s)}
-        else if(bl.includes(id)||s.dataset.white==="true"){s.classList.add("white");s.classList.remove("mine","lost-temp","selected");s.style.pointerEvents="none";s.onclick=null}
-      });
+      // render novamente para reaplicar eventos
+      render(layout);
       updateButtonState();
       alert(antiga?"Poltrona trocada com sucesso!":"Poltrona selecionada!");
     } else {
