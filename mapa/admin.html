@@ -68,7 +68,6 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   </div>
 </div>
 
-<!-- Card das poltronas -->
 <div id="seatCard">
   <div class="seat-info">
     <div class="seat-number" id="cardSeatNum"></div>
@@ -90,6 +89,7 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 const q=s=>document.querySelector(s),
 norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
 gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
+
 let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false, pressTimer=null;
 const seatCard = q("#seatCard");
 const cardSeatNum = q("#cardSeatNum");
@@ -97,9 +97,8 @@ const cardName = q("#cardName");
 const cardCPF = q("#cardCPF");
 
 // Funções do Card
-function showSeatCard(seatId){
-  if(!window.lista) return;
-  const dados = window.lista.find(x => gf(x,"ID","Id","id")?.toString().padStart(2,"0") === seatId);
+function showSeatCard(seatId, lista){
+  const dados = lista.find(x => gf(x,"ID","Id","id")?.toString().padStart(2,"0") === seatId);
   cardSeatNum.textContent = seatId;
   cardName.textContent = dados ? gf(dados,"NOME","Nome","nome") : "—";
   cardCPF.textContent = dados ? gf(dados,"CPF2","CPF","cpf") : "";
@@ -113,31 +112,30 @@ function hideSeatCard(){
 seatCard.querySelector(".no").onclick = hideSeatCard;
 seatCard.querySelector(".yes").onclick = ()=>{};
 
-// Fecha clicando fora
+// Fecha ao clicar fora
 document.addEventListener("click", e=>{
   if(seatCard.classList.contains("show") && !seatCard.contains(e.target) && !e.target.classList.contains("seat")){
     hideSeatCard();
   }
 });
 
-// Integração com o load original
-const originalLoad = load;
-load = async ()=>{
-  await originalLoad();
-  // Garante que a lista esteja acessível globalmente para o Card
-  window.lista = window.lista || [];
-  if(!window.lista.length) window.lista = (await fetchFlow(GET,currentCPF)).json.lista || [];
-  // Adiciona clique longo a todas as poltronas após render
-  document.querySelectorAll(".seat").forEach(e=>{
-    if(!e.dataset.cardListener){
-      e.dataset.cardListener="true";
-      e.addEventListener("mousedown", ()=>{ pressTimer=setTimeout(()=>showSeatCard(e.dataset.seat),600); });
-      e.addEventListener("mouseup", ()=>clearTimeout(pressTimer));
-      e.addEventListener("mouseleave", ()=>clearTimeout(pressTimer));
-    }
-  });
-};
-load();
+// Adiciona clique longo após mapa carregado
+const observeGrid = setInterval(()=>{
+  const seats = document.querySelectorAll(".seat");
+  if(seats.length){
+    seats.forEach(e=>{
+      if(!e.dataset.cardListener){
+        e.dataset.cardListener="true";
+        e.addEventListener("mousedown", ()=>{
+          pressTimer = setTimeout(()=>showSeatCard(e.dataset.seat, window.lista || []),600);
+        });
+        e.addEventListener("mouseup", ()=>clearTimeout(pressTimer));
+        e.addEventListener("mouseleave", ()=>clearTimeout(pressTimer));
+      }
+    });
+    clearInterval(observeGrid);
+  }
+}, 200);
 </script>
 </body>
 </html>
