@@ -10,12 +10,12 @@
 <meta http-equiv="Expires" content="0"/>
 
 <style>
-body{font-family:Arial;margin:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center}
+body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center}
 #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
 .bus-container{padding:20px 20px 24px;border:3px solid #b0b0b0;border-radius:16px;margin:auto;position:relative}
 .grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px}
 .seat,.empty{width:54px;height:54px;border-radius:12px;display:flex;align-items:center;justify-content:center}
-.seat{background:#4CAF50;color:#fff;font-weight:bold;border:3px solid #4CAF50;cursor:pointer}
+.seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer}
 .seat.mine{background:#e74c3c;border-color:#e74c3c}
 .seat.white{background:#fff;border:3px solid #8c96b2;color:transparent;pointer-events:none}
 #confirmarBtn{position:absolute;bottom:-64px;right:20px;width:112px;height:54px;border-radius:12px;border:none;background:#4CAF50;color:#fff;font-weight:bold}
@@ -40,7 +40,7 @@ body{font-family:Arial;margin:0;display:flex;flex-direction:column;min-height:10
 
 <div id="adminOverlay">
   <div id="adminBox">
-    <b id="adminNome">Reservado</b><br>
+    <b>Reservado</b><br>
     <span id="adminCPF"></span><br><br>
     Deseja mudar a poltrona?<br>
     <button id="adminYes">SIM</button>
@@ -51,62 +51,87 @@ body{font-family:Arial;margin:0;display:flex;flex-direction:column;min-height:10
 <div id="adminLabel">admin</div>
 
 <script>
-const ADMIN_CPF="35128248895";
-const q=s=>document.querySelector(s);
-const norm=c=>c?.replace(/\D/g,"").padStart(11,"0")||"";
+/* ===== BASE ORIGINAL (PRESERVADA) ===== */
+const q=s=>document.querySelector(s),
+norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
+gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 
-let currentCurso="",layout=[],bl=[],userSeats=[],sel=null,isLocked=false;
-let isAdmin=norm(sessionStorage.getItem("cpf"))===ADMIN_CPF;
+let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
 
-/* ==== FETCH ==== */
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1";
 
-/* ==== RENDER ==== */
-const cSeat=id=>{
+/* ===== ADMIN ===== */
+const ADMIN_CPF="35128248895";
+const isAdmin=norm(sessionStorage.getItem("cpf"))===ADMIN_CPF;
+
+/* ===== FETCH CORRETO ===== */
+const fetchFlow=async(u,c)=>{try{
+  const r=await fetch(u,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({cpf:c})
+  });
+  return{ok:r.ok,json:r.ok?await r.json():null}
+}catch{return{ok:0}}};
+
+/* ===== RENDER ORIGINAL ===== */
+const cSeat=v=>{
   const e=document.createElement("div");
-  e.className="seat";
-  e.textContent=id;
-  if(bl.includes(id)) e.classList.add("white");
-  if(userSeats.includes(id)) e.classList.add("mine");
-  e.onclick=()=>{ if(!isLocked){ sel=e; } };
+  e.className=v===null?"empty":"seat";
+  if(v){
+    e.dataset.seat=v.toString().padStart(2,"0");
+    e.textContent=e.dataset.seat;
+    if(userSeats.includes(e.dataset.seat)) e.classList.add("mine");
+    else if(bl.includes(e.dataset.seat)) e.classList.add("white");
+  }
   return e;
 };
 
-const render=()=>{
+const render=l=>{
   const w=q(".bus-container");
   w.querySelector(".grid")?.remove();
   const g=document.createElement("div");
   g.className="grid";
-  layout.flat().forEach(v=>{
-    g.appendChild(v?cSeat(v.toString().padStart(2,"0")):document.createElement("div"));
-  });
+  l.forEach(row=>row.forEach(v=>g.appendChild(cSeat(v))));
   w.appendChild(g);
 };
 
-/* ==== LOAD ==== */
-async function load(){
+/* ===== LOAD ORIGINAL ===== */
+const load=async()=>{
   const cpf=sessionStorage.getItem("cpf");
   if(!cpf) return;
-  const r=await fetch(GET,{method:"POST",body:JSON.stringify({cpf})});
-  const j=await r.json();
-  currentCurso=currentCurso||j.codigo[0].CODIGO;
+  currentCPF=norm(cpf);
+
+  const r=await fetchFlow(GET,currentCPF);
+  if(!r.ok) return;
+
+  const lista=r.json.poltronas||[];
+  const cursos=r.json.codigo||[];
+  const aluno=cursos.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF);
+  if(!aluno) return;
+
+  if(!currentCurso){
+    currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toUpperCase();
+  }
+
   q("#cursoText").textContent=currentCurso;
 
-  const rows=j.poltronas.filter(x=>x.CURSO===currentCurso);
-  bl=rows.map(x=>x.ID.toString().padStart(2,"0"));
-  userSeats=rows.filter(x=>norm(x.CPF2)===norm(cpf)).map(x=>x.ID.toString().padStart(2,"0"));
+  const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")===currentCurso);
+  bl=rows.map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
+  userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF)
+                .map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
 
   layout=(await fetch("../configs/0046.json").then(r=>r.json())).layout;
-  render();
+  render(layout);
   q("#bus-wrapper").style.display="block";
-}
+};
 
-/* ==== POLLING ADMIN ==== */
+/* ===== POLLING ADMIN ===== */
 if(isAdmin){
-  setInterval(()=>load(),30000);
+  setInterval(load,30000);
 }
 
-/* ==== TROCA DE TURMA (ADMIN) ==== */
+/* ===== TROCA DE TURMA ADMIN ===== */
 if(isAdmin){
   document.addEventListener("keydown",e=>{
     if(e.key==="Enter"){
