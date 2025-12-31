@@ -73,6 +73,7 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   justify-content:center;
   font-weight:bold;
   margin-bottom:12px;
+  transition:none;
 }
 #seatCard .seat-details{
   display:flex;
@@ -183,7 +184,6 @@ const render = l => {
       e.addEventListener("touchend", ()=>clearTimeout(longPressTimer));
       e.addEventListener("touchcancel", ()=>clearTimeout(longPressTimer));
 
-      // selecao apenas se livre
       if(!userSeats.includes(id) && !bl.includes(id)){
         e.onclick = () => selSeat(e);
       }
@@ -231,10 +231,16 @@ q("#confirmarBtn").onclick = async ()=>{
     const payload=antiga?{cpf:currentCPF,curso:currentCurso,current:antiga,select:nova}:{poltrona:nova,CURSO:currentCurso,cpf:currentCPF};
     const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     if(r.ok){
+      // atualiza userSeats e lista
       userSeats=[nova];
-      if(antiga){bl=bl.filter(x=>x!==antiga);const antigaElem=document.querySelector(`.seat[data-seat="${antiga}"]`);if(antigaElem) delete antigaElem.dataset.white;}
-      // render novamente para reaplicar eventos
-      render(layout);
+      const novaInfo=lista.find(x=>x.ID?.toString().padStart(2,"0")===nova);
+      if(novaInfo) novaInfo.CPF2=currentCPF;
+      if(antiga){
+        const antigaInfo=lista.find(x=>x.ID?.toString().padStart(2,"0")===antiga);
+        if(antigaInfo) antigaInfo.CPF2="";
+        bl=bl.filter(x=>x!==antiga);
+      }
+      render(layout); // reaplica long press
       updateButtonState();
       alert(antiga?"Poltrona trocada com sucesso!":"Poltrona selecionada!");
     } else {
