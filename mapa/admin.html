@@ -23,27 +23,10 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 .empty{background:0 0}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;user-select:none}
-#confirmarBtn.trocar{background:#4CAF50;color:#fff}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
-
-/* Modal admin */
-#adminModal{
-display:none;
-position:fixed;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-background:#d9d9d9;
-border-radius:12px;
-padding:14px;
-width:180px;
-z-index:10000;
-font-size:13px
-}
-#adminModal button{margin-top:6px}
 </style>
 </head>
 
@@ -58,125 +41,130 @@ font-size:13px
 
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
-<div id="adminModal">
-  <div id="adminInfo"></div>
+<!-- MODAL ADMIN -->
+<div id="adminModal" style="
+display:none;
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#d9d9d9;
+border-radius:12px;
+padding:14px;
+width:180px;
+z-index:10000;
+font-size:13px;
+">
+  <div id="adminInfo" style="text-align:left"></div>
   <br>
   <div>Deseja alterar a poltrona?</div>
-  <button id="adminSim">SIM</button>
-  <button id="adminNao">NÃO</button>
+  <div style="margin-top:6px">
+    <button id="adminSim">SIM</button>
+    <button id="adminNao">NÃO</button>
+  </div>
 </div>
 
 <script>
-const q=s=>document.querySelector(s),
-norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
-gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
+/* ========= CONFIG ========= */
+const CPF_ADMIN = "35128248895";
+
+/* ========= HELPERS ========= */
+const q=s=>document.querySelector(s);
+const norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"";
+const gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 
 let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
-let adminTargetSeat=null;
+let adminSeat=null;
 
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
-POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg";
+/* ========= POWER AUTOMATE ========= */
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0";
+const POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg";
 
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
+/* ========= ADMIN ========= */
+const isAdmin=()=>currentCPF===CPF_ADMIN;
 
-const fetchFlow=async(u,c)=>{
-try{
-const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});
-return{ok:r.ok,json:r.ok?await r.json():null}
-}catch{return{ok:0}}
-};
-
-const cSeat=v=>{
-const e=document.createElement("div");
-e.className=v===null?"empty":v==="white"?"seat white":"seat";
-if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0");e.textContent=e.dataset.seat}
-if(v==="white") e.dataset.white="true";
-return e
-};
-
-const selSeat=e=>{
-if(isLocked) return;
-if(!e.classList.contains("white")&&!e.classList.contains("mine")){
-sel?.classList.remove("selected");
-sel=sel===e?null:e;
-e.classList.toggle("selected",sel===e)
-}
-};
-
-const render=l=>{
-const w=q(".bus-container");
-w.querySelector(".grid")?.remove();
-const g=document.createElement("div");
-g.className="grid";
-l.forEach(r=>r.forEach(v=>{
-const e=cSeat(v);
-if(v&&v!=="white"){
-const id=e.dataset.seat;
-if(userSeats.includes(id)) e.classList.add("mine");
-else if(bl.includes(id)) e.classList.add("white");
-else e.onclick=()=>selSeat(e)
-}
-g.appendChild(e)
-}));
-w.appendChild(g)
-};
-
-const load=async()=>{
-const cpf=sessionStorage.getItem("cpf")||prompt("CPF (somente números)");
-if(!cpf)return;
-sessionStorage.setItem("cpf",cpf);
-currentCPF=norm(cpf);
-const r=await fetchFlow(GET,currentCPF);
-if(!r.ok||!r.json){alert("Erro");return}
-const lista=r.json.poltronas||r.json.lista||[];
-const cod=r.json.codigo||r.json.cursos||[];
-const aluno=cod.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF);
-if(!aluno){alert("CPF não encontrado");return}
-currentCurso=gf(aluno,"CODIGO","codigo").toUpperCase();
-q("#cursoText").textContent=currentCurso;
-const rows=lista.filter(x=>gf(x,"CURSO","curso").toUpperCase()===currentCurso);
-bl=[...new Set(rows.map(x=>gf(x,"ID","id").padStart(2,"0")))];
-userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","id").padStart(2,"0"));
-const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
-layout=cfg.layout;
-render(layout);
-q("#bus-wrapper").style.display="block"
-};
-
-let pressTimer=null;
-document.addEventListener("mousedown",e=>{
-const s=e.target.closest(".seat.mine");
-if(!s) return;
-pressTimer=setTimeout(()=>{
-adminTargetSeat=s.dataset.seat;
-q("#adminInfo").innerHTML=
-`${adminTargetSeat}<br>
-Nome: ${"Nome, Sobrenome"}<br>
-CPF: ${currentCPF.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4")}`;
-q("#adminModal").style.display="block"
-},600)
-});
-document.addEventListener("mouseup",()=>clearTimeout(pressTimer));
-
-adminNao.onclick=()=>q("#adminModal").style.display="none";
-adminSim.onclick=()=>{
-q("#adminModal").style.display="none";
-sel=document.querySelector(`.seat[data-seat="${adminTargetSeat}"]`)
-};
+/* ========= CURSO BOX ========= */
+setTimeout(()=>q("#cursoBox").style.pointerEvents="auto",0);
 
 let cursoTimer=null;
-cursoBox.addEventListener("mousedown",()=>{
-cursoTimer=setTimeout(()=>{
-const n=prompt("Código da turma");
-if(n){currentCurso=n.toUpperCase();load()}
-},600)
+q("#cursoBox").addEventListener("mousedown",()=>{
+  if(!isAdmin()) return;
+  cursoTimer=setTimeout(()=>{
+    const c=prompt("Código da turma");
+    if(c){ currentCurso=c.trim().toUpperCase(); load(); }
+  },600);
 });
 document.addEventListener("mouseup",()=>clearTimeout(cursoTimer));
 
-setInterval(()=>{if(!isLocked) load()},30000);
+/* ========= MODAL ========= */
+q("#adminNao").onclick=()=>q("#adminModal").style.display="none";
+q("#adminSim").onclick=()=>{
+  q("#adminModal").style.display="none";
+  sel=document.querySelector(`.seat[data-seat="${adminSeat}"]`);
+};
+
+/* ========= TOQUE LONGO POLTRONA ========= */
+let pressTimer=null;
+document.addEventListener("mousedown",e=>{
+  if(!isAdmin()) return;
+  const s=e.target.closest(".seat:not(.white)");
+  if(!s||!s.dataset.seat) return;
+  pressTimer=setTimeout(()=>{
+    adminSeat=s.dataset.seat;
+    q("#adminInfo").innerHTML=
+`${adminSeat}<br>
+Nome: Nome, Sobrenome<br>
+CPF: ${currentCPF.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4")}`;
+    q("#adminModal").style.display="block";
+  },600);
+});
+document.addEventListener("mouseup",()=>clearTimeout(pressTimer));
+
+/* ========= POLLING ========= */
+setInterval(()=>{ if(isAdmin()&&!isLocked) load(); },30000);
+
+/* ========= LOAD ORIGINAL ========= */
+async function load(){
+  let cpf=sessionStorage.getItem("cpf");
+  if(!cpf){
+    cpf=prompt("CPF (somente números)");
+    if(!cpf) return;
+    sessionStorage.setItem("cpf",cpf);
+  }
+  currentCPF=norm(cpf);
+  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:currentCPF})});
+  const j=await r.json();
+  const lista=j.poltronas||j.lista||[];
+  const cod=j.codigo||j.cursos||[];
+  const aluno=cod.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF);
+  currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toUpperCase();
+  q("#cursoText").textContent=currentCurso;
+  const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")===currentCurso);
+  bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id").padStart(2,"0")))];
+  userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").padStart(2,"0"));
+  const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
+  layout=cfg.layout;
+  render(layout);
+  q("#bus-wrapper").style.display="block";
+}
+
+/* ========= RENDER ========= */
+function render(l){
+  const w=q(".bus-container");
+  w.querySelector(".grid")?.remove();
+  const g=document.createElement("div");
+  g.className="grid";
+  l.forEach(r=>r.forEach(v=>{
+    const e=document.createElement("div");
+    e.className=v===null?"empty":v==="white"?"seat white":"seat";
+    if(v&&v!=="white"){e.dataset.seat=v.padStart(2,"0");e.textContent=e.dataset.seat;}
+    g.appendChild(e);
+  }));
+  w.appendChild(g);
+}
 
 load();
 </script>
