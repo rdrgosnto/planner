@@ -135,11 +135,10 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 <script>
 const q=s=>document.querySelector(s),
 norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
-gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}}; 
+gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 
 let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
-let lista = [];
-let seatState = {};
+let lista=[], seatState={};
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
 POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
@@ -162,28 +161,29 @@ const render = l => {
     if(v){
       const id = e.dataset.seat;
       if(userSeats.includes(id)) e.classList.add("mine");
-      else if(bl.includes(id)) e.classList.add("white");
+      else e.classList.remove("mine","selected");
 
-      let longPressTimer = null;
-      const longPressDuration = 600;
-      const showModalSeatLocal = (id) => {
+      if(bl.includes(id)) e.classList.add("white");
+      else e.classList.remove("white");
+
+      // --- Long press para abrir modal ---
+      let longPressTimer=null;
+      const longPressDuration=600;
+      const showModalSeatLocal = (id)=>{
         const data = seatState[id];
-        q("#modalSeatNumber").textContent = id;
-        q("#modalName").textContent = "Nome: " + (data?.nome || "--");
-        q("#modalCPF").textContent  = "CPF: "  + (data?.cpf  || "--");
+        q("#modalSeatNumber").textContent=id;
+        q("#modalName").textContent="Nome: "+(data?.nome||"--");
+        q("#modalCPF").textContent="CPF: "+(data?.cpf||"--");
         q("#seatModal").classList.add("show");
       };
+      e.addEventListener("mousedown",()=>{longPressTimer=setTimeout(()=>showModalSeatLocal(id),longPressDuration)});
+      e.addEventListener("mouseup",()=>clearTimeout(longPressTimer));
+      e.addEventListener("mouseleave",()=>clearTimeout(longPressTimer));
+      e.addEventListener("touchstart",()=>{longPressTimer=setTimeout(()=>showModalSeatLocal(id),longPressDuration)});
+      e.addEventListener("touchend",()=>clearTimeout(longPressTimer));
+      e.addEventListener("touchcancel",()=>clearTimeout(longPressTimer));
 
-      e.addEventListener("mousedown", ()=>{longPressTimer=setTimeout(()=>showModalSeatLocal(id),longPressDuration)});
-      e.addEventListener("mouseup", ()=>clearTimeout(longPressTimer));
-      e.addEventListener("mouseleave", ()=>clearTimeout(longPressTimer));
-      e.addEventListener("touchstart", ()=>{longPressTimer=setTimeout(()=>showModalSeatLocal(id),longPressDuration)});
-      e.addEventListener("touchend", ()=>clearTimeout(longPressTimer));
-      e.addEventListener("touchcancel", ()=>clearTimeout(longPressTimer));
-
-      if(!userSeats.includes(id) && !bl.includes(id)){
-        e.onclick = () => selSeat(e);
-      }
+      if(!userSeats.includes(id) && !bl.includes(id)) e.onclick=()=>selSeat(e);
     }
     g.appendChild(e);
   }));
@@ -195,7 +195,7 @@ modalYes.onclick=modalNo.onclick=()=>modal.classList.remove("show");
 modal.onclick=e=>{if(e.target===modal) modal.classList.remove("show")};
 
 const updateButtonState=()=>{const btn=q("#confirmarBtn");btn.textContent=userSeats.length>0?"CONFIRMAR":"CONFIRMAR";btn.classList.toggle("trocar",userSeats.length>0)};
-const showModalSeat=(id)=>{
+const showModalSeat=id=>{
   const data=seatState[id];
   q("#modalSeatNumber").textContent=id;
   q("#modalName").textContent="Nome: "+(data?.nome||"--");
@@ -232,14 +232,14 @@ const load=async()=>{
   anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block";
 };
 
-q("#confirmarBtn").onclick = async ()=>{
+q("#confirmarBtn").onclick=async()=>{
   if(isLocked) return;
   if(!sel){ alert("Selecione uma poltrona."); return }
 
   const nova=sel.dataset.seat;
   const antiga=userSeats[0]||null;
 
-  const ok = confirm("Confirma a poltrona selecionada?");
+  const ok=confirm("Confirma a poltrona selecionada?");
   if(!ok){ sel.classList.remove("selected"); sel.style.pointerEvents="auto"; return }
 
   isLocked=true; document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none"); q("#confirmarBtn").disabled=true;
@@ -250,18 +250,18 @@ q("#confirmarBtn").onclick = async ()=>{
     const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
 
     if(r.ok){
-      // --- atualiza seatState ANTES de renderizar ---
+      // --- Corrige primeira troca: atualiza seatState antes de renderizar ---
       if(antiga){
-        seatState[nova] = {...seatState[antiga]}; // move dados
-        seatState[antiga] = null;                 // limpa antiga
+        seatState[nova]={...seatState[antiga]}; // move dados
+        seatState[antiga]=null;                 // limpa antiga
+        bl=bl.filter(x=>x!==antiga);            // antiga volta disponível
       } else {
-        seatState[nova] = { nome:"Usuário", cpf:currentCPF};
+        seatState[nova]={nome:"Usuário",cpf:currentCPF};
       }
 
       userSeats=[nova];
 
       render(layout); updateButtonState();
-
       showModalSeat(nova);
 
       alert(antiga?"Poltrona trocada com sucesso!":"Poltrona selecionada!");
