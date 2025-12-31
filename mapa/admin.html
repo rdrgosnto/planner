@@ -28,9 +28,9 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 
-/* Card branco */
+/* Card branco centralizado */
 #seatCard {
-  position: absolute;
+  position: fixed;
   width: calc(54px * 4 + 10px * 3);
   height: calc(54px * 5 + 14px * 4);
   background: #fff;
@@ -40,7 +40,11 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   z-index: 10000;
   display: none;
   font-family: Arial;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
+
 #seatCard .seat-info { display: flex; gap: 12px; margin-bottom: 16px; }
 #seatCard .seat-number {
   width: 54px; height: 54px; border-radius: 12px;
@@ -104,9 +108,7 @@ const render=l=>{
       const id=e.dataset.seat;
       
       // clique longo
-      e.onmousedown = () => {
-        pressTimer = setTimeout(() => { showSeatCard(e,id); },600);
-      };
+      e.onmousedown = () => { pressTimer = setTimeout(() => { showSeatCard(e,id); },600); };
       e.onmouseup = e.onmouseleave = () => { clearTimeout(pressTimer); };
       
       if(userSeats.includes(id)) e.classList.add("mine");
@@ -184,18 +186,15 @@ q("#confirmarBtn").onclick = async () => {
   },2000);
 };
 
-// === Card clique longo ===
+// === Card clique longo centralizado ===
 let pressTimer = null;
 const card = q("#seatCard");
 function showSeatCard(seatElem, seatId) {
-  const rect = seatElem.getBoundingClientRect();
   const dados = blData.find(x => gf(x,"ID","Id","id")?.toString().padStart(2,"0") === seatId);
   q("#cardSeatNum").textContent = seatId;
   q("#cardName").textContent = dados ? gf(dados,"NOME","Nome","nome") : "—";
   q("#cardCPF").textContent = dados ? gf(dados,"CPF2","CPF","cpf") : "";
-  card.style.top = window.scrollY + rect.top + "px";
-  card.style.left = window.scrollX + rect.right + 10 + "px";
-  card.style.display = "block";
+  card.style.display = "block"; // card sempre centralizado pelo CSS
 }
 card.querySelector(".no").onclick = () => { card.style.display = "none"; };
 card.querySelector(".yes").onclick = () => {};
