@@ -139,7 +139,7 @@ gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase
 
 let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
 let lista = [];
-let seatState = {}; // estado real das poltronas
+let seatState = {};
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
 POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
@@ -151,7 +151,6 @@ const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"
 const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat}if(v==="white") e.dataset.white="true";return e};
 const selSeat=e=>{if(isLocked) return;if(!e.classList.contains("white") && !e.classList.contains("lost") && !e.classList.contains("mine") && !e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel = sel===e?null:e;e.classList.toggle("selected", sel===e)}};
 
-// --- render() com long press para todas poltronas ---
 const render = l => {
   const w = q(".bus-container");
   w.querySelector(".grid")?.remove();
@@ -162,15 +161,12 @@ const render = l => {
     const e = cSeat(v);
     if(v){
       const id = e.dataset.seat;
-
       if(userSeats.includes(id)) e.classList.add("mine");
       else if(bl.includes(id)) e.classList.add("white");
 
-      // LONG PRESS para todas poltronas
       let longPressTimer = null;
       const longPressDuration = 600;
-
-      const showModalSeat = (id) => {
+      const showModalSeatLocal = (id) => {
         const data = seatState[id];
         q("#modalSeatNumber").textContent = id;
         q("#modalName").textContent = "Nome: " + (data?.nome || "--");
@@ -178,10 +174,10 @@ const render = l => {
         q("#seatModal").classList.add("show");
       };
 
-      e.addEventListener("mousedown", ()=>{longPressTimer=setTimeout(()=>showModalSeat(id),longPressDuration)});
+      e.addEventListener("mousedown", ()=>{longPressTimer=setTimeout(()=>showModalSeatLocal(id),longPressDuration)});
       e.addEventListener("mouseup", ()=>clearTimeout(longPressTimer));
       e.addEventListener("mouseleave", ()=>clearTimeout(longPressTimer));
-      e.addEventListener("touchstart", ()=>{longPressTimer=setTimeout(()=>showModalSeat(id),longPressDuration)});
+      e.addEventListener("touchstart", ()=>{longPressTimer=setTimeout(()=>showModalSeatLocal(id),longPressDuration)});
       e.addEventListener("touchend", ()=>clearTimeout(longPressTimer));
       e.addEventListener("touchcancel", ()=>clearTimeout(longPressTimer));
 
@@ -194,13 +190,11 @@ const render = l => {
   w.appendChild(g);
 };
 
-// --- modal ---
 const modal=q("#seatModal"), modalYes=q("#modalYes"), modalNo=q("#modalNo");
 modalYes.onclick=modalNo.onclick=()=>modal.classList.remove("show");
 modal.onclick=e=>{if(e.target===modal) modal.classList.remove("show")};
 
 const updateButtonState=()=>{const btn=q("#confirmarBtn");btn.textContent=userSeats.length>0?"CONFIRMAR":"CONFIRMAR";btn.classList.toggle("trocar",userSeats.length>0)};
-
 const showModalSeat=(id)=>{
   const data=seatState[id];
   q("#modalSeatNumber").textContent=id;
@@ -224,7 +218,7 @@ const load=async()=>{
   bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
   userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
 
-  // --- inicializa seatState ---
+  // inicializa seatState
   lista.forEach(x=>{
     const id=gf(x,"ID","Id","id")?.toString().padStart(2,"0");
     if(!id) return;
@@ -256,9 +250,9 @@ q("#confirmarBtn").onclick = async ()=>{
     const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
 
     if(r.ok){
-      // mover estado
+      // --- atualiza seatState ANTES de renderizar ---
       if(antiga){
-        seatState[nova] = {...seatState[antiga]}; // leva infos da antiga
+        seatState[nova] = {...seatState[antiga]}; // move dados
         seatState[antiga] = null;                 // limpa antiga
       } else {
         seatState[nova] = { nome:"Usuário", cpf:currentCPF};
@@ -268,7 +262,6 @@ q("#confirmarBtn").onclick = async ()=>{
 
       render(layout); updateButtonState();
 
-      // abre card na nova poltrona
       showModalSeat(nova);
 
       alert(antiga?"Poltrona trocada com sucesso!":"Poltrona selecionada!");
