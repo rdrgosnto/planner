@@ -15,7 +15,7 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none}
 .seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;cursor:default}
-.seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;cursor:default!important} /* pointer-events removido */
+.seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;cursor:default!important}
 .seat.white{background:#fff!important;border:3px solid #8c96b2!important}
 .seat.lost-temp{background:#aaa!important;border-color:#777!important}
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
@@ -47,8 +47,8 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   pointer-events:auto;
 }
 #seatCard{
-  width:calc(54px*3 + 32px); /* 3 poltronas de largura */
-  height:calc(54px*4 + 32px); /* 4 poltronas de altura */
+  width:calc(54px*3 + 32px);
+  height:calc(54px*4 + 32px);
   background:#fff;
   display:flex;
   flex-direction:column;
@@ -73,12 +73,6 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   justify-content:center;
   font-weight:bold;
   margin-bottom:12px;
-  box-shadow:0 0 0 rgba(0,0,0,0);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-#seatModal.show #seatCard .seat-square{
-  box-shadow:0 4px 12px rgba(0,0,0,0.4);
-  transform:scale(1.05);
 }
 #seatCard .seat-details{
   display:flex;
@@ -156,7 +150,7 @@ const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"
 const cSeat=v=>{const e=document.createElement("div");e.className=v===null?"empty":v==="white"?"seat white":"seat";if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat}if(v==="white") e.dataset.white="true";return e};
 const selSeat=e=>{if(isLocked) return;if(!e.classList.contains("white") && !e.classList.contains("lost") && !e.classList.contains("mine") && !e.classList.contains("lost-temp")){sel?.classList.remove("selected");sel = sel===e?null:e;e.classList.toggle("selected", sel===e)}};
 
-// --- render() com long press para todas as poltronas ---
+// --- render() com long press para todas poltronas ---
 const render = l => {
   const w = q(".bus-container");
   w.querySelector(".grid")?.remove();
@@ -174,7 +168,7 @@ const render = l => {
       // LONG PRESS para todas poltronas
       let longPressTimer = null;
       const longPressDuration = 600;
-      const showModalSeat = () => {
+      const showModalSeat = (id) => {
         const info = lista.find(x => x.ID?.toString().padStart(2,"0") === id) || {};
         q("#modalSeatNumber").textContent = `${id}`;
         q("#modalName").textContent = `Nome: ${gf(info,"NOME","Nome")||"--"}`;
@@ -182,10 +176,10 @@ const render = l => {
         q("#seatModal").classList.add("show");
       };
 
-      e.addEventListener("mousedown", ()=>{longPressTimer=setTimeout(showModalSeat,longPressDuration)});
+      e.addEventListener("mousedown", ()=>{longPressTimer=setTimeout(()=>showModalSeat(id),longPressDuration)});
       e.addEventListener("mouseup", ()=>clearTimeout(longPressTimer));
       e.addEventListener("mouseleave", ()=>clearTimeout(longPressTimer));
-      e.addEventListener("touchstart", ()=>{longPressTimer=setTimeout(showModalSeat,longPressDuration)});
+      e.addEventListener("touchstart", ()=>{longPressTimer=setTimeout(()=>showModalSeat(id),longPressDuration)});
       e.addEventListener("touchend", ()=>clearTimeout(longPressTimer));
       e.addEventListener("touchcancel", ()=>clearTimeout(longPressTimer));
 
