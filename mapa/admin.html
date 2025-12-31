@@ -73,7 +73,6 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   justify-content:center;
   font-weight:bold;
   margin-bottom:12px;
-  transition:none;
 }
 #seatCard .seat-details{
   display:flex;
@@ -140,7 +139,7 @@ gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase
 
 let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
 let lista = [];
-let fakeName="", fakeCPF="";
+let seatState = {}; // estado real das poltronas
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
 POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
@@ -170,11 +169,12 @@ const render = l => {
       // LONG PRESS para todas poltronas
       let longPressTimer = null;
       const longPressDuration = 600;
+
       const showModalSeat = (id) => {
-        const info = lista.find(x => x.ID?.toString().padStart(2,"0") === id) || {};
-        q("#modalSeatNumber").textContent = `${id}`;
-        q("#modalName").textContent = `Nome: ${gf(info,"NOME","Nome")||fakeName||"--"}`;
-        q("#modalCPF").textContent = `CPF: ${gf(info,"CPF2","CPF")||fakeCPF||"--"}`;
+        const data = seatState[id];
+        q("#modalSeatNumber").textContent = id;
+        q("#modalName").textContent = "Nome: " + (data?.nome || "--");
+        q("#modalCPF").textContent  = "CPF: "  + (data?.cpf  || "--");
         q("#seatModal").classList.add("show");
       };
 
@@ -202,10 +202,10 @@ modal.onclick=e=>{if(e.target===modal) modal.classList.remove("show")};
 const updateButtonState=()=>{const btn=q("#confirmarBtn");btn.textContent=userSeats.length>0?"CONFIRMAR":"CONFIRMAR";btn.classList.toggle("trocar",userSeats.length>0)};
 
 const showModalSeat=(id)=>{
-  const info=lista.find(x=>x.ID?.toString().padStart(2,"0")===id)||{};
-  q("#modalSeatNumber").textContent=`${id}`;
-  q("#modalName").textContent=`Nome: ${gf(info,"NOME","Nome")||fakeName||"--"}`;
-  q("#modalCPF").textContent=`CPF: ${gf(info,"CPF2","CPF")||fakeCPF||"--"}`;
+  const data=seatState[id];
+  q("#modalSeatNumber").textContent=id;
+  q("#modalName").textContent="Nome: "+(data?.nome||"--");
+  q("#modalCPF").textContent="CPF: "+(data?.cpf||"--");
   q("#seatModal").classList.add("show");
 };
 
@@ -223,6 +223,16 @@ const load=async()=>{
   const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso);
   bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))];
   userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
+
+  // --- inicializa seatState ---
+  lista.forEach(x=>{
+    const id=gf(x,"ID","Id","id")?.toString().padStart(2,"0");
+    if(!id) return;
+    const nome=gf(x,"NOME","Nome");
+    const cpf=gf(x,"CPF2","CPF");
+    seatState[id] = nome && cpf ? {nome, cpf} : null;
+  });
+
   const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
   layout=cfg.layout;render(layout);updateButtonState();
   anim(100);setTimeout(()=>q("#progress-bar-container").remove(),600);q("#bus-wrapper").style.display="block";
@@ -232,37 +242,33 @@ q("#confirmarBtn").onclick = async ()=>{
   if(isLocked) return;
   if(!sel){ alert("Selecione uma poltrona."); return }
 
-  // salvar dados fake da poltrona antiga
-  const antiga= userSeats[0]||null;
-  if(antiga){
-    const antigaInfo=lista.find(x=>x.ID?.toString().padStart(2,"0")===antiga);
-    fakeName=gf(antigaInfo,"NOME","Nome")||"--";
-    fakeCPF=gf(antigaInfo,"CPF2","CPF")||"--";
-  }
+  const nova=sel.dataset.seat;
+  const antiga=userSeats[0]||null;
 
   const ok = confirm("Confirma a poltrona selecionada?");
   if(!ok){ sel.classList.remove("selected"); sel.style.pointerEvents="auto"; return }
 
   isLocked=true; document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none"); q("#confirmarBtn").disabled=true;
-  const nova=sel.dataset.seat;
 
   try{
     const url=antiga?POST_TROCAR:POST;
     const payload=antiga?{cpf:currentCPF,curso:currentCurso,current:antiga,select:nova}:{poltrona:nova,CURSO:currentCurso,cpf:currentCPF};
     const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    if(r.ok){
-      userSeats=[nova];
-      const novaInfo=lista.find(x=>x.ID?.toString().padStart(2,"0")===nova);
-      if(novaInfo) novaInfo.CPF2=currentCPF;
-      if(antiga){
-        const antigaInfo=lista.find(x=>x.ID?.toString().padStart(2,"0")===antiga);
-        if(antigaInfo) antigaInfo.CPF2="";
-        bl=bl.filter(x=>x!==antiga);
-      }
-      render(layout); // reaplica long press
-      updateButtonState();
 
-      // ABRE O CARD NA NOVA POLTRONA com fake info da antiga
+    if(r.ok){
+      // mover estado
+      if(antiga){
+        seatState[nova] = {...seatState[antiga]}; // leva infos da antiga
+        seatState[antiga] = null;                 // limpa antiga
+      } else {
+        seatState[nova] = { nome:"Usuário", cpf:currentCPF};
+      }
+
+      userSeats=[nova];
+
+      render(layout); updateButtonState();
+
+      // abre card na nova poltrona
       showModalSeat(nova);
 
       alert(antiga?"Poltrona trocada com sucesso!":"Poltrona selecionada!");
@@ -275,8 +281,6 @@ q("#confirmarBtn").onclick = async ()=>{
   sel=null; setTimeout(()=>{
     document.querySelectorAll(".seat").forEach(s=>{if(!s.classList.contains("mine")&&!s.classList.contains("white")) s.style.pointerEvents="auto"});
     q("#confirmarBtn").disabled=false; isLocked=false;
-    // limpar fake após abrir card
-    fakeName=""; fakeCPF="";
   },2000);
 };
 
