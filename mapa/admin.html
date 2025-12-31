@@ -4,61 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa</title>
+
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 
 <style>
-body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
+body{font-family:Arial;margin:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center}
 #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
-.bus-container{padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
-.grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
-.seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
-.seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none}
-.seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;cursor:default}
-.seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;cursor:default!important;pointer-events:none!important}
-.seat.white{background:#fff!important;border:3px solid #8c96b2!important}
-.seat.lost-temp{background:#aaa!important;border-color:#777!important}
-.seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
-.seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-.empty{background:0 0}
-#confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999}
+.bus-container{padding:20px 20px 24px;border:3px solid #b0b0b0;border-radius:16px;margin:auto;position:relative}
+.grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px}
+.seat,.empty{width:54px;height:54px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.seat{background:#4CAF50;color:#fff;font-weight:bold;border:3px solid #4CAF50;cursor:pointer}
+.seat.mine{background:#e74c3c;border-color:#e74c3c}
+.seat.white{background:#fff;border:3px solid #8c96b2;color:transparent;pointer-events:none}
+#confirmarBtn{position:absolute;bottom:-64px;right:20px;width:112px;height:54px;border-radius:12px;border:none;background:#4CAF50;color:#fff;font-weight:bold}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;display:flex;align-items:center;justify-content:center}
 #cursoText{transform:rotate(-90deg);font-size:18px}
-#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001}
-#progress-bar{width:0;height:100%;background:#4CAF50}
+#adminLabel{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);font-size:11px;color:#888}
 
-/* ===== ADMIN OVERLAY ===== */
-#adminOverlay{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:10000;
-}
-#adminBox{
-  width:190px;
-  height:130px;
-  background:#d0d0d0;
-  border:3px solid #8c96b2;
-  border-radius:12px;
-  padding:10px;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  font-size:14px;
-}
-.admin-actions{text-align:center}
-.admin-actions button{
-  margin:4px;
-  padding:6px 14px;
-  border:none;
-  border-radius:8px;
-  font-weight:bold;
-}
-.yes{background:#4CAF50;color:#fff}
-.no{background:#888;color:#fff}
+/* ADMIN BOX */
+#adminOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999}
+#adminBox{width:190px;height:130px;background:#d0d0d0;border:3px solid #8c96b2;border-radius:12px;padding:10px;font-size:14px}
 </style>
 </head>
 
@@ -71,63 +38,88 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   </div>
 </div>
 
-<div id="progress-bar-container"><div id="progress-bar"></div></div>
-
-<!-- ADMIN BOX -->
 <div id="adminOverlay">
   <div id="adminBox">
-    <div>
-      <b id="adminNome">Aluno</b><br>
-      <span id="adminCPF"></span>
-    </div>
-    <div class="admin-actions">
-      Deseja mudar a poltrona?<br>
-      <button class="yes" id="adminYes">SIM</button>
-      <button class="no" id="adminNo">NÃO</button>
-    </div>
+    <b id="adminNome">Reservado</b><br>
+    <span id="adminCPF"></span><br><br>
+    Deseja mudar a poltrona?<br>
+    <button id="adminYes">SIM</button>
+    <button id="adminNo">NÃO</button>
   </div>
 </div>
 
+<div id="adminLabel">admin</div>
+
 <script>
-const q=s=>document.querySelector(s),
-norm=c=>c?.replace(/\D/g,"").padStart(11,"0")||"";
-
 const ADMIN_CPF="35128248895";
-let isAdmin=false,isLocked=false,sel=null,adminSeat=null,longTimer=null;
+const q=s=>document.querySelector(s);
+const norm=c=>c?.replace(/\D/g,"").padStart(11,"0")||"";
 
-/* detecta admin */
-if(norm(sessionStorage.getItem("cpf"))===ADMIN_CPF) isAdmin=true;
+let currentCurso="",layout=[],bl=[],userSeats=[],sel=null,isLocked=false;
+let isAdmin=norm(sessionStorage.getItem("cpf"))===ADMIN_CPF;
 
-/* ADMIN BOX */
-const openAdmin=(seat)=>{
-  adminSeat=seat;
-  q("#adminCPF").textContent=seat.dataset.cpf||"";
-  q("#adminOverlay").style.display="flex";
-  isLocked=true;
-};
-const closeAdmin=()=>{
-  q("#adminOverlay").style.display="none";
-  isLocked=false;
-};
-q("#adminNo").onclick=closeAdmin;
-q("#adminYes").onclick=()=>{
-  closeAdmin();
-  sel=adminSeat;
-  sel.classList.add("selected");
+/* ==== FETCH ==== */
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1";
+
+/* ==== RENDER ==== */
+const cSeat=id=>{
+  const e=document.createElement("div");
+  e.className="seat";
+  e.textContent=id;
+  if(bl.includes(id)) e.classList.add("white");
+  if(userSeats.includes(id)) e.classList.add("mine");
+  e.onclick=()=>{ if(!isLocked){ sel=e; } };
+  return e;
 };
 
-/* toque longo */
-document.addEventListener("mousedown",e=>{
-  if(!isAdmin) return;
-  const seat=e.target.closest(".seat.mine");
-  if(!seat) return;
-  longTimer=setTimeout(()=>openAdmin(seat),600);
-});
-document.addEventListener("mouseup",()=>clearTimeout(longTimer));
+const render=()=>{
+  const w=q(".bus-container");
+  w.querySelector(".grid")?.remove();
+  const g=document.createElement("div");
+  g.className="grid";
+  layout.flat().forEach(v=>{
+    g.appendChild(v?cSeat(v.toString().padStart(2,"0")):document.createElement("div"));
+  });
+  w.appendChild(g);
+};
 
-/* ===== TODO O SEU JS ORIGINAL SEGUE INTACTO ABAIXO ===== */
-/* (não removi nada do seu fluxo existente) */
+/* ==== LOAD ==== */
+async function load(){
+  const cpf=sessionStorage.getItem("cpf");
+  if(!cpf) return;
+  const r=await fetch(GET,{method:"POST",body:JSON.stringify({cpf})});
+  const j=await r.json();
+  currentCurso=currentCurso||j.codigo[0].CODIGO;
+  q("#cursoText").textContent=currentCurso;
 
+  const rows=j.poltronas.filter(x=>x.CURSO===currentCurso);
+  bl=rows.map(x=>x.ID.toString().padStart(2,"0"));
+  userSeats=rows.filter(x=>norm(x.CPF2)===norm(cpf)).map(x=>x.ID.toString().padStart(2,"0"));
+
+  layout=(await fetch("../configs/0046.json").then(r=>r.json())).layout;
+  render();
+  q("#bus-wrapper").style.display="block";
+}
+
+/* ==== POLLING ADMIN ==== */
+if(isAdmin){
+  setInterval(()=>load(),30000);
+}
+
+/* ==== TROCA DE TURMA (ADMIN) ==== */
+if(isAdmin){
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){
+      const t=prompt("Código da turma:");
+      if(t){
+        currentCurso=t.trim().toUpperCase();
+        load();
+      }
+    }
+  });
+}
+
+load();
 </script>
 </body>
 </html>
