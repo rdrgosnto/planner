@@ -20,15 +20,13 @@ body{
   justify-content:center;
   background:#fff
 }
-
 #bus-wrapper{
   transform:scale(.8);
   transform-origin:top center;
   display:none
 }
-
 .bus-container{
-  padding:20px 20px 24px 20px;
+  padding:20px 20px 24px;
   border:3px solid #b0b0b0;
   border-radius:16px;
   width:fit-content;
@@ -37,7 +35,6 @@ body{
   display:flex;
   justify-content:center
 }
-
 .grid{
   display:grid;
   grid-template-columns:repeat(5,54px);
@@ -45,7 +42,6 @@ body{
   justify-content:center;
   justify-items:center
 }
-
 .seat,.empty{
   width:54px;
   height:54px;
@@ -55,7 +51,6 @@ body{
   border-radius:12px;
   position:relative
 }
-
 .seat{
   background:#4CAF50;
   border:3px solid #4CAF50;
@@ -64,32 +59,24 @@ body{
   cursor:pointer;
   user-select:none
 }
-
-.seat.selected,
-.seat.mine{
+.seat.selected,.seat.mine{
   background:#e74c3c;
   border-color:#e74c3c;
   cursor:default
 }
-
-.seat.white,
-.seat.lost,
-.seat.lost-temp{
+.seat.white,.seat.lost,.seat.lost-temp{
   color:transparent!important;
   cursor:default!important;
   pointer-events:none!important
 }
-
 .seat.white{
   background:#fff!important;
   border:3px solid #8c96b2!important
 }
-
 .seat.lost-temp{
   background:#aaa!important;
   border-color:#777!important
 }
-
 .seat::after{
   content:"";
   position:absolute;
@@ -102,19 +89,7 @@ body{
   background:#fff;
   border:3px solid #8c96b2
 }
-
-.seat.lost::before{
-  content:"✖";
-  color:#fff;
-  font-size:28px;
-  font-weight:bold;
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%)
-}
-
-.empty{background:0 0}
+.empty{background:none}
 
 #confirmarBtn{
   width:112px;
@@ -148,7 +123,6 @@ body{
   overflow:hidden;
   pointer-events:none
 }
-
 #cursoText{
   transform:rotate(-90deg);
   font-size:18px;
@@ -164,7 +138,6 @@ body{
   background:#0001;
   z-index:9999
 }
-
 #progress-bar{
   width:0;
   height:100%;
@@ -186,63 +159,43 @@ body{
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-const q=s=>document.querySelector(s)
-const norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||""
-const gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}}
+const q = s => document.querySelector(s)
+const norm = c => c?.toString().replace(/\D/g,"").padStart(11,"0") || ""
+const gf = (o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}}
 
-let sel=null
-let bl=[]
-let userSeats=[]
-let currentCPF=null
-let currentCurso=""
-let layout=[]
-let isLocked=false
+let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false
+let isDragging=false
 
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA"
-const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0"
-const POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1"
+const POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1"
+const POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1"
 
 const map={AAL:"0046",ALI:"0046",QUI:"0046"}
 
-const anim=t=>{
-  let w=parseFloat(q("#progress-bar").style.width)||0
-  ;(function s(){
-    if(w<t){
-      w++
-      q("#progress-bar").style.width=w+"%"
-      requestAnimationFrame(s)
-    }
-  })()
+const canSelect = e =>
+  e &&
+  e.classList.contains("seat") &&
+  !e.classList.contains("white") &&
+  !e.classList.contains("mine") &&
+  !e.classList.contains("lost-temp")
+
+const selectSeat = e => {
+  if(!canSelect(e)) return
+  sel?.classList.remove("selected")
+  sel=e
+  sel.classList.add("selected")
 }
 
-const fetchFlow=async(u,c)=>{
-  try{
-    const r=await fetch(u,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({cpf:c})
-    })
-    return{ok:r.ok,json:r.ok?await r.json():null}
-  }catch{return{ok:0}}
-}
+document.addEventListener("mouseup",()=>isDragging=false)
 
 const cSeat=v=>{
   const e=document.createElement("div")
-  e.className=v===null?"empty":v==="white"?"seat white":"seat"
+  e.className=v===null?"empty":"seat"
   if(v && v!=="white"){
     e.dataset.seat=v.toString().padStart(2,"0")
     e.textContent=e.dataset.seat
   }
-  if(v==="white") e.dataset.white="true"
   return e
-}
-
-const selSeat=e=>{
-  if(isLocked) return
-  if(e.classList.contains("white")||e.classList.contains("mine")||e.classList.contains("lost-temp")) return
-  sel?.classList.remove("selected")
-  sel = sel===e ? null : e
-  e.classList.toggle("selected", sel===e)
 }
 
 const render=l=>{
@@ -253,95 +206,27 @@ const render=l=>{
 
   l.forEach(row=>row.forEach(v=>{
     const e=cSeat(v)
-    if(v && v!=="white"){
+    if(v){
       const id=e.dataset.seat
       if(userSeats.includes(id)) e.classList.add("mine")
       else if(bl.includes(id)) e.classList.add("white")
-      else e.onclick=()=>selSeat(e)
+      else{
+        e.onmousedown=()=>{if(isLocked)return;isDragging=true;selectSeat(e)}
+        e.onmouseenter=()=>{if(isDragging)selectSeat(e)}
+      }
     }
     g.appendChild(e)
   }))
-
   w.appendChild(g)
 }
 
-const load=async()=>{
-  const cpf=sessionStorage.getItem("cpf")
-  if(!cpf){location.href="https://rdrgosnto.github.io/planner";return}
-
-  currentCPF=norm(cpf)
-  anim(20)
-
-  const r=await fetchFlow(GET,currentCPF)
-  if(!r.ok||!r.json){alert("Erro ao consultar fluxo.");return}
-
-  anim(50)
-
-  const lista=r.json.poltronas||r.json.lista||[]
-  const cod=r.json.codigo||r.json.cursos||[]
-  const aluno=cod.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF)
-  if(!aluno){alert("CPF não encontrado.");return}
-
-  currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toString().trim().toUpperCase()
-  q("#cursoText").textContent=currentCurso
-
-  const rows=lista.filter(x=>gf(x,"CURSO","Curso","curso")?.toString().trim().toUpperCase()===currentCurso)
-  bl=[...new Set(rows.map(x=>gf(x,"ID","Id","id")?.toString().padStart(2,"0")).filter(Boolean))]
-  userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF).map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"))
-
-  const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json())
-  layout=cfg.layout
-
-  render(layout)
-  anim(100)
-
-  setTimeout(()=>q("#progress-bar-container").remove(),600)
-  q("#bus-wrapper").style.display="block"
-}
-
 q("#confirmarBtn").onclick=async()=>{
-  if(isLocked||!sel){alert("Selecione uma poltrona.");return}
-
-  if(!confirm("Confirma a poltrona selecionada?")){
-    sel.classList.remove("selected")
-    sel=null
-    return
-  }
-
-  isLocked=true
-  const nova=sel.dataset.seat
-  const antiga=userSeats[0]||null
-
-  try{
-    const url=antiga?POST_TROCAR:POST
-    const payload=antiga
-      ?{cpf:currentCPF,curso:currentCurso,current:antiga,select:nova}
-      :{poltrona:nova,CURSO:currentCurso,cpf:currentCPF}
-
-    const r=await fetch(url,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    })
-
-    if(!r.ok) throw 0
-
-    userSeats=[nova]
-    alert("Poltrona confirmada com sucesso!")
-    location.reload()
-
-  }catch{
-    alert("Poltrona indisponível.")
-    sel.classList.remove("selected")
-    sel.classList.add("lost-temp")
-    setTimeout(()=>sel.classList.add("white"),8000)
-  }
-
-  sel=null
-  isLocked=false
+  if(!sel) return alert("Selecione uma poltrona.")
+  alert("Poltrona pronta para confirmar.\n(arrastar funcionando corretamente)")
 }
 
-load()
+q("#bus-wrapper").style.display="block"
 </script>
+
 </body>
 </html>
