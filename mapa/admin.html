@@ -23,9 +23,9 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 .seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 .empty{background:0 0}
 #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;user-select:none}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
-#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001}
+#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
 #progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 
 .seat.dragging{
@@ -39,14 +39,12 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
 </head>
 
 <body>
-
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
     <button id="confirmarBtn">CONFIRMAR</button>
   </div>
 </div>
-
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
@@ -56,7 +54,7 @@ gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase
 
 let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
 
-/* ===== DRAG ===== */
+/* ========= DRAG ========= */
 let dragSeat=null, dragTimer=null, dragOrigin=null, isDragging=false;
 
 function enableDrag(seat){
@@ -99,10 +97,7 @@ function endDrag(e){
   const p=e.changedTouches?e.changedTouches[0]:e;
   const el=document.elementFromPoint(p.clientX,p.clientY);
   const target=el?.closest(".seat");
-
-  if(target && target!==dragSeat){
-    swapSeats(dragSeat,target);
-  }
+  if(target && target!==dragSeat) swapSeats(dragSeat,target);
   cleanupDrag();
 }
 
@@ -111,7 +106,6 @@ function cleanupDrag(){
   dragSeat.removeAttribute("style");
   dragSeat=null;
   isDragging=false;
-
   document.removeEventListener("mousemove",moveDrag);
   document.removeEventListener("touchmove",moveDrag);
   document.removeEventListener("mouseup",endDrag);
@@ -133,7 +127,7 @@ function swapSeats(a,b){
   render(layout);
 }
 
-/* ===== RENDER ===== */
+/* ========= RENDER ========= */
 const cSeat=v=>{
   const e=document.createElement("div");
   e.className=v===null?"empty":v==="white"?"seat white":"seat";
@@ -170,19 +164,35 @@ const render=l=>{
   w.appendChild(g);
 };
 
-/* ===== LOAD ===== */
-async function load(){
-  const cfg=await fetch("layout.json").then(r=>r.json());
+/* ========= LOAD ORIGINAL ========= */
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA";
+const map={AAL:"0046",ALI:"0046",QUI:"0046"};
+
+const load=async()=>{
+  const cpf=sessionStorage.getItem("cpf");
+  if(!cpf){location.href="https://rdrgosnto.github.io/planner";return;}
+  currentCPF=norm(cpf);
+
+  const r=await fetch(GET,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({cpf:currentCPF})
+  });
+  const data=await r.json();
+
+  const aluno=data.cursos.find(x=>norm(gf(x,"CPF2","CPF"))===currentCPF);
+  currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toUpperCase();
+  q("#cursoText").textContent=currentCurso;
+
+  const rows=data.poltronas.filter(x=>gf(x,"CURSO","Curso","curso")===currentCurso);
+  bl=rows.map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
+  userSeats=rows.filter(x=>norm(gf(x,"CPF2","CPF"))===currentCPF)
+                .map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"));
+
+  const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
   layout=cfg.layout;
   render(layout);
   q("#bus-wrapper").style.display="block";
-}
-
-/* ===== CONFIRMAR ===== */
-q("#confirmarBtn").onclick=()=>{
-  if(!sel) return alert("Selecione uma poltrona");
-  userSeats=[sel.dataset.seat];
-  alert("Poltrona confirmada: "+sel.dataset.seat);
 };
 
 load();
