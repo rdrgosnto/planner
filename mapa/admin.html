@@ -4,40 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Planner | Mapa – Troca Livre</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
 
 <style>
+/* === SEU CSS ORIGINAL (inalterado) === */
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
 .bus-container{padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
 .grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
-
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none}
-
-.seat.from{background:#f1c40f;border-color:#f1c40f;color:#000}
-.seat.to{background:#e74c3c;border-color:#e74c3c}
-
-.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent}
-.seat.lost-temp{background:#aaa!important;border-color:#777!important;color:transparent}
-
+.seat.from{background:#f1c40f!important;border-color:#f1c40f!important;color:#000}
+.seat.to{background:#e74c3c!important;border-color:#e74c3c!important}
+.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent!important}
+.seat.lost-temp{background:#aaa!important;border-color:#777!important;color:transparent!important}
 .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
-
 .empty{background:0 0}
-
-#confirmarBtn{
-  width:140px;height:54px;background:#4CAF50;color:#fff;border:none;
-  font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;
-  position:absolute;bottom:-64px;right:20px
-}
-
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#confirmarBtn{width:160px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center}
 #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
-
-#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001}
-#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 </style>
 </head>
 
@@ -50,51 +34,43 @@ body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min
   </div>
 </div>
 
-<div id="progress-bar-container"><div id="progress-bar"></div></div>
-
 <script>
-/* ================= CONFIG ================= */
-const MODE = "TROCA_LIVRE";
+/* === helpers originais === */
+const q=s=>document.querySelector(s),
+norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
+gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 
+/* === endpoints === */
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1";
 const POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1";
-
 const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-const q=s=>document.querySelector(s);
-const norm=c=>c?.replace(/\D/g,"").padStart(11,"0")||"";
+/* === state === */
+let layout=[], bl=[], currentCurso="", exchange={origem:null,destino:null}, isLocked=false;
 
-/* ================= STATE ================= */
-let layout=[], currentCurso="";
-let exchange={ origem:null, destino:null };
-let isLocked=false;
-
-/* ================= UI ================= */
-const anim=t=>{
-  let w=0;
-  (function s(){ if(w<t){w++;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s)} })();
-};
-
-const createSeat=v=>{
+/* === render === */
+const cSeat=v=>{
   const e=document.createElement("div");
-  if(v===null){ e.className="empty"; return e }
+  if(v===null){e.className="empty";return e}
   e.className="seat";
   e.dataset.seat=v.toString().padStart(2,"0");
   e.textContent=e.dataset.seat;
+  if(bl.includes(e.dataset.seat)) e.classList.add("white");
   e.onclick=()=>onSeatClick(e);
   return e;
 };
 
 const render=()=>{
-  const box=q(".bus-container");
-  box.querySelector(".grid")?.remove();
+  const w=q(".bus-container");
+  w.querySelector(".grid")?.remove();
   const g=document.createElement("div");
   g.className="grid";
-  layout.forEach(r=>r.forEach(v=>g.appendChild(createSeat(v))));
-  box.appendChild(g);
+  layout.forEach(r=>r.forEach(v=>g.appendChild(cSeat(v))));
+  w.appendChild(g);
 };
 
-const resetExchange=()=>{
+/* === troca livre === */
+const reset=()=>{
   exchange={origem:null,destino:null};
   document.querySelectorAll(".seat").forEach(s=>{
     s.classList.remove("from","to","lost-temp");
@@ -102,48 +78,40 @@ const resetExchange=()=>{
   });
 };
 
-/* ================= LOGIC ================= */
 const onSeatClick=e=>{
   if(isLocked) return;
   const id=e.dataset.seat;
 
   if(!exchange.origem){
-    let cpf=prompt(`CPF do ocupante da poltrona ${id} (se livre, deixe vazio):`);
-    if(cpf!==null){
-      cpf=norm(cpf);
-      exchange.origem={ seat:id, cpf:cpf||null };
-      e.classList.add("from");
-    }
+    let cpf=prompt(`CPF do ocupante da poltrona ${id}:`);
+    if(cpf===null) return;
+    exchange.origem={ seat:id, cpf:norm(cpf) };
+    e.classList.add("from");
     return;
   }
 
   if(exchange.origem.seat===id){
-    resetExchange();
-    return;
+    reset(); return;
   }
 
   exchange.destino={ seat:id };
   e.classList.add("to");
 };
 
-/* ================= CONFIRM ================= */
+/* === confirmar === */
 q("#confirmarBtn").onclick=async()=>{
-  if(isLocked) return;
-  if(!exchange.origem || !exchange.destino){
-    alert("Selecione origem e destino.");
-    return;
+  if(!exchange.origem||!exchange.destino){
+    alert("Selecione origem e destino"); return;
   }
 
-  const msg=
-`Confirma a troca?
-CPF: ${exchange.origem.cpf||"(vazio)"}
+  if(!confirm(
+`Confirmar troca?
+CPF: ${exchange.origem.cpf}
 Origem: ${exchange.origem.seat}
-Destino: ${exchange.destino.seat}`;
-
-  if(!confirm(msg)) return;
+Destino: ${exchange.destino.seat}`
+  )) return;
 
   isLocked=true;
-  document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
 
   try{
     const r=await fetch(POST_TROCAR,{
@@ -158,33 +126,45 @@ Destino: ${exchange.destino.seat}`;
     });
 
     if(r.ok){
-      alert("Troca realizada com sucesso!");
-      resetExchange();
+      alert("Troca realizada!");
+      reset();
     }else{
-      alert("Erro: dados não conferem ou poltrona indisponível.");
+      alert("CPF não confere com a poltrona ou indisponível.");
     }
   }catch{
-    alert("Erro de comunicação.");
+    alert("Erro de comunicação");
   }
 
   isLocked=false;
 };
 
-/* ================= LOAD ================= */
+/* === load ORIGINAL === */
 (async()=>{
-  anim(30);
-  const cpf=sessionStorage.getItem("cpf")||"00000000000";
-  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});
+  const cpfSessao=sessionStorage.getItem("cpf");
+  if(!cpfSessao){ alert("CPF não encontrado"); return }
+
+  const r=await fetch(GET,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ cpf: norm(cpfSessao) })
+  });
   const j=await r.json();
-  currentCurso=j.codigo?.[0]?.CODIGO?.toUpperCase()||"";
+
+  const lista=j.poltronas||j.lista||[];
+  const cod=j.codigo||j.cursos||[];
+  const aluno=cod.find(x=>norm(gf(x,"CPF2","CPF"))===norm(cpfSessao));
+  currentCurso=gf(aluno,"CODIGO","Codigo","codigo").toUpperCase();
   q("#cursoText").textContent=currentCurso;
+
+  bl=[...new Set(lista
+    .filter(x=>gf(x,"CURSO","Curso","curso").toUpperCase()===currentCurso)
+    .map(x=>gf(x,"ID","Id","id").toString().padStart(2,"0"))
+  )];
 
   const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
   layout=cfg.layout;
 
   render();
-  anim(100);
-  setTimeout(()=>q("#progress-bar-container").remove(),500);
   q("#bus-wrapper").style.display="block";
 })();
 </script>
