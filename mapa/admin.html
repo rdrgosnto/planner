@@ -3,181 +3,191 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Planner | Mapa</title>
+<title>Planner | Mapa – Troca Livre</title>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
+
 <style>
 body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff}
 #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
 .bus-container{padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
 .grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
+
 .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none}
-.seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;cursor:default}
-.seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;cursor:default!important;pointer-events:none!important}
-.seat.white{background:#fff!important;border:3px solid #8c96b2!important}
-.seat.lost-temp{background:#aaa!important;border-color:#777!important}
-.seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
-.seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-.empty{background:0 0}
-#confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;user-select:none}
-#confirmarBtn.trocar{background:#4CAF50;color:#fff}
-#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
-#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
-#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
-#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 
-/* === DRAG (ADICIONADO) === */
-.seat.dragging{
-  position:fixed!important;
-  z-index:99999!important;
-  pointer-events:none!important;
-  transform:scale(1.1);
-  opacity:.9;
+.seat.from{background:#f1c40f;border-color:#f1c40f;color:#000}
+.seat.to{background:#e74c3c;border-color:#e74c3c}
+
+.seat.white{background:#fff!important;border:3px solid #8c96b2!important;color:transparent}
+.seat.lost-temp{background:#aaa!important;border-color:#777!important;color:transparent}
+
+.seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
+
+.empty{background:0 0}
+
+#confirmarBtn{
+  width:140px;height:54px;background:#4CAF50;color:#fff;border:none;
+  font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;
+  position:absolute;bottom:-64px;right:20px
 }
+
+#cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
+
+#progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001}
+#progress-bar{width:0;height:100%;background:#4CAF50;transition:width .1s linear}
 </style>
 </head>
+
 <body>
+
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
-    <button id="confirmarBtn">CONFIRMAR</button>
+    <button id="confirmarBtn">CONFIRMAR TROCA</button>
   </div>
 </div>
+
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
-const q=s=>document.querySelector(s),
-norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
-gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
+/* ================= CONFIG ================= */
+const MODE = "TROCA_LIVRE";
 
-let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
+const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1";
+const POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1";
 
-/* === DRAG & SWAP (ADICIONADO) === */
-let dragSeat=null, dragTimer=null, dragOrigin=null, isDragging=false;
+const map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-function enableDrag(seat){
-  const start=e=>{
-    if(isLocked) return;
-    e.preventDefault();
-    dragTimer=setTimeout(()=>startDrag(seat,e),500);
-  };
-  const cancel=()=>clearTimeout(dragTimer);
+const q=s=>document.querySelector(s);
+const norm=c=>c?.replace(/\D/g,"").padStart(11,"0")||"";
 
-  seat.addEventListener("mousedown",start);
-  seat.addEventListener("touchstart",start,{passive:false});
-  seat.addEventListener("mouseup",cancel);
-  seat.addEventListener("mouseleave",cancel);
-  seat.addEventListener("touchend",cancel);
-}
+/* ================= STATE ================= */
+let layout=[], currentCurso="";
+let exchange={ origem:null, destino:null };
+let isLocked=false;
 
-function startDrag(seat,e){
-  isDragging=true;
-  dragSeat=seat;
-  dragOrigin=seat.getBoundingClientRect();
-  seat.classList.add("dragging");
-  moveDrag(e);
+/* ================= UI ================= */
+const anim=t=>{
+  let w=0;
+  (function s(){ if(w<t){w++;q("#progress-bar").style.width=w+"%";requestAnimationFrame(s)} })();
+};
 
-  document.addEventListener("mousemove",moveDrag);
-  document.addEventListener("touchmove",moveDrag,{passive:false});
-  document.addEventListener("mouseup",endDrag);
-  document.addEventListener("touchend",endDrag);
-}
-
-function moveDrag(e){
-  if(!isDragging) return;
-  const p=e.touches?e.touches[0]:e;
-  dragSeat.style.left=p.clientX-dragOrigin.width/2+"px";
-  dragSeat.style.top=p.clientY-dragOrigin.height/2+"px";
-}
-
-function endDrag(e){
-  if(!isDragging) return;
-  const p=e.changedTouches?e.changedTouches[0]:e;
-  const el=document.elementFromPoint(p.clientX,p.clientY);
-  const target=el?.closest(".seat");
-  if(target && target!==dragSeat) swapSeats(dragSeat,target);
-  cleanupDrag();
-}
-
-function cleanupDrag(){
-  dragSeat.classList.remove("dragging");
-  dragSeat.removeAttribute("style");
-  dragSeat=null;
-  isDragging=false;
-  document.removeEventListener("mousemove",moveDrag);
-  document.removeEventListener("touchmove",moveDrag);
-  document.removeEventListener("mouseup",endDrag);
-  document.removeEventListener("touchend",endDrag);
-}
-
-function swapSeats(a,b){
-  const sa=a.dataset.seat||"white";
-  const sb=b.dataset.seat||"white";
-
-  for(let i=0;i<layout.length;i++){
-    for(let j=0;j<layout[i].length;j++){
-      const v=layout[i][j]?.toString().padStart(2,"0");
-      if(v===sa) layout[i][j]=sb==="white"?"white":parseInt(sb);
-      else if(v===sb) layout[i][j]=sa==="white"?"white":parseInt(sa);
-    }
-  }
-  render(layout);
-}
-
-/* === SEU CÓDIGO ORIGINAL (INALTERADO) === */
-const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
-POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg",
-map={AAL:"0046",ALI:"0046",QUI:"0046"};
-
-const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
-const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,json:r.ok?await r.json():null}}catch{return{ok:0}}};
-
-const cSeat=v=>{
+const createSeat=v=>{
   const e=document.createElement("div");
-  e.className=v===null?"empty":v==="white"?"seat white":"seat";
-  if(v && v!=="white"){e.dataset.seat=v.toString().padStart(2,"0");e.textContent=e.dataset.seat}
-  if(v==="white") e.dataset.white="true";
+  if(v===null){ e.className="empty"; return e }
+  e.className="seat";
+  e.dataset.seat=v.toString().padStart(2,"0");
+  e.textContent=e.dataset.seat;
+  e.onclick=()=>onSeatClick(e);
   return e;
 };
 
-const selSeat=e=>{
-  if(isLocked) return;
-  if(!e.classList.contains("white")&&!e.classList.contains("lost")&&!e.classList.contains("mine")&&!e.classList.contains("lost-temp")){
-    sel?.classList.remove("selected");
-    sel=sel===e?null:e;
-    e.classList.toggle("selected",sel===e);
-  }
-};
-
-const render=l=>{
-  const w=q(".bus-container");
-  w.querySelector(".grid")?.remove();
+const render=()=>{
+  const box=q(".bus-container");
+  box.querySelector(".grid")?.remove();
   const g=document.createElement("div");
   g.className="grid";
-
-  l.forEach(row=>row.forEach(v=>{
-    const e=cSeat(v);
-    if(v && v!=="white"){
-      const id=e.dataset.seat;
-      if(userSeats.includes(id)) e.classList.add("mine");
-      else if(bl.includes(id)) e.classList.add("white");
-      else e.onclick=()=>selSeat(e);
-
-      enableDrag(e); // 👈 ÚNICA LINHA ADICIONADA
-    }
-    g.appendChild(e);
-  }));
-
-  w.appendChild(g);
+  layout.forEach(r=>r.forEach(v=>g.appendChild(createSeat(v))));
+  box.appendChild(g);
 };
 
-/* === RESTO DO SEU JS ORIGINAL === */
-/* load(), confirmarBtn.onclick etc. — permanece igual */
+const resetExchange=()=>{
+  exchange={origem:null,destino:null};
+  document.querySelectorAll(".seat").forEach(s=>{
+    s.classList.remove("from","to","lost-temp");
+    s.style.pointerEvents="auto";
+  });
+};
 
-load();
+/* ================= LOGIC ================= */
+const onSeatClick=e=>{
+  if(isLocked) return;
+  const id=e.dataset.seat;
+
+  if(!exchange.origem){
+    let cpf=prompt(`CPF do ocupante da poltrona ${id} (se livre, deixe vazio):`);
+    if(cpf!==null){
+      cpf=norm(cpf);
+      exchange.origem={ seat:id, cpf:cpf||null };
+      e.classList.add("from");
+    }
+    return;
+  }
+
+  if(exchange.origem.seat===id){
+    resetExchange();
+    return;
+  }
+
+  exchange.destino={ seat:id };
+  e.classList.add("to");
+};
+
+/* ================= CONFIRM ================= */
+q("#confirmarBtn").onclick=async()=>{
+  if(isLocked) return;
+  if(!exchange.origem || !exchange.destino){
+    alert("Selecione origem e destino.");
+    return;
+  }
+
+  const msg=
+`Confirma a troca?
+CPF: ${exchange.origem.cpf||"(vazio)"}
+Origem: ${exchange.origem.seat}
+Destino: ${exchange.destino.seat}`;
+
+  if(!confirm(msg)) return;
+
+  isLocked=true;
+  document.querySelectorAll(".seat").forEach(s=>s.style.pointerEvents="none");
+
+  try{
+    const r=await fetch(POST_TROCAR,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        cpf: exchange.origem.cpf,
+        curso: currentCurso,
+        current: exchange.origem.seat,
+        select: exchange.destino.seat
+      })
+    });
+
+    if(r.ok){
+      alert("Troca realizada com sucesso!");
+      resetExchange();
+    }else{
+      alert("Erro: dados não conferem ou poltrona indisponível.");
+    }
+  }catch{
+    alert("Erro de comunicação.");
+  }
+
+  isLocked=false;
+};
+
+/* ================= LOAD ================= */
+(async()=>{
+  anim(30);
+  const cpf=sessionStorage.getItem("cpf")||"00000000000";
+  const r=await fetch(GET,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});
+  const j=await r.json();
+  currentCurso=j.codigo?.[0]?.CODIGO?.toUpperCase()||"";
+  q("#cursoText").textContent=currentCurso;
+
+  const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
+  layout=cfg.layout;
+
+  render();
+  anim(100);
+  setTimeout(()=>q("#progress-bar-container").remove(),500);
+  q("#bus-wrapper").style.display="block";
+})();
 </script>
+
 </body>
 </html>
