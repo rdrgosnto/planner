@@ -8,32 +8,38 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            margin: 0; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
+            margin: 0; font-family: Arial, sans-serif; 
             background: #fff; overflow: hidden; min-height: 100vh; display: flex; 
             flex-direction: column; justify-content: center; user-select: none; -webkit-user-select: none;
         }
         
         input { user-select: text; -webkit-user-select: text; }
 
-        /* SPLASH */
+        /* SPLASH - Idêntico ao seu modelo */
         #splash { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; }
-        #splash b { font-size: 36px; color: #4CAF50; margin-bottom: 10px }
+        #splash b { font-size: 36px; color: #4CAF50; margin-bottom: 10px; font-weight: bold; }
         #splash i { width: 120px; height: 2px; background: #e0e0e0; overflow: hidden; position: relative }
         #splash i:after { content:""; display:block; width:40px; height:100%; background:#4CAF50; animation:l .9s infinite; position:absolute }
         @keyframes l { from { left:-40px } to { left:120px } }
 
         /* VIEWS */
-        .view { display: none; width: 100vw; }
-        .view.active { display: flex; flex-direction: column; align-items: center; }
+        .view { display: none; width: 100vw; visibility: hidden; }
+        .view.active { display: flex; flex-direction: column; align-items: center; visibility: visible; }
 
-        /* LOGIN */
+        /* LOGIN - Layout fiel ao seu HTML original */
         .app-login-box { width: 90%; max-width: 300px; margin: auto; }
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block }
         .row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ccc; padding: 4px 0 }
+        .row.err { border-color: #e53935 }
+        .row.ok { border-color: #4CAF50 }
+        
         input { flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
-        input::placeholder { color: #333; font-size: 16px; opacity: 0.6; }
-        button#btn-entrar { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; }
+        input::placeholder { font-size: 16px; color: #999; }
+        
+        button#btn-entrar { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
         button#btn-entrar.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
+        
+        .errmsg { font-size: 13px; color: #e53935; margin: 14px 0 0 2px; display: none }
 
         /* MAPA */
         #w { transform: scale(.85); transform-origin: top center; margin-top: 10px; visibility: hidden; opacity: 0; }
@@ -50,9 +56,9 @@
         #cbx { position: absolute; top: 60px; left: 100%; width: 40px; height: 122px; background: #4CAF50; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
         #ctx { transform: rotate(-90deg); font-size: 18px; white-space: nowrap }
         #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #eee; z-index: 1000; }
-        #pb { width: 0; height: 100%; background: #4CAF50; transition: width .05s }
+        #pb { width: 0; height: 100%; background: #4CAF50; transition: width .1s }
 
-        /* MODAL DARK SYSTEM (3x2 poltronas: ~182px x 122px) */
+        /* MODAL DARK SYSTEM (3x2) */
         #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 10000; }
         .modal-box { 
             background: #323232; color: #fff; padding: 20px; border-radius: 12px; 
@@ -75,10 +81,11 @@
     <div id="view-login" class="view active">
         <div class="app-login-box">
             <label>CPF</label>
-            <div class="row">
-                <input id="cpf-input" placeholder="CPF (somente números)" inputmode="numeric" autocomplete="off">
-                <button id="btn-entrar" disabled>ENTRAR</button>
+            <div class="row" id="login-row">
+                <input id="cpf" placeholder="CPF (somente números)" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                <button id="btn" disabled>ENTRAR</button>
             </div>
+            <div class="errmsg" id="err"></div>
         </div>
     </div>
 
@@ -101,11 +108,19 @@
 
     <script>
         const q = s => document.querySelector(s);
-        const nm = c => c?.toString().replace(/\D/g, "").padStart(11, "0") || "";
+        const nm = v => v.replace(/\D/g, "").padStart(11, "0");
         
-        // Cache imediato do layout para ganho de velocidade
-        let layoutCache = null;
-        fetch(`configs/0046.json`).then(r => r.json()).then(data => layoutCache = data).catch(()=>{});
+        // Validação Algoritmo CPF (do seu HTML)
+        const vCPF = c => !/^(\d)\1+$/.test(c) && [9, 10].every(t => {
+            let s = 0; for (let i = 0; i < t; i++) s += c[i] * (t + 1 - i);
+            return ((s * 10) % 11) % 10 == c[t]
+        });
+
+        // Configuração de Telas
+        setTimeout(() => {
+            q("#splash").remove();
+            q("#view-login").style.visibility = "visible";
+        }, 1600);
 
         const fscr = (on) => {
             const d = document.documentElement;
@@ -120,7 +135,7 @@
 
         const showMsg = (txt, confirmMode = false) => {
             return new Promise((resolve) => {
-                q("#modal-text").textContent = txt;
+                q("#modal-text").innerHTML = txt;
                 const actions = q("#modal-actions");
                 actions.innerHTML = "";
                 if (confirmMode) {
@@ -147,31 +162,56 @@
 
         let sel = null, us = [], cpfAtivo = null, cur = "", lock = false;
 
-        q("#cpf-input").oninput = (e) => {
-            e.target.value = e.target.value.replace(/\D/g, "");
-            const b = q("#btn-entrar");
-            if (e.target.value.length === 11) { b.disabled = false; b.classList.add("ready"); }
-            else { b.disabled = true; b.classList.remove("ready"); }
+        // --- LOGICA DE LOGIN (IDENTICA AO SEU HTML) ---
+        const inp = q("#cpf"), btnE = q("#btn"), err = q("#err"), row = q("#login-row");
+        const setS = s => { row.className = "row"; if(s) row.classList.add(s) };
+        const resetL = () => { btnE.disabled = 1; btnE.className = ""; setS(); err.style.display = "none" };
+
+        let debounce;
+        inp.oninput = () => {
+            inp.value = inp.value.replace(/\D/g, "");
+            if (debounce) clearTimeout(debounce);
+            resetL();
+            if (!inp.value) return;
+            if (inp.value.length === 11) inp.blur();
+            if (inp.value.length < 11) return;
+
+            const v1 = nm(inp.value);
+            if (!vCPF(v1)) {
+                err.textContent = "CPF inválido";
+                err.style.display = "block"; setS("err"); return;
+            }
+
+            debounce = setTimeout(async () => {
+                try {
+                    const rs = await fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: v1}) });
+                    const d = await rs.json();
+                    if (!(d.codigo || []).find(x => nm(x.CPF2 || x.CPF) === v1 && String(x.ID).trim() === "#")) throw 0;
+                    btnE.disabled = 0; btnE.classList.add("ready"); setS("ok");
+                } catch {
+                    err.textContent = "CPF não autorizado"; err.style.display = "block"; setS("err"); btnE.disabled = 1;
+                }
+            }, 400);
         };
 
-        q("#btn-entrar").onclick = () => {
-            fscr(true);
-            cpfAtivo = nm(q("#cpf-input").value);
-            q("#view-login").classList.remove("active");
-            q("#view-mapa").classList.add("active");
-            loadMapaData();
+        btnE.onclick = () => {
+            if (!btnE.disabled) {
+                fscr(true);
+                cpfAtivo = nm(inp.value);
+                q("#view-login").classList.remove("active");
+                q("#view-mapa").classList.add("active");
+                loadMapaData();
+            }
         };
 
+        // --- LOGICA DO MAPA ---
         const loadMapaData = async () => {
             let pb = q("#pb"), w = 0;
             let iv = setInterval(() => { if(w<95){ w+=2; pb.style.width=w+"%"; } }, 5);
             try {
-                // Requisição de dados
                 const d = await fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: cpfAtivo}) }).then(r => r.json());
-
                 const l = d.poltronas || d.lista || [];
                 const a = (d.codigo || d.cursos || []).find(x => nm(x.CPF2 || x.CPF) === cpfAtivo);
-                if (!a) { await showMsg("CPF não autorizado."); location.reload(); return; }
                 
                 cur = (a.CODIGO || a.Codigo).toString().trim().toUpperCase();
                 q("#ctx").textContent = cur;
@@ -179,10 +219,9 @@
                 const bl = [...new Set(rows.map(x => (x.ID || x.Id)?.toString().padStart(2, "0")).filter(Boolean))];
                 us = rows.filter(x => nm(x.CPF2 || x.CPF) === cpfAtivo).map(x => (x.ID || x.Id).toString().padStart(2, "0"));
                 
-                // Usa o cache do layout ou busca se falhou
-                const cfg = layoutCache || await fetch(`configs/0046.json`).then(res => res.json());
-                
+                const cfg = await fetch(`configs/0046.json`).then(res => res.json());
                 renderGrid(cfg.layout, bl);
+                
                 clearInterval(iv);
                 pb.style.width = "100%";
                 q("#pbc").style.display = "none";
@@ -193,7 +232,6 @@
         const renderGrid = (layout, bl) => {
             const c = q(".bc"), g = document.createElement("div");
             g.className = "g";
-            const frag = document.createDocumentFragment();
             layout.forEach(row => row.forEach(v => {
                 const e = document.createElement("div");
                 if (v === null) e.className = "e";
@@ -205,10 +243,10 @@
                     else if (bl.includes(id) || v === "white") e.classList.add("white");
                     else e.onclick = () => { fscr(true); selectPoltrona(e); };
                 }
-                frag.appendChild(e);
+                g.appendChild(e);
             }));
             const old = q(".g"); if (old) old.remove();
-            g.appendChild(frag); c.appendChild(g);
+            c.appendChild(g);
         };
 
         const selectPoltrona = (e) => {
@@ -219,8 +257,8 @@
         };
 
         q("#btn-confirmar").onclick = async () => {
-            if (lock || !sel) return !sel && showMsg("Selecione um lugar");
-            if (!(await showMsg("Confirmar escolha?", true))) return;
+            if (lock || !sel) return !sel && showMsg("Selecione uma poltrona");
+            if (!(await showMsg("Confirmar troca de poltrona?", true))) return;
 
             lock = true; q("#btn-confirmar").disabled = true;
             const nS = sel.dataset.s, old = us[0] || null;
@@ -230,18 +268,30 @@
                 const res = await fetch(old ? U.S : U.P, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
 
                 if (res.ok) {
-                    const timeoutExit = setTimeout(() => { fscr(false); location.reload(); }, 9000);
-                    await showMsg("Sucesso! Saindo em 9s...");
-                    clearTimeout(timeoutExit);
+                    let count = 9;
+                    const updateTimer = () => {
+                        q("#modal-text").innerHTML = `Poltrona selecionada com sucesso!<br>Redirecionando em ${count} segundos`;
+                    };
+                    
+                    const timeoutExit = setInterval(() => {
+                        count--;
+                        if(count <= 0) {
+                            clearInterval(timeoutExit);
+                            fscr(false); location.reload();
+                        } else {
+                            updateTimer();
+                        }
+                    }, 1000);
+
+                    await showMsg(`Poltrona selecionada com sucesso!<br>Redirecionando em ${count} segundos`);
+                    clearInterval(timeoutExit);
                     fscr(false); location.reload();
                 } else {
-                    await showMsg("Lugar já ocupado.");
+                    await showMsg("Poltrona selecionada por outro usuário");
                     lock = false; q("#btn-confirmar").disabled = false; sel = null;
                 }
             } catch (e) { await showMsg("Erro técnico."); lock = false; q("#btn-confirmar").disabled = false; }
         };
-
-        setTimeout(() => q("#splash").remove(), 1600);
     </script>
 </body>
 </html>
