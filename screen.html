@@ -28,7 +28,7 @@
         button#btn-entrar.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
 
         /* MAPA */
-        #w { transform: scale(.85); transform-origin: top center; margin-top: 10px; visibility: hidden; opacity: 0; transition: opacity 0.3s ease; }
+        #w { transform: scale(.85); transform-origin: top center; margin-top: 10px; visibility: hidden; opacity: 0; }
         .bc { padding: 20px; border: 3px solid #b0b0b0; border-radius: 16px; width: fit-content; margin: 20px auto; position: relative; display: flex; justify-content: center; background: #fff; }
         .g { display: grid; grid-template-columns: repeat(5,54px); gap: 14px 10px; justify-content: center }
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative }
@@ -44,14 +44,42 @@
         #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #eee; z-index: 1000; }
         #pb { width: 0; height: 100%; background: #4CAF50; transition: width .1s }
 
-        /* MODAL PERSONALIZADO (Evita sair do Fullscreen) */
-        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        .modal-box { background: #fff; padding: 20px; border-radius: 16px; width: 85%; max-width: 300px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal-box p { margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.4; }
-        .modal-btns { display: flex; gap: 10px; justify-content: center; }
-        .modal-btns button { border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        /* MODAL FIXO (3x2 poltronas: 182px x 122px aprox) */
+        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .modal-box { 
+            background: #333; /* Cor similar ao alert escuro */
+            color: #fff;
+            padding: 15px; 
+            border-radius: 12px; 
+            width: 182px;  /* Largura de 3 poltronas + gaps */
+            height: 122px; /* Altura de 2 poltronas + gaps */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        .modal-box p { 
+            margin: 0; 
+            font-size: 13px; 
+            text-align: center; 
+            overflow-y: auto; 
+            width: 100%;
+            word-wrap: break-word;
+        }
+        .modal-btns { display: flex; gap: 8px; width: 100%; }
+        .modal-btns button { 
+            flex: 1; 
+            border: none; 
+            padding: 6px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 11px;
+            cursor: pointer; 
+        }
         .btn-ok { background: #4CAF50; color: #fff; }
-        .btn-cancel { background: #eee; color: #666; }
+        .btn-cancel { background: #555; color: #ccc; }
     </style>
 </head>
 <body>
@@ -89,41 +117,32 @@
         const q = s => document.querySelector(s);
         const nm = c => c?.toString().replace(/\D/g, "").padStart(11, "0") || "";
 
-        // Controle de Fullscreen
-        const fscr = (force = true) => {
+        const fscr = (on) => {
             const d = document.documentElement;
-            if (force && !document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (on) {
                 if (d.requestFullscreen) d.requestFullscreen().catch(()=>{});
                 else if (d.webkitRequestFullscreen) d.webkitRequestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
             }
         };
 
-        const exitFscr = () => {
-            if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        };
-
-        // Sistema de Modal customizado para substituir Alert e Confirm
         const showMsg = (txt, confirmMode = false) => {
             return new Promise((resolve) => {
                 q("#modal-text").textContent = txt;
                 const actions = q("#modal-actions");
                 actions.innerHTML = "";
-                
                 if (confirmMode) {
                     const btnC = document.createElement("button");
-                    btnC.className = "btn-cancel";
-                    btnC.textContent = "Cancelar";
+                    btnC.className = "btn-cancel"; btnC.textContent = "Não";
                     btnC.onclick = () => { q("#modal-overlay").style.display = "none"; resolve(false); };
                     actions.appendChild(btnC);
                 }
-
                 const btnO = document.createElement("button");
-                btnO.className = "btn-ok";
-                btnO.textContent = confirmMode ? "Confirmar" : "OK";
+                btnO.className = "btn-ok"; btnO.textContent = confirmMode ? "Sim" : "OK";
                 btnO.onclick = () => { q("#modal-overlay").style.display = "none"; resolve(true); };
                 actions.appendChild(btnO);
-
                 q("#modal-overlay").style.display = "flex";
             });
         };
@@ -141,17 +160,12 @@
         q("#cpf-input").oninput = (e) => {
             e.target.value = e.target.value.replace(/\D/g, "");
             const b = q("#btn-entrar");
-            if (e.target.value.length === 11) {
-                b.disabled = false; b.classList.add("ready");
-                q(".row").classList.add("ok");
-            } else {
-                b.disabled = true; b.classList.remove("ready");
-                q(".row").classList.remove("ok");
-            }
+            if (e.target.value.length === 11) { b.disabled = false; b.classList.add("ready"); }
+            else { b.disabled = true; b.classList.remove("ready"); }
         };
 
         q("#btn-entrar").onclick = () => {
-            fscr();
+            fscr(true);
             cpfAtivo = nm(q("#cpf-input").value);
             q("#view-login").classList.remove("active");
             q("#view-mapa").classList.add("active");
@@ -160,31 +174,37 @@
 
         const loadMapaData = async () => {
             let pb = q("#pb"), w = 0;
-            let iv = setInterval(() => { if(w<90){ w++; pb.style.width=w+"%"; } }, 20);
+            let iv = setInterval(() => { if(w<90){ w++; pb.style.width=w+"%"; } }, 15);
+            
             try {
-                const r = await fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: cpfAtivo}) });
-                const d = await r.json();
+                // Execução paralela para ganhar tempo
+                const promiseData = fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: cpfAtivo}) }).then(r => r.json());
+                
+                const d = await promiseData;
                 const l = d.poltronas || d.lista || [];
                 const a = (d.codigo || d.cursos || []).find(x => nm(x.CPF2 || x.CPF) === cpfAtivo);
-                if (!a) { 
-                    await showMsg("CPF não autorizado."); 
-                    location.reload(); 
-                    return; 
-                }
+                
+                if (!a) { await showMsg("CPF não autorizado."); location.reload(); return; }
+                
                 cur = (a.CODIGO || a.Codigo).toString().trim().toUpperCase();
                 q("#ctx").textContent = cur;
+                
                 const rows = l.filter(x => (x.CURSO || x.Curso)?.toString().trim().toUpperCase() === cur);
                 const bl = [...new Set(rows.map(x => (x.ID || x.Id)?.toString().padStart(2, "0")).filter(Boolean))];
                 us = rows.filter(x => nm(x.CPF2 || x.CPF) === cpfAtivo).map(x => (x.ID || x.Id).toString().padStart(2, "0"));
-                const cfg = await fetch(`configs/${cur === "AAL" || cur === "ALI" || cur === "QUI" ? "0046" : "0046"}.json`).then(res => res.json());
+                
+                // Busca o layout imediatamente
+                const cfg = await fetch(`configs/0046.json`).then(res => res.json());
+                
                 renderGrid(cfg.layout, bl);
                 clearInterval(iv);
                 pb.style.width = "100%";
+                
                 setTimeout(() => {
                     q("#pbc").style.display = "none";
                     q("#w").style.visibility = "visible";
                     q("#w").style.opacity = "1";
-                }, 500);
+                }, 300);
             } catch (err) { await showMsg("Erro de conexão."); }
         };
 
@@ -202,7 +222,7 @@
                     if (v !== "white") { e.textContent = id; e.dataset.s = id; }
                     if (us.includes(id)) e.classList.add("mine");
                     else if (bl.includes(id) || v === "white") e.classList.add("white");
-                    else e.onclick = () => { fscr(); selectPoltrona(e); };
+                    else e.onclick = () => { fscr(true); selectPoltrona(e); };
                 }
                 g.appendChild(e);
             }));
@@ -217,54 +237,28 @@
         };
 
         q("#btn-confirmar").onclick = async () => {
-            if (lock || !sel) return !sel && showMsg("Selecione uma poltrona");
-            
-            const confirmou = await showMsg("Confirma seleção desta poltrona?", true);
-            if (!confirmou) return;
+            if (lock || !sel) return !sel && showMsg("Escolha um lugar");
+            if (!(await showMsg("Confirmar troca?", true))) return;
 
-            lock = true;
-            q("#btn-confirmar").disabled = true;
-            const nS = sel.dataset.s;
-            const old = us[0] || null;
-            const el = sel;
+            lock = true; q("#btn-confirmar").disabled = true;
+            const nS = sel.dataset.s, old = us[0] || null, el = sel;
 
             try {
-                const payload = old ? 
-                    { cpf: cpfAtivo, curso: cur, current: old, select: nS } : 
-                    { poltrona: nS, CURSO: cur, cpf: cpfAtivo };
-
-                const res = await fetch(old ? U.S : U.P, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
+                const payload = old ? { cpf: cpfAtivo, curso: cur, current: old, select: nS } : { poltrona: nS, CURSO: cur, cpf: cpfAtivo };
+                const res = await fetch(old ? U.S : U.P, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
 
                 if (res.ok) {
-                    if (old) {
-                        let oE = q(`.s[data-s="${old}"]`);
-                        if (oE) { oE.classList.remove("mine"); oE.onclick = () => { fscr(); selectPoltrona(oE); }; }
-                    }
-                    el.classList.remove("selected");
-                    el.classList.add("mine");
-                    us = [nS];
-                    
-                    // SÓ AQUI ELE SAI DO FULLSCREEN, DEPOIS DO OK DO USUÁRIO
-                    await showMsg("Poltrona selecionada com sucesso!");
-                    exitFscr(); 
-
+                    await showMsg("Sucesso!");
+                    fscr(false); // Sai do Fullscreen
+                    location.reload(); // Volta ao início
                 } else {
-                    await showMsg("Poltrona ocupada por outro usuário");
+                    await showMsg("Lugar ocupado.");
                     el.classList.remove("selected");
                     el.classList.add("lt");
                     setTimeout(() => { el.classList.remove("lt"); el.classList.add("white") }, 9000);
                 }
-            } catch (e) {
-                await showMsg("Erro ao confirmar.");
-            } finally {
-                lock = false;
-                q("#btn-confirmar").disabled = false;
-                sel = null;
-            }
+            } catch (e) { await showMsg("Erro técnico."); }
+            finally { lock = false; q("#btn-confirmar").disabled = false; sel = null; }
         };
 
         setTimeout(() => q("#splash").remove(), 1600);
