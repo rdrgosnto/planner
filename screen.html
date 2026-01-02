@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Planner - Sistema Unificado</title>
+    <style>
+        /* ESTILOS GERAIS E RESET */
+        * { box-sizing: border-box }
+        body { margin: 0; font-family: Arial, sans-serif; background: #fff; overflow-x: hidden; }
+        
+        /* SPLASH SCREEN */
+        #splash { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; }
+        #splash b { font-size: 36px; color: #4CAF50; margin-bottom: 10px }
+        #splash i { width: 120px; height: 2px; background: #e0e0e0; overflow: hidden; position: relative }
+        #splash i:after { content: ""; display: block; width: 40px; height: 100%; background: #4CAF50; animation: l .9s infinite; position: absolute }
+        @keyframes l { from { left: -40px } to { left: 120px } }
+
+        /* CONTROLE DE VISIBILIDADE DAS TELAS */
+        .view { display: none; min-height: 100vh; width: 100vw; }
+        .active { display: flex; flex-direction: column; }
+
+        /* ESTILOS DA TELA DE LOGIN (TELA 1) */
+        #view-login { justify-content: center; align-items: center; }
+        .app-login-box { width: 90%; max-width: 300px; }
+        label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block }
+        .row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ccc; padding: 4px 0 }
+        .row.err { border-color: #e53935 }
+        .row.ok { border-color: #4CAF50 }
+        input { flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
+        input::placeholder { font-size: 16px; color: #999 }
+        button#btn { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; white-space: nowrap; cursor: default; }
+        button#btn.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
+        button#btn.ready:active { background: #43a047; transform: scale(.97) }
+        .errmsg { font-size: 13px; color: #e53935; margin: 14px 0 0 2px; display: none }
+
+        /* ESTILOS DA TELA DO MAPA (TELA 2 - SEGUNDO HTML) */
+        /* O conteúdo do segundo HTML que você enviou é idêntico ao primeiro, 
+           então mantive a mesma estrutura visual para consistência. */
+        #view-mapa { justify-content: center; align-items: center; background: #fdfdfd; }
+    </style>
+</head>
+<body>
+
+    <div id="splash"><b>Planner</b><i></i></div>
+
+    <div id="view-login" class="view active">
+        <div class="app-login-box">
+            <label>CPF</label>
+            <div class="row">
+                <input id="cpf" placeholder="CPF (somente números)" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                <button id="btn" disabled>ENTRAR</button>
+            </div>
+            <div class="errmsg" id="err"></div>
+        </div>
+    </div>
+
+    <div id="view-mapa" class="view">
+        <div class="app-login-box">
+            <label>ACESSO AUTORIZADO</label>
+            <div class="row ok" style="border-bottom: none; text-align: center; justify-content: center;">
+                <p style="color: #4CAF50; font-weight: bold; font-size: 18px;">Bem-vindo ao Mapa</p>
+            </div>
+            <p style="font-size: 14px; color: #666; text-align: center;">O sistema agora está em tela cheia.</p>
+            <button class="ready" style="width: 100%; margin-top: 20px; height: 40px; border-radius: 8px;" onclick="location.reload()">SAIR / LOGOUT</button>
+        </div>
+    </div>
+
+    <script>
+        // Funções Utilitárias
+        const $ = s => document.querySelector(s);
+        const n = v => v.replace(/\D/g, "").padStart(11, "0");
+        
+        // Validação de CPF
+        const v = c => !/^(\d)\1+$/.test(c) && [9, 10].every(t => {
+            let s = 0; for (let i = 0; i < t; i++) s += c[i] * (t + 1 - i);
+            return ((s * 10) % 11) % 10 == c[t]
+        });
+
+        const c = $("#cpf"), b = $("#btn"), e = $("#err"), r = $(".row");
+        const vLogin = $("#view-login"), vMapa = $("#view-mapa");
+
+        // Splash Screen
+        setTimeout(() => {
+            $("#splash").remove();
+        }, 1600);
+
+        // Lógica de Tela Cheia
+        function activateFullscreen() {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); // Safari/iOS
+            else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        }
+
+        const s = status => { r.className = "row"; if (status) r.classList.add(status) };
+        const x = () => { b.disabled = 1; b.className = ""; s(); e.style.display = "none" };
+
+        let t;
+        c.oninput = () => {
+            c.value = c.value.replace(/\D/g, "");
+            if (t) clearTimeout(t);
+            x();
+            if (!c.value) return;
+            if (c.value.length === 11) c.blur();
+            if (c.value.length < 11) return;
+
+            const v1 = n(c.value);
+            if (!v(v1)) {
+                e.textContent = "CPF inválido";
+                e.style.display = "block";
+                s("err");
+                return
+            }
+
+            t = setTimeout(async () => {
+                try {
+                    const rs = await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ cpf: v1 })
+                    });
+                    const d = await rs.json();
+                    
+                    // Validação de permissão conforme seu código original
+                    if (!(d.codigo || []).find(x => n(x.CPF2 || x.CPF) === v1 && String(x.ID).trim() === "#")) throw 0;
+                    
+                    b.disabled = 0;
+                    b.classList.add("ready");
+                    s("ok");
+                } catch {
+                    e.textContent = "CPF não autorizado";
+                    e.style.display = "block";
+                    s("err");
+                    b.disabled = 1;
+                }
+            }, 400);
+        };
+
+        // Ação do Botão Entrar
+        b.onclick = () => {
+            if (!b.disabled) {
+                // Ativa Tela Cheia
+                activateFullscreen();
+
+                // Salva Sessão
+                sessionStorage.setItem("cpf", n(c.value));
+                sessionStorage.setItem("authMapa", 1);
+
+                // Troca de Tela (SPA)
+                vLogin.classList.remove("active");
+                vMapa.classList.add("active");
+            }
+        };
+    </script>
+</body>
+</html>
