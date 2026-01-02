@@ -265,7 +265,7 @@
                 const res = await fetch(old ? U.S : U.P, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
 
                 if (res.ok) {
-                    let count = 9;
+                    let count = 14;
                     const updateTimer = () => {
                         q("#modal-text").innerHTML = `Poltrona selecionada com sucesso!<br>Redirecionando em ${count} segundos`;
                     };
@@ -285,8 +285,8 @@
                     
                     setTimeout(() => {
                         el.classList.remove("lt");
-                        el.classList.add("white"); // Fica branca após 9s
-                    }, 9000);
+                        el.classList.add("white"); // Fica branca após 14s
+                    }, 14000);
 
                     lock = false; q("#btn-confirmar").disabled = false; sel = null;
                 }
