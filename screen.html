@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <title>Planner</title>
     <style>
-        /* [Mantendo seus estilos originais anteriores...] */
         * { box-sizing: border-box }
         body { margin: 0; font-family: Arial, sans-serif; background: #fff; overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
         
@@ -22,21 +21,12 @@
         .app-login-box { width: 90%; max-width: 300px; margin: auto; }
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block }
         .row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ccc; padding: 4px 0 }
-        .row.err { border-color: #e53935 }
         .row.ok { border-color: #4CAF50 }
         input { flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
-        button#btn-entrar { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; cursor: default; }
+        button#btn-entrar { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; cursor: default; transition: 0.3s; }
         button#btn-entrar.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
 
-        /* AJUSTE NO CONTAINER DO MAPA PARA EVITAR DESCONFIGURAÇÃO */
-        #w { 
-            transform: scale(.85); 
-            transform-origin: top center; 
-            margin-top: 10px; 
-            visibility: hidden; /* Começa invisível mas ocupando espaço */
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
+        #w { transform: scale(.85); transform-origin: top center; margin-top: 10px; visibility: hidden; opacity: 0; transition: opacity 0.3s ease; }
         .bc { padding: 20px; border: 3px solid #b0b0b0; border-radius: 16px; width: fit-content; margin: 20px auto; position: relative; display: flex; justify-content: center; background: #fff; }
         .g { display: grid; grid-template-columns: repeat(5,54px); gap: 14px 10px; justify-content: center }
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative }
@@ -45,9 +35,10 @@
         .s.white, .s.lt { color:transparent!important; pointer-events:none!important }
         .s.white { background:#fff!important; border:3px solid #8c96b2!important }
         .s.lt { background:#aaa!important; border-color:#777!important }
-        .s::after { content:""; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); width:32px; height:14px; border-radius:8px; background:#fff; border:3px solid #8c96b2 }
+        .s::after { content:""; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); width:32px; height:14px; border-radius:8px; background:#fff; border:3px solid #8c96b2}
         
         #btn-confirmar { width: 112px; height: 54px; background: #4CAF50; color: #fff; border: none; font-size: 16px; font-weight: 700; border-radius: 12px; cursor: pointer; position: absolute; bottom: -64px; right: 20px }
+        #btn-confirmar:disabled { opacity: 0.6; cursor: not-allowed; }
         #cbx { position: absolute; top: 60px; left: 100%; width: 40px; height: 122px; background: #4CAF50; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
         #ctx { transform: rotate(-90deg); font-size: 18px; white-space: nowrap }
         #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #eee; z-index: 1000; }
@@ -65,7 +56,6 @@
                 <input id="cpf-input" placeholder="CPF" inputmode="numeric" autocomplete="off">
                 <button id="btn-entrar" disabled>ENTRAR</button>
             </div>
-            <div id="err-login" style="color:red; font-size:12px; margin-top:10px; display:none"></div>
         </div>
     </div>
 
@@ -82,8 +72,7 @@
     <script>
         const q = s => document.querySelector(s);
         const nm = c => c?.toString().replace(/\D/g, "").padStart(11, "0") || "";
-        
-        // Função Reforçada de Fullscreen
+
         const fscr = () => {
             const d = document.documentElement;
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
@@ -108,20 +97,21 @@
             const b = q("#btn-entrar");
             if (e.target.value.length === 11) {
                 b.disabled = false; b.classList.add("ready");
+                q(".row").classList.add("ok");
             } else {
                 b.disabled = true; b.classList.remove("ready");
+                q(".row").classList.remove("ok");
             }
         };
 
         q("#btn-entrar").onclick = () => {
-            fscr(); // Primeiro pedido de fullscreen
+            fscr();
             cpfAtivo = nm(q("#cpf-input").value);
             q("#view-login").classList.remove("active");
             q("#view-mapa").classList.add("active");
             loadMapaData();
         };
 
-        // Carregar Mapa
         const loadMapaData = async () => {
             let pb = q("#pb"), w = 0;
             let iv = setInterval(() => { if(w<90){ w++; pb.style.width=w+"%"; } }, 20);
@@ -133,7 +123,7 @@
                 const l = d.poltronas || d.lista || [];
                 const a = (d.codigo || d.cursos || []).find(x => nm(x.CPF2 || x.CPF) === cpfAtivo);
                 
-                if (!a) { alert("Não autorizado"); location.reload(); return; }
+                if (!a) { alert("CPF não autorizado."); location.reload(); return; }
                 
                 cur = (a.CODIGO || a.Codigo).toString().trim().toUpperCase();
                 q("#ctx").textContent = cur;
@@ -142,7 +132,6 @@
                 const bl = [...new Set(rows.map(x => (x.ID || x.Id)?.toString().padStart(2, "0")).filter(Boolean))];
                 us = rows.filter(x => nm(x.CPF2 || x.CPF) === cpfAtivo).map(x => (x.ID || x.Id).toString().padStart(2, "0"));
                 
-                // Layout
                 const cfg = await fetch(`configs/${cur === "AAL" || cur === "ALI" || cur === "QUI" ? "0046" : "0046"}.json`).then(res => res.json());
                 
                 renderGrid(cfg.layout, bl);
@@ -151,13 +140,11 @@
                 pb.style.width = "100%";
                 setTimeout(() => {
                     q("#pbc").style.display = "none";
-                    // SÓ MOSTRA O MAPA DEPOIS DE TUDO PRONTO
-                    const mapa = q("#w");
-                    mapa.style.visibility = "visible";
-                    mapa.style.opacity = "1";
+                    q("#w").style.visibility = "visible";
+                    q("#w").style.opacity = "1";
                 }, 500);
 
-            } catch (err) { alert("Erro de conexão"); }
+            } catch (err) { alert("Erro de conexão ao carregar mapa."); }
         };
 
         const renderGrid = (layout, bl) => {
@@ -175,10 +162,7 @@
                     if (v !== "white") { e.textContent = id; e.dataset.s = id; }
                     if (us.includes(id)) e.classList.add("mine");
                     else if (bl.includes(id) || v === "white") e.classList.add("white");
-                    else e.onclick = (event) => {
-                        fscr(); // REFORÇA O FULLSCREEN A CADA TOQUE
-                        selectPoltrona(e);
-                    };
+                    else e.onclick = () => { fscr(); selectPoltrona(e); };
                 }
                 g.appendChild(e);
             }));
@@ -192,7 +176,56 @@
             if (sel) sel.classList.add("selected");
         };
 
-        // Splash
+        // LÓGICA DO BOTÃO CONFIRMAR (Restaurada)
+        q("#btn-confirmar").onclick = async () => {
+            if (lock || !sel) return !sel && alert("Selecione uma poltrona");
+            if (!confirm("Confirma troca de poltrona?")) return;
+
+            lock = true;
+            q("#btn-confirmar").disabled = true;
+            const nS = sel.dataset.s;
+            const old = us[0] || null;
+            const el = sel;
+
+            try {
+                // Monta o objeto de acordo com a existência de uma poltrona anterior (U.S para troca, U.P para nova)
+                const payload = old ? 
+                    { cpf: cpfAtivo, curso: cur, current: old, select: nS } : 
+                    { poltrona: nS, CURSO: cur, cpf: cpfAtivo };
+
+                const res = await fetch(old ? U.S : U.P, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    if (old) {
+                        let oE = q(`.s[data-s="${old}"]`);
+                        if (oE) { 
+                            oE.classList.remove("mine"); 
+                            oE.onclick = () => { fscr(); selectPoltrona(oE); }; 
+                        }
+                    }
+                    el.classList.remove("selected");
+                    el.classList.add("mine");
+                    us = [nS];
+                    alert("Poltrona selecionada com sucesso!");
+                } else {
+                    alert("Poltrona ocupada por outro usuário");
+                    el.classList.remove("selected");
+                    el.classList.add("lt");
+                    setTimeout(() => { el.classList.remove("lt"); el.classList.add("white") }, 9000);
+                }
+            } catch (e) {
+                alert("Erro ao confirmar seleção.");
+            } finally {
+                lock = false;
+                q("#btn-confirmar").disabled = false;
+                sel = null;
+            }
+        };
+
         setTimeout(() => q("#splash").remove(), 1600);
     </script>
 </body>
