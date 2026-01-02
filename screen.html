@@ -26,7 +26,7 @@
         .view { display: none; width: 100vw; visibility: hidden; }
         .view.active { display: flex; flex-direction: column; align-items: center; visibility: visible; }
 
-        /* LOGIN - Estilo Original do Botão Restaurado */
+        /* LOGIN */
         .app-login-box { width: 90%; max-width: 300px; margin: auto; }
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block }
         .row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ccc; padding: 4px 0 }
@@ -36,12 +36,11 @@
         input { flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
         input::placeholder { font-size: 16px; color: #999; }
         
-        /* BOTÃO ENTRAR ORIGINAL */
         button#btn { 
             flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; 
             border-radius: 20px; background: 0; color: #aaa; font-size: 12px; 
             font-weight: bold; display: flex; align-items: center; justify-content: center; 
-            white-space: nowrap; transition: none;
+            white-space: nowrap;
         }
         button#btn.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
         button#btn.ready:active { background: #43a047; transform: scale(.97) }
@@ -55,8 +54,11 @@
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative }
         .s { background:#4CAF50; border:3px solid #4CAF50; color:#fff; font-weight:700; cursor:pointer; }
         .s.selected, .s.mine { background:#e74c3c; border-color:#e74c3c; cursor:default }
+        
+        /* Classes de estado ocupado/indisponível */
         .s.white { background:#fff!important; border:3px solid #8c96b2!important; color:transparent!important; pointer-events:none!important }
         .s.lt { background:#aaa!important; border-color:#777!important; color:transparent!important; pointer-events:none!important }
+        
         .s::after { content:""; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); width:32px; height:14px; border-radius:8px; background:#fff; border:3px solid #8c96b2}
         
         #btn-confirmar { width: 112px; height: 54px; background: #4CAF50; color: #fff; border: none; font-size: 16px; font-weight: 700; border-radius: 12px; cursor: pointer; position: absolute; bottom: -64px; right: 20px }
@@ -65,7 +67,7 @@
         #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #eee; z-index: 1000; }
         #pb { width: 0; height: 100%; background: #4CAF50; transition: width .1s }
 
-        /* MODAL DARK SYSTEM (4x2 poltronas: ~246px x 122px) */
+        /* MODAL 4x2 DARK */
         #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 10000; }
         .modal-box { 
             background: #323232; color: #fff; padding: 20px; border-radius: 12px; 
@@ -179,12 +181,8 @@
             if (!inp.value) return;
             if (inp.value.length === 11) inp.blur();
             if (inp.value.length < 11) return;
-
             const v1 = nm(inp.value);
-            if (!vCPF(v1)) {
-                err.textContent = "CPF inválido";
-                err.style.display = "block"; setS("err"); return;
-            }
+            if (!vCPF(v1)) { err.textContent = "CPF inválido"; err.style.display = "block"; setS("err"); return; }
 
             debounce = setTimeout(async () => {
                 try {
@@ -215,18 +213,14 @@
                 const d = await fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: cpfAtivo}) }).then(r => r.json());
                 const l = d.poltronas || d.lista || [];
                 const a = (d.codigo || d.cursos || []).find(x => nm(x.CPF2 || x.CPF) === cpfAtivo);
-                
                 cur = (a.CODIGO || a.Codigo).toString().trim().toUpperCase();
                 q("#ctx").textContent = cur;
                 const rows = l.filter(x => (x.CURSO || x.Curso)?.toString().trim().toUpperCase() === cur);
                 const bl = [...new Set(rows.map(x => (x.ID || x.Id)?.toString().padStart(2, "0")).filter(Boolean))];
                 us = rows.filter(x => nm(x.CPF2 || x.CPF) === cpfAtivo).map(x => (x.ID || x.Id).toString().padStart(2, "0"));
-                
                 const cfg = await fetch(`configs/0046.json`).then(res => res.json());
                 renderGrid(cfg.layout, bl);
-                
-                clearInterval(iv);
-                pb.style.width = "100%";
+                clearInterval(iv); pb.style.width = "100%";
                 q("#pbc").style.display = "none";
                 q("#w").style.visibility = "visible"; q("#w").style.opacity = "1";
             } catch (err) { await showMsg("Erro de conexão."); }
@@ -253,7 +247,7 @@
         };
 
         const selectPoltrona = (e) => {
-            if (lock) return;
+            if (lock || e.classList.contains("white") || e.classList.contains("lt")) return;
             if (sel) sel.classList.remove("selected");
             sel = (sel === e) ? null : e;
             if (sel) sel.classList.add("selected");
@@ -264,7 +258,7 @@
             if (!(await showMsg("Confirmar troca de poltrona?", true))) return;
 
             lock = true; q("#btn-confirmar").disabled = true;
-            const nS = sel.dataset.s, old = us[0] || null;
+            const nS = sel.dataset.s, old = us[0] || null, el = sel;
 
             try {
                 const payload = old ? { cpf: cpfAtivo, curso: cur, current: old, select: nS } : { poltrona: nS, CURSO: cur, cpf: cpfAtivo };
@@ -275,23 +269,25 @@
                     const updateTimer = () => {
                         q("#modal-text").innerHTML = `Poltrona selecionada com sucesso!<br>Redirecionando em ${count} segundos`;
                     };
-                    
                     const timeoutExit = setInterval(() => {
                         count--;
-                        if(count <= 0) {
-                            clearInterval(timeoutExit);
-                            fscr(false); location.reload();
-                        } else {
-                            updateTimer();
-                        }
+                        if(count <= 0) { clearInterval(timeoutExit); fscr(false); location.reload(); }
+                        else { updateTimer(); }
                     }, 1000);
-
-                    updateTimer(); // Chamada inicial
+                    updateTimer();
                     await showMsg(`Poltrona selecionada com sucesso!<br>Redirecionando em ${count} segundos`);
-                    clearInterval(timeoutExit);
-                    fscr(false); location.reload();
+                    clearInterval(timeoutExit); fscr(false); location.reload();
                 } else {
+                    // LÓGICA DE PERDA DE POLTRONA:
                     await showMsg("Poltrona selecionada por outro usuário");
+                    el.classList.remove("selected");
+                    el.classList.add("lt"); // Fica cinza
+                    
+                    setTimeout(() => {
+                        el.classList.remove("lt");
+                        el.classList.add("white"); // Fica branca após 9s
+                    }, 9000);
+
                     lock = false; q("#btn-confirmar").disabled = false; sel = null;
                 }
             } catch (e) { await showMsg("Erro técnico."); lock = false; q("#btn-confirmar").disabled = false; }
