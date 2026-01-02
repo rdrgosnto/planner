@@ -2,25 +2,23 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Planner - Sistema Unificado</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>Planner</title>
     <style>
-        /* ESTILOS GERAIS */
+        /* [Mantendo seus estilos originais anteriores...] */
         * { box-sizing: border-box }
         body { margin: 0; font-family: Arial, sans-serif; background: #fff; overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
         
-        /* SPLASH SCREEN */
         #splash { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; }
         #splash b { font-size: 36px; color: #4CAF50; margin-bottom: 10px }
         #splash i { width: 120px; height: 2px; background: #e0e0e0; overflow: hidden; position: relative }
         #splash i:after { content: ""; display: block; width: 40px; height: 100%; background: #4CAF50; animation: l .9s infinite; position: absolute }
         @keyframes l { from { left: -40px } to { left: 120px } }
 
-        /* NAVEGAÇÃO ENTRE TELAS */
         .view { display: none; width: 100vw; }
         .view.active { display: flex; flex-direction: column; align-items: center; }
 
-        /* TELA 1: LOGIN */
+        #view-login { justify-content: center; align-items: center; }
         .app-login-box { width: 90%; max-width: 300px; margin: auto; }
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block }
         .row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ccc; padding: 4px 0 }
@@ -29,11 +27,17 @@
         input { flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
         button#btn-entrar { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; cursor: default; }
         button#btn-entrar.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
-        .errmsg { font-size: 13px; color: #e53935; margin: 14px 0 0 2px; display: none }
 
-        /* TELA 2: MAPA / POLTRONAS */
-        #w { transform: scale(.8); transform-origin: top center; margin-top: 20px; }
-        .bc { padding: 20px 20px 24px; border: 3px solid #b0b0b0; border-radius: 16px; width: fit-content; margin: 20px auto; position: relative; display: flex; justify-content: center }
+        /* AJUSTE NO CONTAINER DO MAPA PARA EVITAR DESCONFIGURAÇÃO */
+        #w { 
+            transform: scale(.85); 
+            transform-origin: top center; 
+            margin-top: 10px; 
+            visibility: hidden; /* Começa invisível mas ocupando espaço */
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .bc { padding: 20px; border: 3px solid #b0b0b0; border-radius: 16px; width: fit-content; margin: 20px auto; position: relative; display: flex; justify-content: center; background: #fff; }
         .g { display: grid; grid-template-columns: repeat(5,54px); gap: 14px 10px; justify-content: center }
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative }
         .s { background:#4CAF50; border:3px solid #4CAF50; color:#fff; font-weight:700; cursor:pointer; user-select:none }
@@ -42,12 +46,11 @@
         .s.white { background:#fff!important; border:3px solid #8c96b2!important }
         .s.lt { background:#aaa!important; border-color:#777!important }
         .s::after { content:""; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); width:32px; height:14px; border-radius:8px; background:#fff; border:3px solid #8c96b2 }
-        .e { background:0 0 }
+        
         #btn-confirmar { width: 112px; height: 54px; background: #4CAF50; color: #fff; border: none; font-size: 16px; font-weight: 700; border-radius: 12px; cursor: pointer; position: absolute; bottom: -64px; right: 20px }
-        #btn-confirmar:disabled { opacity: .6 }
-        #cbx { position: absolute; top: 60px; left: 100%; width: 40px; height: 122px; background: #4CAF50; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: none }
+        #cbx { position: absolute; top: 60px; left: 100%; width: 40px; height: 122px; background: #4CAF50; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
         #ctx { transform: rotate(-90deg); font-size: 18px; white-space: nowrap }
-        #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #0001 }
+        #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #eee; z-index: 1000; }
         #pb { width: 0; height: 100%; background: #4CAF50; transition: width .1s }
     </style>
 </head>
@@ -59,10 +62,10 @@
         <div class="app-login-box">
             <label>CPF</label>
             <div class="row">
-                <input id="cpf-input" placeholder="CPF (somente números)" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                <input id="cpf-input" placeholder="CPF" inputmode="numeric" autocomplete="off">
                 <button id="btn-entrar" disabled>ENTRAR</button>
             </div>
-            <div id="err-login" class="errmsg"></div>
+            <div id="err-login" style="color:red; font-size:12px; margin-top:10px; display:none"></div>
         </div>
     </div>
 
@@ -79,14 +82,16 @@
     <script>
         const q = s => document.querySelector(s);
         const nm = c => c?.toString().replace(/\D/g, "").padStart(11, "0") || "";
-        const gf = (o, ...n) => {
-            for (let x of n) {
-                let k = Object.keys(o || {}).find(z => z.toLowerCase() === x.toLowerCase());
-                if (k) return o[k];
+        
+        // Função Reforçada de Fullscreen
+        const fscr = () => {
+            const d = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (d.requestFullscreen) d.requestFullscreen().catch(()=>{});
+                else if (d.webkitRequestFullscreen) d.webkitRequestFullscreen();
             }
         };
 
-        // Configurações e APIs (Unificadas do seu código)
         const B = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/";
         const E = "/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=";
         const U = {
@@ -94,153 +99,100 @@
             P: `${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,
             S: `${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`
         };
-        const cmap = { AAL: "0046", ALI: "0046", QUI: "0046" };
 
-        let sel = null, bl = [], us = [], cpfAtivo = null, cur = "", lock = false;
+        let sel = null, us = [], cpfAtivo = null, cur = "", lock = false;
 
-        // --- LÓGICA DE LOGIN ---
-        const vLogin = q("#view-login"), vMapa = q("#view-mapa"), inp = q("#cpf-input"), btnE = q("#btn-entrar");
-
-        inp.oninput = () => {
-            inp.value = inp.value.replace(/\D/g, "");
-            btnE.disabled = 1; btnE.classList.remove("ready");
-            q(".row").className = "row";
-            q("#err-login").style.display = "none";
-
-            if (inp.value.length === 11) {
-                // Validação rápida de CPF para habilitar botão
-                const v1 = nm(inp.value);
-                btnE.disabled = 0; btnE.classList.add("ready");
-                q(".row").classList.add("ok");
+        // Login
+        q("#cpf-input").oninput = (e) => {
+            e.target.value = e.target.value.replace(/\D/g, "");
+            const b = q("#btn-entrar");
+            if (e.target.value.length === 11) {
+                b.disabled = false; b.classList.add("ready");
+            } else {
+                b.disabled = true; b.classList.remove("ready");
             }
         };
 
-        btnE.onclick = () => {
-            if (!btnE.disabled) {
-                // Ativar Fullscreen
-                const doc = document.documentElement;
-                if (doc.requestFullscreen) doc.requestFullscreen();
-                else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
-
-                cpfAtivo = nm(inp.value);
-                sessionStorage.setItem("cpf", cpfAtivo);
-                
-                // Mudar Tela
-                vLogin.classList.remove("active");
-                vMapa.classList.add("active");
-                
-                // Iniciar carregamento do Mapa
-                loadMapaData();
-            }
+        q("#btn-entrar").onclick = () => {
+            fscr(); // Primeiro pedido de fullscreen
+            cpfAtivo = nm(q("#cpf-input").value);
+            q("#view-login").classList.remove("active");
+            q("#view-mapa").classList.add("active");
+            loadMapaData();
         };
 
-        // --- LÓGICA DO MAPA (Sua lógica original adaptada) ---
-        const an = t => {
-            let b = q("#pb"), w = 0, i = setInterval(() => {
-                w >= t ? clearInterval(i) : (w++, b.style.width = w + "%")
-            }, 10)
+        // Carregar Mapa
+        const loadMapaData = async () => {
+            let pb = q("#pb"), w = 0;
+            let iv = setInterval(() => { if(w<90){ w++; pb.style.width=w+"%"; } }, 20);
+
+            try {
+                const r = await fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: cpfAtivo}) });
+                const d = await r.json();
+                
+                const l = d.poltronas || d.lista || [];
+                const a = (d.codigo || d.cursos || []).find(x => nm(x.CPF2 || x.CPF) === cpfAtivo);
+                
+                if (!a) { alert("Não autorizado"); location.reload(); return; }
+                
+                cur = (a.CODIGO || a.Codigo).toString().trim().toUpperCase();
+                q("#ctx").textContent = cur;
+                
+                const rows = l.filter(x => (x.CURSO || x.Curso)?.toString().trim().toUpperCase() === cur);
+                const bl = [...new Set(rows.map(x => (x.ID || x.Id)?.toString().padStart(2, "0")).filter(Boolean))];
+                us = rows.filter(x => nm(x.CPF2 || x.CPF) === cpfAtivo).map(x => (x.ID || x.Id).toString().padStart(2, "0"));
+                
+                // Layout
+                const cfg = await fetch(`configs/${cur === "AAL" || cur === "ALI" || cur === "QUI" ? "0046" : "0046"}.json`).then(res => res.json());
+                
+                renderGrid(cfg.layout, bl);
+                
+                clearInterval(iv);
+                pb.style.width = "100%";
+                setTimeout(() => {
+                    q("#pbc").style.display = "none";
+                    // SÓ MOSTRA O MAPA DEPOIS DE TUDO PRONTO
+                    const mapa = q("#w");
+                    mapa.style.visibility = "visible";
+                    mapa.style.opacity = "1";
+                }, 500);
+
+            } catch (err) { alert("Erro de conexão"); }
         };
 
-        const rd = l => {
-            const c = q(".bc"), o = q(".g");
-            if (o) o.remove();
+        const renderGrid = (layout, bl) => {
+            const c = q(".bc"), old = q(".g");
+            if (old) old.remove();
             const g = document.createElement("div");
             g.className = "g";
-            l.forEach(r => r.forEach(v => {
+
+            layout.forEach(row => row.forEach(v => {
                 const e = document.createElement("div");
                 if (v === null) e.className = "e";
                 else {
                     e.className = "s";
                     const id = v.toString().padStart(2, "0");
-                    if (v !== "white") { e.textContent = id; e.dataset.s = id }
+                    if (v !== "white") { e.textContent = id; e.dataset.s = id; }
                     if (us.includes(id)) e.classList.add("mine");
                     else if (bl.includes(id) || v === "white") e.classList.add("white");
-                    else e.onclick = () => sl(e)
+                    else e.onclick = (event) => {
+                        fscr(); // REFORÇA O FULLSCREEN A CADA TOQUE
+                        selectPoltrona(e);
+                    };
                 }
-                g.appendChild(e)
+                g.appendChild(e);
             }));
-            c.appendChild(g)
+            c.appendChild(g);
         };
 
-        const sl = e => {
-            if (lock || e.classList.contains("white") || e.classList.contains("mine") || e.classList.contains("lt")) return;
+        const selectPoltrona = (e) => {
+            if (lock) return;
             if (sel) sel.classList.remove("selected");
             sel = (sel === e) ? null : e;
-            if (sel) sel.classList.add("selected")
+            if (sel) sel.classList.add("selected");
         };
 
-        const loadMapaData = async () => {
-            an(40);
-            try {
-                const r = await fetch(U.G, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ cpf: cpfAtivo })
-                }), d = await r.json();
-                
-                an(70);
-                const l = d.poltronas || d.lista || [], s = d.codigo || d.cursos || [];
-                const a = s.find(x => nm(gf(x, "CPF2", "CPF")) === cpfAtivo);
-                
-                if (!a) { alert("CPF não autorizado no sistema de poltronas"); location.reload(); return; }
-                
-                cur = gf(a, "CODIGO", "Codigo").toString().trim().toUpperCase();
-                q("#ctx").textContent = cur;
-                
-                const rows = l.filter(x => gf(x, "CURSO", "Curso")?.toString().trim().toUpperCase() === cur);
-                bl = [...new Set(rows.map(x => gf(x, "ID", "Id")?.toString().padStart(2, "0")).filter(Boolean))];
-                us = rows.filter(x => nm(gf(x, "CPF2", "CPF")) === cpfAtivo).map(x => gf(x, "ID", "Id").toString().padStart(2, "0"));
-                
-                // Carregar Layout do JSON (Caminho relativo mantido)
-                const cfg = await fetch(`configs/${cmap[cur] || "0046"}.json`).then(res => res.json());
-                rd(cfg.layout);
-                an(100);
-                setTimeout(() => { if(q("#pbc")) q("#pbc").remove() }, 600);
-                q("#w").style.display = "block";
-            } catch (e) {
-                alert("Erro ao carregar mapa");
-                console.error(e);
-            }
-        };
-
-        q("#btn-confirmar").onclick = async () => {
-            if (lock || !sel) return !sel && alert("Selecione uma poltrona");
-            if (!confirm("Confirma troca de poltrona?")) return;
-            
-            lock = true; q("#btn-confirmar").disabled = true;
-            const nS = sel.dataset.s, old = us[0] || null, el = sel;
-            
-            try {
-                const p = old ? { cpf: cpfAtivo, curso: cur, current: old, select: nS } : { poltrona: nS, CURSO: cur, cpf: cpfAtivo };
-                const r = await fetch(old ? U.S : U.P, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(p)
-                });
-                
-                if (r.ok) {
-                    if (old) {
-                        let oE = q(`.s[data-s="${old}"]`);
-                        if (oE) { oE.classList.remove("mine"); oE.onclick = () => sl(oE) }
-                    }
-                    el.classList.remove("selected");
-                    el.classList.add("mine");
-                    us = [nS];
-                    alert("Poltrona selecionada com sucesso!");
-                } else {
-                    alert("Poltrona ocupada por outro usuário");
-                    el.classList.remove("selected");
-                    el.classList.add("lt");
-                    setTimeout(() => { el.classList.remove("lt"); el.classList.add("white") }, 9000);
-                }
-            } catch (e) {
-                alert("Erro ao confirmar");
-            } finally {
-                lock = false; q("#btn-confirmar").disabled = false; sel = null;
-            }
-        };
-
-        // Splash Screen Remover
+        // Splash
         setTimeout(() => q("#splash").remove(), 1600);
     </script>
 </body>
