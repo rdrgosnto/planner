@@ -7,12 +7,10 @@
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* Bloqueia seleção de texto em toda a página, exceto inputs */
         body { 
-            margin: 0; font-family: Arial, sans-serif; background: #fff; 
-            overflow: hidden; min-height: 100vh; display: flex; 
-            flex-direction: column; justify-content: center;
-            user-select: none; -webkit-user-select: none;
+            margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: #fff; overflow: hidden; min-height: 100vh; display: flex; 
+            flex-direction: column; justify-content: center; user-select: none; -webkit-user-select: none;
         }
         
         input { user-select: text; -webkit-user-select: text; }
@@ -21,8 +19,8 @@
         #splash { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; }
         #splash b { font-size: 36px; color: #4CAF50; margin-bottom: 10px }
         #splash i { width: 120px; height: 2px; background: #e0e0e0; overflow: hidden; position: relative }
-        #splash i:after { content: ""; display: block; width: 40px; height: 100%; background: #4CAF50; animation: l .9s infinite; position: absolute }
-        @keyframes l { from { left: -40px } to { left: 120px } }
+        #splash i:after { content:""; display:block; width:40px; height:100%; background:#4CAF50; animation:l .9s infinite; position:absolute }
+        @keyframes l { from { left:-40px } to { left:120px } }
 
         /* VIEWS */
         .view { display: none; width: 100vw; }
@@ -32,16 +30,13 @@
         .app-login-box { width: 90%; max-width: 300px; margin: auto; }
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block }
         .row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ccc; padding: 4px 0 }
-        
         input { flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
-        /* Placeholder igual ao texto do label */
         input::placeholder { color: #333; font-size: 16px; opacity: 0.6; }
-        
         button#btn-entrar { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; cursor: default; }
         button#btn-entrar.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
 
         /* MAPA */
-        #w { transform: scale(.85); transform-origin: top center; margin-top: 10px; visibility: hidden; opacity: 0; transition: opacity 0.3s; }
+        #w { transform: scale(.85); transform-origin: top center; margin-top: 10px; visibility: hidden; opacity: 0; transition: opacity 0.2s; }
         .bc { padding: 20px; border: 3px solid #b0b0b0; border-radius: 16px; width: fit-content; margin: 20px auto; position: relative; display: flex; justify-content: center; background: #fff; }
         .g { display: grid; grid-template-columns: repeat(5,54px); gap: 14px 10px; justify-content: center }
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative }
@@ -57,23 +52,25 @@
         #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #eee; z-index: 1000; }
         #pb { width: 0; height: 100%; background: #4CAF50; transition: width .1s }
 
-        /* MODAL 4x2 */
-        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        /* MODAL SISTEMA (7x4 poltronas: ~438px x 242px) */
+        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 10000; }
         .modal-box { 
-            background: #2b2b2b; color: #fff; padding: 15px; border-radius: 10px; 
-            width: 246px; height: 122px; display: flex; flex-direction: column; 
-            justify-content: space-between; box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            background: #fff; color: #333; padding: 24px; border-radius: 28px; 
+            width: 438px; height: 242px; display: flex; flex-direction: column; 
+            justify-content: space-between; box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+            border: none;
         }
         .modal-box p { 
-            margin: 0; font-size: 14px; text-align: left; line-height: 1.4;
-            overflow-y: auto; width: 100%; padding-right: 5px;
+            margin: 0; font-size: 16px; text-align: left; line-height: 1.5;
+            overflow-y: auto; width: 100%; color: #444;
         }
-        .modal-btns { display: flex; gap: 10px; width: 100%; justify-content: center; }
+        .modal-btns { display: flex; gap: 24px; width: 100%; justify-content: flex-end; }
         .modal-btns button { 
-            background: #444; color: #fff; border: 1px solid #555;
-            padding: 8px 16px; border-radius: 4px; font-size: 12px;
-            cursor: pointer; min-width: 60px;
+            background: none; color: #2196F3; border: none;
+            padding: 8px 12px; font-size: 14px; font-weight: bold;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
         }
+        .modal-btns button:active { background: #f0f0f0; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -170,26 +167,31 @@
 
         const loadMapaData = async () => {
             let pb = q("#pb"), w = 0;
-            let iv = setInterval(() => { if(w<90){ w++; pb.style.width=w+"%"; } }, 10);
+            let iv = setInterval(() => { if(w<90){ w++; pb.style.width=w+"%"; } }, 8);
             try {
-                const pData = fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: cpfAtivo}) }).then(r => r.json());
-                const d = await pData;
+                // Inicia busca de dados e layout em paralelo
+                const [d, cfg] = await Promise.all([
+                    fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: cpfAtivo}) }).then(r => r.json()),
+                    fetch(`configs/0046.json`).then(res => res.json())
+                ]);
+
                 const l = d.poltronas || d.lista || [];
                 const a = (d.codigo || d.cursos || []).find(x => nm(x.CPF2 || x.CPF) === cpfAtivo);
                 if (!a) { await showMsg("CPF não autorizado."); location.reload(); return; }
+                
                 cur = (a.CODIGO || a.Codigo).toString().trim().toUpperCase();
                 q("#ctx").textContent = cur;
                 const rows = l.filter(x => (x.CURSO || x.Curso)?.toString().trim().toUpperCase() === cur);
                 const bl = [...new Set(rows.map(x => (x.ID || x.Id)?.toString().padStart(2, "0")).filter(Boolean))];
                 us = rows.filter(x => nm(x.CPF2 || x.CPF) === cpfAtivo).map(x => (x.ID || x.Id).toString().padStart(2, "0"));
-                const cfg = await fetch(`configs/0046.json`).then(res => res.json());
+                
                 renderGrid(cfg.layout, bl);
                 clearInterval(iv);
                 pb.style.width = "100%";
                 setTimeout(() => {
                     q("#pbc").style.display = "none";
                     q("#w").style.visibility = "visible"; q("#w").style.opacity = "1";
-                }, 200);
+                }, 150);
             } catch (err) { await showMsg("Erro de conexão."); }
         };
 
@@ -198,6 +200,7 @@
             if (old) old.remove();
             const g = document.createElement("div");
             g.className = "g";
+            const frag = document.createDocumentFragment();
             layout.forEach(row => row.forEach(v => {
                 const e = document.createElement("div");
                 if (v === null) e.className = "e";
@@ -209,8 +212,9 @@
                     else if (bl.includes(id) || v === "white") e.classList.add("white");
                     else e.onclick = () => { fscr(true); selectPoltrona(e); };
                 }
-                g.appendChild(e);
+                frag.appendChild(e);
             }));
+            g.appendChild(frag);
             c.appendChild(g);
         };
 
@@ -233,24 +237,15 @@
                 const res = await fetch(old ? U.S : U.P, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
 
                 if (res.ok) {
-                    const finalMsg = "Sucesso! Saindo em 9s...";
-                    // Inicia o timer de saída
-                    const timeoutExit = setTimeout(() => {
-                        fscr(false); location.reload();
-                    }, 9000);
-
-                    // Se clicar no OK da mensagem, sai imediatamente
-                    await showMsg(finalMsg);
+                    const timeoutExit = setTimeout(() => { fscr(false); location.reload(); }, 9000);
+                    await showMsg("Sucesso! Saindo em 9s...");
                     clearTimeout(timeoutExit);
                     fscr(false); location.reload();
                 } else {
                     await showMsg("Lugar já ocupado.");
                     lock = false; q("#btn-confirmar").disabled = false; sel = null;
                 }
-            } catch (e) { 
-                await showMsg("Erro técnico."); 
-                lock = false; q("#btn-confirmar").disabled = false;
-            }
+            } catch (e) { await showMsg("Erro técnico."); lock = false; q("#btn-confirmar").disabled = false; }
         };
 
         setTimeout(() => q("#splash").remove(), 1600);
