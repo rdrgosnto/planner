@@ -15,7 +15,7 @@
         
         input { user-select: text; -webkit-user-select: text; }
 
-        /* SPLASH - Idêntico ao seu modelo */
+        /* SPLASH */
         #splash { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; }
         #splash b { font-size: 36px; color: #4CAF50; margin-bottom: 10px; font-weight: bold; }
         #splash i { width: 120px; height: 2px; background: #e0e0e0; overflow: hidden; position: relative }
@@ -26,7 +26,7 @@
         .view { display: none; width: 100vw; visibility: hidden; }
         .view.active { display: flex; flex-direction: column; align-items: center; visibility: visible; }
 
-        /* LOGIN - Layout fiel ao seu HTML original */
+        /* LOGIN - Estilo Original do Botão Restaurado */
         .app-login-box { width: 90%; max-width: 300px; margin: auto; }
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block }
         .row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ccc; padding: 4px 0 }
@@ -36,8 +36,15 @@
         input { flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
         input::placeholder { font-size: 16px; color: #999; }
         
-        button#btn-entrar { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
-        button#btn-entrar.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
+        /* BOTÃO ENTRAR ORIGINAL */
+        button#btn { 
+            flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; 
+            border-radius: 20px; background: 0; color: #aaa; font-size: 12px; 
+            font-weight: bold; display: flex; align-items: center; justify-content: center; 
+            white-space: nowrap; transition: none;
+        }
+        button#btn.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
+        button#btn.ready:active { background: #43a047; transform: scale(.97) }
         
         .errmsg { font-size: 13px; color: #e53935; margin: 14px 0 0 2px; display: none }
 
@@ -58,11 +65,11 @@
         #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #eee; z-index: 1000; }
         #pb { width: 0; height: 100%; background: #4CAF50; transition: width .1s }
 
-        /* MODAL DARK SYSTEM (3x2) */
+        /* MODAL DARK SYSTEM (4x2 poltronas: ~246px x 122px) */
         #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 10000; }
         .modal-box { 
             background: #323232; color: #fff; padding: 20px; border-radius: 12px; 
-            width: 182px; height: 122px; display: flex; flex-direction: column; 
+            width: 246px; height: 122px; display: flex; flex-direction: column; 
             justify-content: space-between; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
         .modal-box p { margin: 0; font-size: 13px; text-align: left; line-height: 1.4; color: #eee; }
@@ -110,13 +117,11 @@
         const q = s => document.querySelector(s);
         const nm = v => v.replace(/\D/g, "").padStart(11, "0");
         
-        // Validação Algoritmo CPF (do seu HTML)
         const vCPF = c => !/^(\d)\1+$/.test(c) && [9, 10].every(t => {
             let s = 0; for (let i = 0; i < t; i++) s += c[i] * (t + 1 - i);
             return ((s * 10) % 11) % 10 == c[t]
         });
 
-        // Configuração de Telas
         setTimeout(() => {
             q("#splash").remove();
             q("#view-login").style.visibility = "visible";
@@ -162,7 +167,6 @@
 
         let sel = null, us = [], cpfAtivo = null, cur = "", lock = false;
 
-        // --- LOGICA DE LOGIN (IDENTICA AO SEU HTML) ---
         const inp = q("#cpf"), btnE = q("#btn"), err = q("#err"), row = q("#login-row");
         const setS = s => { row.className = "row"; if(s) row.classList.add(s) };
         const resetL = () => { btnE.disabled = 1; btnE.className = ""; setS(); err.style.display = "none" };
@@ -204,7 +208,6 @@
             }
         };
 
-        // --- LOGICA DO MAPA ---
         const loadMapaData = async () => {
             let pb = q("#pb"), w = 0;
             let iv = setInterval(() => { if(w<95){ w+=2; pb.style.width=w+"%"; } }, 5);
@@ -283,6 +286,7 @@
                         }
                     }, 1000);
 
+                    updateTimer(); // Chamada inicial
                     await showMsg(`Poltrona selecionada com sucesso!<br>Redirecionando em ${count} segundos`);
                     clearInterval(timeoutExit);
                     fscr(false); location.reload();
