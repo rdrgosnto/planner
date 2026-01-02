@@ -12,11 +12,12 @@
     .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
     .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none;transition: transform 0.1s;}
     .seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;cursor:default}
-    .seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;cursor:default!important;pointer-events:none!important}
+    
+    /* Alterado para permitir pointer-events durante o modo de troca */
+    .seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;}
     .seat.white{background:#fff!important;border:3px solid #8c96b2!important}
-    .seat.lost-temp{background:#aaa!important;border-color:#777!important}
+    
     .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
-    .seat.lost::before{content:"✖";color:#fff;font-size:28px;font-weight:bold;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
     .empty{background:0 0}
     
     /* Efeito de Flutuar */
@@ -24,17 +25,19 @@
         position: fixed !important;
         z-index: 10000 !important;
         pointer-events: none !important;
-        opacity: 0.8;
+        opacity: 0.9;
         transform: scale(1.2);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        background: #3498db !important; /* Cor azul para destacar o arraste */
+        border-color: #2980b9 !important;
     }
     .drop-target {
-        transform: scale(1.1);
-        border: 3px dashed #e74c3c !important;
+        transform: scale(1.15);
+        border: 3px solid #3498db !important;
+        z-index: 10;
     }
 
     #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;user-select:none}
-    #confirmarBtn.trocar{background:#4CAF50;color:#fff}
     #cursoBox{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:9999;overflow:hidden;pointer-events:none}
     #cursoText{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
     #progress-bar-container{position:fixed;bottom:0;left:0;width:100%;height:8px;background:#0001;z-index:9999}
@@ -64,21 +67,20 @@ POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.po
 map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
 const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
-
 const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,json:r.ok?await r.json():null}}catch{return{ok:0}}};
 
 const cSeat=v=>{
     const e=document.createElement("div");
     e.className=v===null?"empty":v==="white"?"seat white":"seat";
-    if(v && v!=="white"){
-        e.dataset.seat=v.toString().padStart(2,"0"); 
-        e.textContent=e.dataset.seat;
+    if(v && v!=="white"){ e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat; }
+    if(v==="white") {
+        e.dataset.white="true";
+        e.dataset.seat=v.toString().padStart(2,"0"); // Mantém o ID mesmo sendo branca
     }
-    if(v==="white") e.dataset.white="true";
     return e;
 };
 
-// --- LOGICA DE ARRASTAR E CLIQUE LONGO ---
+// --- NOVA LOGICA DE ARRASTAR (IRRESTRITA) ---
 
 const startDrag = (e, element) => {
     if (isLocked || !element.classList.contains("mine")) return;
@@ -89,9 +91,10 @@ const startDrag = (e, element) => {
         seatToSwap = element;
         dragElem = element.cloneNode(true);
         dragElem.classList.add("dragging-active");
+        dragElem.textContent = element.dataset.seat; // Garante que o número apareça no arraste
         document.body.appendChild(dragElem);
         updateDragPos(clientX, clientY);
-        if (navigator.vibrate) navigator.vibrate(50);
+        if (navigator.vibrate) navigator.vibrate(60);
     }, 600); 
 };
 
@@ -100,9 +103,13 @@ const updateDragPos = (x, y) => {
     dragElem.style.left = `${x - 27}px`;
     dragElem.style.top = `${y - 27}px`;
     
+    // Identifica qualquer poltrona abaixo, mesmo bloqueada
     const target = document.elementFromPoint(x, y)?.closest('.seat');
+    
     document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-    if (target && target !== seatToSwap && !target.classList.contains('white')) {
+    
+    // Agora permite qualquer poltrona como alvo (exceto ela mesma)
+    if (target && target !== seatToSwap) {
         target.classList.add('drop-target');
     }
 };
@@ -115,8 +122,14 @@ const endDrag = (e) => {
     const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
     const target = document.elementFromPoint(x, y)?.closest('.seat');
 
-    if (target && target !== seatToSwap && !target.classList.contains('white')) {
-        selSeat(target); // Seleciona a poltrona de destino
+    if (target && target !== seatToSwap) {
+        // Força a seleção da poltrona de destino, ignorando restrições de classe
+        const novaId = target.dataset.seat;
+        if(confirm(`Deseja forçar a troca para a poltrona ${novaId}?`)) {
+            sel = target;
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('selected'));
+            target.classList.add('selected');
+        }
     }
 
     dragElem.remove();
@@ -125,7 +138,7 @@ const endDrag = (e) => {
 };
 
 window.addEventListener('mousemove', e => updateDragPos(e.clientX, e.clientY));
-window.addEventListener('touchmove', e => updateDragPos(e.touches[0].clientX, e.touches[0].clientY), {passive:false});
+window.addEventListener('touchmove', e => { if(dragElem) e.preventDefault(); updateDragPos(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
 window.addEventListener('mouseup', endDrag);
 window.addEventListener('touchend', endDrag);
 
@@ -133,7 +146,8 @@ window.addEventListener('touchend', endDrag);
 
 const selSeat=e=>{
     if(isLocked) return;
-    if(!e.classList.contains("white") && !e.classList.contains("lost") && !e.classList.contains("mine") && !e.classList.contains("lost-temp")){
+    // Clique normal ainda respeita bloqueios, arraste não.
+    if(!e.classList.contains("white") && !e.classList.contains("mine")){
         sel?.classList.remove("selected");
         sel = sel===e?null:e;
         e.classList.toggle("selected", sel===e);
@@ -147,11 +161,11 @@ const render=l=>{
     g.className="grid";
     l.forEach(row=>row.forEach(v=>{
         const e=cSeat(v);
-        if(v && v!=="white"){
-            const id=e.dataset.seat;
+        if(v !== null){
+            const id = e.dataset.seat;
+            // Adiciona eventos de arraste sempre na poltrona do usuário
             if(userSeats.includes(id)) {
                 e.classList.add("mine");
-                // Eventos para arrastar apenas na poltrona do usuário (mine)
                 e.addEventListener('mousedown', (evt) => startDrag(evt, e));
                 e.addEventListener('touchstart', (evt) => startDrag(evt, e));
             } else if(bl.includes(id)) {
@@ -167,13 +181,7 @@ const render=l=>{
 
 const updateButtonState=()=>{
     const btn=q("#confirmarBtn");
-    if(userSeats.length>0){
-        btn.textContent="CONFIRMAR";
-        btn.classList.add("trocar")
-    } else {
-        btn.textContent="CONFIRMAR";
-        btn.classList.remove("trocar")
-    }
+    btn.classList.toggle("trocar", userSeats.length > 0);
 };
 
 const load=async()=>{
@@ -196,26 +204,19 @@ const load=async()=>{
     render(layout);
     updateButtonState();
     anim(100);
-    setTimeout(()=>q("#progress-bar-container").remove(),600);
+    setTimeout(()=>q("#progress-bar-container").remove(), 600);
     q("#bus-wrapper").style.display="block"
 };
 
 q("#confirmarBtn").onclick = async () => {
-  if(isLocked) return;
-  if(!sel){ alert("Selecione uma poltrona."); return }
-
-  const ok = confirm("Confirma a poltrona selecionada?");
-  if(!ok){
-    sel.classList.remove("selected");
-    return;
-  }
+  if(isLocked || !sel) return;
+  if(!confirm("Confirma a poltrona selecionada?")) return;
 
   isLocked = true;
-  document.querySelectorAll(".seat").forEach(s => s.style.pointerEvents = "none");
   q("#confirmarBtn").disabled = true;
   const nova = sel.dataset.seat;
-  const antiga = userSeats[0] || null;
-  
+  const antiga = userSeats[0];
+
   try {
     const url = antiga ? POST_TROCAR : POST;
     const payload = antiga
@@ -230,33 +231,16 @@ q("#confirmarBtn").onclick = async () => {
 
     if(r.ok){
       userSeats = [nova];
-      if(antiga) {
-        bl = bl.filter(x => x !== antiga);
-      }
-      // Recarrega o layout para atualizar os estados
-      render(layout);
-      updateButtonState();
-      alert(antiga ? "Poltrona trocada com sucesso!" : "Poltrona selecionada!");
+      alert("Operação realizada com sucesso!");
+      location.reload(); // Recarrega para limpar estados e refletir a nova posição
     } else {
-      alert("Poltrona selecionada por outro usuário.");
-      sel.classList.remove("selected");
-      sel.classList.add("lost-temp");
-      const lostSeat = sel;
-      setTimeout(()=>{lostSeat.classList.remove("lost-temp");lostSeat.classList.add("white");},10000);
+      alert("Erro ao processar a troca.");
     }
   } catch {
     alert("Erro de comunicação.");
   }
-  
-  sel = null;
-  setTimeout(()=>{
-    document.querySelectorAll(".seat").forEach(s=>{
-      if(!s.classList.contains("mine") && !s.classList.contains("white")) 
-        s.style.pointerEvents = "auto"
-    });
-    q("#confirmarBtn").disabled = false;
-    isLocked = false;
-  },2000);
+  isLocked = false;
+  q("#confirmarBtn").disabled = false;
 };
 
 load();
