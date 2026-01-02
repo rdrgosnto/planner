@@ -7,34 +7,25 @@
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: Arial, sans-serif; background: #fff; overflow: hidden; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; user-select: none; -webkit-user-select: none; }
-        input { user-select: text; -webkit-user-select: text; }
-        
-        /* SPLASH SCREEN */
+        input { user-select: text; -webkit-user-select: text; flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
         #splash { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; }
         #splash b { font-size: 36px; color: #4CAF50; margin-bottom: 10px; font-weight: bold; }
         #splash i { width: 120px; height: 2px; background: #e0e0e0; overflow: hidden; position: relative }
         #splash i:after { content:""; display:block; width:40px; height:100%; background:#4CAF50; animation:l .9s infinite; position:absolute }
         @keyframes l { from { left:-40px } to { left:120px } }
-
-        /* VIEWS */
-        .view { display: none; width: 100vw; visibility: hidden; }
-        .view.active { display: flex; flex-direction: column; align-items: center; visibility: visible; }
-
-        /* LOGIN */
+        .view { display: none; width: 100vw; visibility: hidden; flex-direction: column; align-items: center; }
+        .view.active { display: flex; visibility: visible; }
         .app-login-box { width: 90%; max-width: 300px; margin: auto; }
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block }
         .row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ccc; padding: 4px 0 }
         .row.err { border-color: #e53935 }
         .row.ok { border-color: #4CAF50 }
-        input { flex: 1 1 auto; min-width: 0; border: 0; padding: 12px 6px 12px 2px; font-size: 18px; background: 0; outline: 0 }
         input::placeholder { font-size: 16px; color: #999; }
-        button#btn { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+        button#btn { flex: 0 0 auto; width: 70px; padding: 6px 0; border: 1px solid #aaa; border-radius: 20px; background: 0; color: #aaa; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
         button#btn.ready { background: #4CAF50; color: #fff; border-color: #4CAF50; cursor: pointer }
         button#btn.ready:active { background: #43a047; transform: scale(.97) }
         .errmsg { font-size: 13px; color: #e53935; margin: 14px 0 0 2px; display: none }
-
-        /* MAPA */
-        #w { transform: scale(.85); transform-origin: top center; margin-top: 10px; visibility: hidden; opacity: 0; transition: opacity 0.3s; }
+        #w { transform: scale(.85); transform-origin: top center; margin-top: 10px; visibility: hidden; opacity: 0; transition: opacity .3s; }
         .bc { padding: 20px; border: 3px solid #b0b0b0; border-radius: 16px; width: fit-content; margin: 20px auto; position: relative; display: flex; justify-content: center; background: #fff; }
         .g { display: grid; grid-template-columns: repeat(5,54px); gap: 14px 10px; justify-content: center }
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative }
@@ -43,25 +34,20 @@
         .s.white { background:#fff!important; border:3px solid #8c96b2!important; color:transparent!important; pointer-events:none!important }
         .s.lt { background:#aaa!important; border-color:#777!important; color:transparent!important; pointer-events:none!important }
         .s::after { content:""; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); width:32px; height:14px; border-radius:8px; background:#fff; border:3px solid #8c96b2}
-        
         #btn-confirmar { width: 112px; height: 54px; background: #4CAF50; color: #fff; border: none; font-size: 16px; font-weight: 700; border-radius: 12px; cursor: pointer; position: absolute; bottom: -64px; right: 20px }
         #cbx { position: absolute; top: 60px; left: 100%; width: 40px; height: 122px; background: #4CAF50; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: none }
         #ctx { transform: rotate(-90deg); font-size: 18px; white-space: nowrap }
         #pbc { position: fixed; bottom: 0; width: 100%; height: 8px; background: #eee; z-index: 1000; }
         #pb { width: 0; height: 100%; background: #4CAF50; transition: width .1s }
-
-        /* MODAL DARK SYSTEM (4x2) */
-        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        .modal-box { background: #323232; color: #fff; padding: 20px; border-radius: 12px; width: 246px; height: 122px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .modal-box { background: #323232; color: #fff; padding: 20px; border-radius: 12px; width: 246px; height: 122px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 25px rgba(0,0,0,.5); }
         .modal-box p { margin: 0; font-size: 13px; text-align: left; line-height: 1.4; color: #eee; }
         .modal-btns { display: flex; gap: 15px; width: 100%; justify-content: flex-end; }
         .modal-btns button { background: none; color: #8ab4f8; border: none; padding: 5px; font-size: 13px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
     </style>
 </head>
 <body>
-
     <div id="splash"><b>Planner</b><i></i></div>
-
     <div id="view-login" class="view active">
         <div class="app-login-box">
             <label>CPF</label>
@@ -72,154 +58,95 @@
             <div class="errmsg" id="err"></div>
         </div>
     </div>
-
     <div id="view-mapa" class="view">
-        <div id="w">
-            <div class="bc">
-                <div id="cbx"><div id="ctx"></div></div>
-                <button id="btn-confirmar">CONFIRMAR</button>
-            </div>
-        </div>
+        <div id="w"><div class="bc"><div id="cbx"><div id="ctx"></div></div><button id="btn-confirmar">CONFIRMAR</button></div></div>
         <div id="pbc"><div id="pb"></div></div>
     </div>
-
-    <div id="modal-overlay">
-        <div class="modal-box">
-            <p id="modal-text"></p>
-            <div id="modal-actions" class="modal-btns"></div>
-        </div>
-    </div>
+    <div id="modal-overlay"><div class="modal-box"><p id="modal-text"></p><div id="modal-actions" class="modal-btns"></div></div></div>
 
     <script>
         const q = s => document.querySelector(s), nm = v => v.replace(/\D/g, "").padStart(11, "0");
         const vCPF = c => !/^(\d)\1+$/.test(c) && [9, 10].every(t => { let s = 0; for (let i = 0; i < t; i++) s += c[i] * (t + 1 - i); return ((s * 10) % 11) % 10 == c[t] });
-        
-        setTimeout(() => { q("#splash").remove(); q("#view-login").style.visibility = "visible"; }, 1600);
-        
-        const fscr = (on) => { const d = document.documentElement; if (on) { if (d.requestFullscreen) d.requestFullscreen().catch(()=>{}); else if (d.webkitRequestFullscreen) d.webkitRequestFullscreen(); } else { if (document.exitFullscreen) document.exitFullscreen().catch(()=>{}); else if (document.webkitExitFullscreen) document.webkitExitFullscreen(); } };
-        
-        const showMsg = (txt, confirmMode = false) => { 
-            return new Promise((resolve) => { 
-                q("#modal-text").innerHTML = txt; 
-                const actions = q("#modal-actions"); 
-                actions.innerHTML = ""; 
-                if (confirmMode) { 
-                    const btnN = document.createElement("button"); 
-                    btnN.textContent = "Não"; 
-                    btnN.onclick = () => { q("#modal-overlay").style.display = "none"; resolve(false); }; 
-                    actions.appendChild(btnN); 
-                } 
-                const btnO = document.createElement("button"); 
-                btnO.textContent = confirmMode ? "Sim" : "OK"; 
-                btnO.onclick = () => { q("#modal-overlay").style.display = "none"; resolve(true); }; 
-                actions.appendChild(btnO); 
-                q("#modal-overlay").style.display = "flex"; 
-            }); 
-        };
+        const fscr = (on) => { const d = document.documentElement; if (on) { (d.requestFullscreen || d.webkitRequestFullscreen || (()=>{}))(); } else { (document.exitFullscreen || document.webkitExitFullscreen || (()=>{}))(); } };
+        const showMsg = (txt, confirmMode = false) => new Promise(res => { 
+            q("#modal-text").innerHTML = txt; const act = q("#modal-actions"); act.innerHTML = "";
+            if (confirmMode) { const bN = document.createElement("button"); bN.textContent = "Não"; bN.onclick = () => { q("#modal-overlay").style.display = "none"; res(false) }; act.appendChild(bN); }
+            const bO = document.createElement("button"); bO.textContent = confirmMode ? "Sim" : "OK"; bO.onclick = () => { q("#modal-overlay").style.display = "none"; res(true) };
+            act.appendChild(bO); q("#modal-overlay").style.display = "flex"; 
+        });
 
-        const B = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/", E = "/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=";
-        const U = { 
-            G: `${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`, 
-            P: `${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`, 
-            S: `${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg` 
-        };
+        const B = "https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/", 
+              E = "/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
+              U = { G: B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA", P: B+"478aac5453024f5cb3d3b26495d9b7e0"+E+"H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0", S: B+"1d167b2351e14940acb006f964b87cef"+E+"V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg" };
 
-        let sel = null, us = [], cpfAtivo = null, cur = "", lock = false;
+        let sel, us = [], cpfAtivo, cur, lock, debounce;
         const inp = q("#cpf"), btnE = q("#btn"), err = q("#err"), row = q("#login-row");
 
+        setTimeout(() => { q("#splash").remove(); q("#view-login").classList.add("active") }, 1600);
+
         inp.oninput = () => {
-            inp.value = inp.value.replace(/\D/g, "");
-            let debounce; if (debounce) clearTimeout(debounce);
+            inp.value = inp.value.replace(/\D/g, ""); if (debounce) clearTimeout(debounce);
             btnE.disabled = 1; btnE.className = ""; row.className = "row"; err.style.display = "none";
-            if (inp.value.length === 11) inp.blur();
-            if (inp.value.length < 11) return;
-            const v1 = nm(inp.value);
-            if (!vCPF(v1)) { err.textContent = "CPF inválido"; err.style.display = "block"; row.classList.add("err"); return; }
+            if (inp.value.length === 11) inp.blur(); else if (inp.value.length < 11) return;
+            const v1 = nm(inp.value); if (!vCPF(v1)) { err.textContent = "CPF inválido"; err.style.display = "block"; row.classList.add("err"); return; }
             debounce = setTimeout(async () => {
                 try {
                     const rs = await fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: v1}) });
-                    const d = await rs.json();
-                    if (!(d.codigo || []).find(x => nm(x.CPF2 || x.CPF) === v1 && String(x.ID).trim() === "#")) throw 0;
+                    const d = await rs.json(); if (!(d.codigo || []).find(x => nm(x.CPF2 || x.CPF) === v1 && String(x.ID).trim() === "#")) throw 0;
                     btnE.disabled = 0; btnE.classList.add("ready"); row.classList.add("ok");
-                } catch {
-                    err.textContent = "CPF não autorizado"; err.style.display = "block"; row.classList.add("err");
-                }
+                } catch { err.textContent = "CPF não autorizado"; err.style.display = "block"; row.classList.add("err") }
             }, 400);
         };
 
-        btnE.onclick = () => { if (!btnE.disabled) { fscr(true); cpfAtivo = nm(inp.value); q("#view-login").classList.remove("active"); q("#view-mapa").classList.add("active"); loadMapaData(); } };
+        btnE.onclick = () => { fscr(1); cpfAtivo = nm(inp.value); q("#view-login").classList.remove("active"); q("#view-mapa").classList.add("active"); loadMapaData() };
 
-        const loadMapaData = async () => {
-            let pb = q("#pb"), w = 0;
-            let iv = setInterval(() => { if(w<95){ w+=2; pb.style.width=w+"%"; } }, 5);
+        async function loadMapaData() {
+            let pb = q("#pb"), w = 0, iv = setInterval(() => { if(w<95){ w+=2; pb.style.width=w+"%" } }, 5);
             try {
                 const d = await fetch(U.G, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpf: cpfAtivo}) }).then(r => r.json());
-                const l = d.poltronas || d.lista || [];
                 const a = (d.codigo || d.cursos || []).find(x => nm(x.CPF2 || x.CPF) === cpfAtivo);
-                cur = (a.CODIGO || a.Codigo).toString().trim().toUpperCase();
-                q("#ctx").textContent = cur;
-                const rows = l.filter(x => (x.CURSO || x.Curso)?.toString().trim().toUpperCase() === cur);
-                const bl = [...new Set(rows.map(x => (x.ID || x.Id)?.toString().padStart(2, "0")).filter(Boolean))];
-                us = rows.filter(x => nm(x.CPF2 || x.CPF) === cpfAtivo).map(x => (x.ID || x.Id).toString().padStart(2, "0"));
-                const cfg = await fetch(`configs/0046.json`).then(res => res.json());
-                renderGrid(cfg.layout, bl);
-                clearInterval(iv); pb.style.width = "100%";
-                q("#pbc").style.display = "none"; q("#w").style.visibility = "visible"; q("#w").style.opacity = "1";
-            } catch { await showMsg("Erro de conexão."); }
-        };
+                cur = (a.CODIGO || a.Codigo).toString().trim().toUpperCase(); q("#ctx").textContent = cur;
+                const rws = (d.poltronas || d.lista || []).filter(x => (x.CURSO || x.Curso)?.toString().trim().toUpperCase() === cur);
+                const bl = [...new Set(rws.map(x => (x.ID || x.Id)?.toString().padStart(2, "0")).filter(Boolean))];
+                us = rws.filter(x => nm(x.CPF2 || x.CPF) === cpfAtivo).map(x => (x.ID || x.Id).toString().padStart(2, "0"));
+                const cfg = await fetch(`configs/0046.json`).then(r => r.json());
+                renderGrid(cfg.layout, bl); clearInterval(iv); pb.style.width = "100%";
+                setTimeout(() => { q("#pbc").style.display = "none"; q("#w").style.visibility = "visible"; q("#w").style.opacity = 1 }, 200);
+            } catch { showMsg("Erro de conexão") }
+        }
 
-        const renderGrid = (layout, bl) => {
+        function renderGrid(ly, bl) {
             const c = q(".bc"), g = document.createElement("div"); g.className = "g";
-            layout.forEach(row => row.forEach(v => {
-                const e = document.createElement("div");
-                if (v === null) e.className = "e";
-                else {
-                    e.className = "s"; const id = v.toString().padStart(2, "0");
-                    if (v !== "white") { e.textContent = id; e.dataset.s = id; }
-                    if (us.includes(id)) e.classList.add("mine");
-                    else if (bl.includes(id) || v === "white") e.classList.add("white");
-                    else e.onclick = () => { fscr(true); selectPoltrona(e); };
-                }
-                g.appendChild(e);
+            ly.forEach(r => r.forEach(v => {
+                const e = document.createElement("div"); e.className = v === null ? "e" : "s";
+                if (v !== null) {
+                    const id = v.toString().padStart(2, "0"); if (v !== "white") { e.textContent = id; e.dataset.s = id }
+                    if (us.includes(id)) e.classList.add("mine"); else if (bl.includes(id) || v === "white") e.classList.add("white");
+                    else e.onclick = () => { fscr(1); if(!lock && !e.classList.contains("white")) { if(sel) sel.classList.remove("selected"); sel = (sel === e) ? null : e; if(sel) sel.classList.add("selected") } };
+                } g.appendChild(e);
             }));
             const old = q(".g"); if (old) old.remove(); c.appendChild(g);
-        };
-
-        const selectPoltrona = (e) => { if (lock || e.classList.contains("white") || e.classList.contains("lt")) return; if (sel) sel.classList.remove("selected"); sel = (sel === e) ? null : e; if (sel) sel.classList.add("selected"); };
+        }
 
         q("#btn-confirmar").onclick = async () => {
-            if (lock || !sel) return !sel && showMsg("Selecione uma poltrona");
-            if (!(await showMsg("Confirmar troca de poltrona?", true))) return;
-            lock = true; q("#btn-confirmar").disabled = true;
-            const nS = sel.dataset.s, old = us[0] || null, el = sel;
+            if (lock || !sel) return showMsg("Selecione uma poltrona");
+            if (!(await showMsg("Confirmar troca de poltrona?", 1))) return;
+            lock = 1; q("#btn-confirmar").disabled = 1; const nS = sel.dataset.s, old = us[0], el = sel;
             try {
-                const payload = old ? { cpf: cpfAtivo, curso: cur, current: old, select: nS } : { poltrona: nS, CURSO: cur, cpf: cpfAtivo };
-                const res = await fetch(old ? U.S : U.P, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
-                
+                const pl = old ? { cpf: cpfAtivo, curso: cur, current: old, select: nS } : { poltrona: nS, CURSO: cur, cpf: cpfAtivo };
+                const res = await fetch(old ? U.S : U.P, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(pl) });
                 if (res.ok) {
-                    // 1. Atualiza o mapa visualmente antes do modal
-                    if (old) { 
-                        let oE = q(`.s[data-s="${old}"]`); 
-                        if (oE) { oE.classList.remove("mine"); oE.onclick = () => { fscr(true); selectPoltrona(oE); }; } 
-                    }
+                    if (old) { const oE = q(`.s[data-s="${old}"]`); if (oE) { oE.classList.remove("mine"); oE.onclick = () => { fscr(1); if(sel) sel.classList.remove("selected"); sel=oE; sel.classList.add("selected") } } }
                     el.classList.remove("selected"); el.classList.add("mine"); us = [nS];
-
-                    // 2. Pequeno delay para enxergar a mudança no mapa
                     setTimeout(async () => {
-                        let count = 14; 
-                        const updateTimer = () => { q("#modal-text").innerHTML = `Poltrona selecionada com sucesso!<br>Redirecionando em ${count} segundos`; };
-                        const timeoutExit = setInterval(() => { count--; if(count <= 0) { clearInterval(timeoutExit); fscr(false); location.reload(); } else { updateTimer(); } }, 1000);
-                        updateTimer();
-                        await showMsg(`Poltrona selecionada com sucesso!<br>Redirecionando em ${count} segundos`);
-                        clearInterval(timeoutExit); fscr(false); location.reload();
+                        let cnt = 14; const iv = setInterval(() => { cnt--; if(cnt<=0){ clearInterval(iv); fscr(0); location.reload() } else q("#modal-text").innerHTML = `Poltrona selecionada com sucesso!<br>Redirecionando em ${cnt} segundos` }, 1000);
+                        await showMsg(`Poltrona selecionada com sucesso!<br>Redirecionando em 14 segundos`); clearInterval(iv); fscr(0); location.reload();
                     }, 500);
                 } else {
-                    await showMsg("Poltrona selecionada por outro usuário");
-                    el.classList.remove("selected"); el.classList.add("lt");
-                    setTimeout(() => { el.classList.remove("lt"); el.classList.add("white"); }, 14000);
-                    lock = false; q("#btn-confirmar").disabled = false; sel = null;
+                    await showMsg("Poltrona selecionada por outro usuário"); el.classList.remove("selected"); el.classList.add("lt");
+                    setTimeout(() => { el.classList.remove("lt"); el.classList.add("white") }, 14000); lock = 0; q("#btn-confirmar").disabled = 0; sel = null;
                 }
-            } catch { await showMsg("Erro técnico."); lock = false; q("#btn-confirmar").disabled = false; }
+            } catch { await showMsg("Erro técnico"); lock = 0; q("#btn-confirmar").disabled = 0 }
         };
     </script>
 </body>
