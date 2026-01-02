@@ -3,32 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Planner | Mapa Interativo</title>
+<title>Planner | Mapa</title>
 <style>
-    body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff; touch-action: none; overflow: hidden;}
+    body{font-family:Arial;margin:0;padding:0;display:flex;flex-direction:column;min-height:100vh;justify-content:center;background:#fff; touch-action: none;}
     #bus-wrapper{transform:scale(.8);transform-origin:top center;display:none}
     .bus-container{padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:20px auto;position:relative;display:flex;justify-content:center}
     .grid{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center;justify-items:center}
     .seat,.empty{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
+    .seat{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:bold;cursor:pointer;user-select:none;transition: transform 0.1s;}
+    .seat.selected,.seat.mine{background:#e74c3c;border-color:#e74c3c;cursor:default}
     
-    .seat{
-        background:#4CAF50;
-        border:3px solid #4CAF50;
-        color:#fff;
-        font-weight:bold;
-        cursor:pointer;
-        user-select:none;
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s, border-color 0.3s;
-    }
-    
-    .seat.selected, .seat.mine{background:#e74c3c;border-color:#e74c3c;}
-    .seat.white{background:#fff!important;border:3px solid #8c96b2!important; color: transparent !important;}
-    .seat.white::before { color: #8c96b2; content: attr(data-seat); position: absolute; font-size: 12px; top: 2px; } /* Debug para ver número na branca se quiser */
+    /* Alterado para permitir pointer-events durante o modo de troca */
+    .seat.white,.seat.lost,.seat.lost-temp{color:transparent!important;}
+    .seat.white{background:#fff!important;border:3px solid #8c96b2!important}
     
     .seat::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #8c96b2}
     .empty{background:0 0}
     
-    /* Estado de Flutuação (Clone) */
+    /* Efeito de Flutuar */
     .dragging-active {
         position: fixed !important;
         z-index: 10000 !important;
@@ -36,21 +28,13 @@
         opacity: 0.9;
         transform: scale(1.2);
         box-shadow: 0 15px 30px rgba(0,0,0,0.4);
-        background: #3498db !important;
+        background: #3498db !important; /* Cor azul para destacar o arraste */
         border-color: #2980b9 !important;
     }
-
-    /* Feedback visual no alvo */
     .drop-target {
-        transform: scale(1.1);
+        transform: scale(1.15);
         border: 3px solid #3498db !important;
         z-index: 10;
-    }
-
-    /* Poltronas que estão em processo de troca visual */
-    .swapping {
-        opacity: 0.7;
-        z-index: 5;
     }
 
     #confirmarBtn{width:112px;height:54px;background:#4CAF50;color:#fff;border:none;font-size:16px;font-weight:bold;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;user-select:none}
@@ -61,14 +45,12 @@
 </style>
 </head>
 <body>
-
 <div id="bus-wrapper">
   <div class="bus-container">
     <div id="cursoBox"><div id="cursoText"></div></div>
     <button id="confirmarBtn">CONFIRMAR</button>
   </div>
 </div>
-
 <div id="progress-bar-container"><div id="progress-bar"></div></div>
 
 <script>
@@ -77,28 +59,43 @@ norm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
 gf=(o,...n)=>{for(const x of n){const k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
 
 let sel=null, bl=[], userSeats=[], currentCPF=null, currentCurso="", layout=[], isLocked=false;
-let dragElem = null, longPressTimer = null, seatToSwap = null, originalTarget = null;
+let dragElem = null, longPressTimer = null, seatToSwap = null;
 
 const GET="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
 POST="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/478aac5453024f5cb3d3b26495d9b7e0/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
 POST_TROCAR="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/1d167b2351e14940acb006f964b87cef/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg",
 map={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-// --- LÓGICA DE ARRASTE E ANIMAÇÃO ---
+const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
+const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,json:r.ok?await r.json():null}}catch{return{ok:0}}};
+
+const cSeat=v=>{
+    const e=document.createElement("div");
+    e.className=v===null?"empty":v==="white"?"seat white":"seat";
+    if(v && v!=="white"){ e.dataset.seat=v.toString().padStart(2,"0"); e.textContent=e.dataset.seat; }
+    if(v==="white") {
+        e.dataset.white="true";
+        e.dataset.seat=v.toString().padStart(2,"0"); // Mantém o ID mesmo sendo branca
+    }
+    return e;
+};
+
+// --- NOVA LOGICA DE ARRASTAR (IRRESTRITA) ---
 
 const startDrag = (e, element) => {
     if (isLocked || !element.classList.contains("mine")) return;
-    const touch = e.touches ? e.touches[0] : e;
-    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
     longPressTimer = setTimeout(() => {
-        resetPositions(); // Limpa trocas anteriores não confirmadas
         seatToSwap = element;
         dragElem = element.cloneNode(true);
         dragElem.classList.add("dragging-active");
+        dragElem.textContent = element.dataset.seat; // Garante que o número apareça no arraste
         document.body.appendChild(dragElem);
-        updateDragPos(touch.clientX, touch.clientY);
+        updateDragPos(clientX, clientY);
         if (navigator.vibrate) navigator.vibrate(60);
-    }, 600);
+    }, 600); 
 };
 
 const updateDragPos = (x, y) => {
@@ -106,42 +103,33 @@ const updateDragPos = (x, y) => {
     dragElem.style.left = `${x - 27}px`;
     dragElem.style.top = `${y - 27}px`;
     
+    // Identifica qualquer poltrona abaixo, mesmo bloqueada
     const target = document.elementFromPoint(x, y)?.closest('.seat');
+    
     document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
     
+    // Agora permite qualquer poltrona como alvo (exceto ela mesma)
     if (target && target !== seatToSwap) {
         target.classList.add('drop-target');
     }
-};
-
-const animateSwap = (el1, el2) => {
-    const r1 = el1.getBoundingClientRect();
-    const r2 = el2.getBoundingClientRect();
-    el1.style.transform = `translate(${r2.left - r1.left}px, ${r2.top - r1.top}px)`;
-    el2.style.transform = `translate(${r1.left - r2.left}px, ${r1.top - r2.top}px)`;
-    el1.classList.add('swapping');
-    el2.classList.add('swapping');
-};
-
-const resetPositions = () => {
-    document.querySelectorAll('.seat').forEach(s => {
-        s.style.transform = '';
-        s.classList.remove('swapping', 'selected');
-    });
-    sel = null;
 };
 
 const endDrag = (e) => {
     clearTimeout(longPressTimer);
     if (!dragElem) return;
 
-    const touch = e.changedTouches ? e.changedTouches[0] : e;
-    const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.seat');
+    const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+    const target = document.elementFromPoint(x, y)?.closest('.seat');
 
     if (target && target !== seatToSwap) {
-        animateSwap(seatToSwap, target);
-        sel = target;
-        target.classList.add('selected');
+        // Força a seleção da poltrona de destino, ignorando restrições de classe
+        const novaId = target.dataset.seat;
+        if(confirm(`Deseja forçar a troca para a poltrona ${novaId}?`)) {
+            sel = target;
+            document.querySelectorAll('.seat').forEach(s => s.classList.remove('selected'));
+            target.classList.add('selected');
+        }
     }
 
     dragElem.remove();
@@ -154,29 +142,15 @@ window.addEventListener('touchmove', e => { if(dragElem) e.preventDefault(); upd
 window.addEventListener('mouseup', endDrag);
 window.addEventListener('touchend', endDrag);
 
-// --- FUNÇÕES ORIGINAIS ADAPTADAS ---
-
-const anim=t=>{let w=parseFloat(q("#progress-bar").style.width)||0;(function s(){w<t?(w++,q("#progress-bar").style.width=w+"%",requestAnimationFrame(s)):0})()};
-
-const fetchFlow=async(u,c)=>{try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:c})});return{ok:r.ok,json:r.ok?await r.json():null}}catch{return{ok:0}}};
-
-const cSeat=v=>{
-    const e=document.createElement("div");
-    e.className=v===null?"empty":v==="white"?"seat white":"seat";
-    if(v !== null){
-        const val = v.toString().padStart(2,"0");
-        e.dataset.seat=val; 
-        e.textContent=val;
-    }
-    return e;
-};
+// --- FIM DA LOGICA DE ARRASTE ---
 
 const selSeat=e=>{
     if(isLocked) return;
-    resetPositions();
+    // Clique normal ainda respeita bloqueios, arraste não.
     if(!e.classList.contains("white") && !e.classList.contains("mine")){
-        sel = e;
-        e.classList.add("selected");
+        sel?.classList.remove("selected");
+        sel = sel===e?null:e;
+        e.classList.toggle("selected", sel===e);
     }
 };
 
@@ -188,14 +162,14 @@ const render=l=>{
     l.forEach(row=>row.forEach(v=>{
         const e=cSeat(v);
         if(v !== null){
-            const id=e.dataset.seat;
+            const id = e.dataset.seat;
+            // Adiciona eventos de arraste sempre na poltrona do usuário
             if(userSeats.includes(id)) {
                 e.classList.add("mine");
                 e.addEventListener('mousedown', (evt) => startDrag(evt, e));
                 e.addEventListener('touchstart', (evt) => startDrag(evt, e));
             } else if(bl.includes(id)) {
                 e.classList.add("white");
-                e.onclick=()=>selSeat(e); // Permite selecionar mesmo branca para troca manual
             } else {
                 e.onclick=()=>selSeat(e);
             }
@@ -203,6 +177,11 @@ const render=l=>{
         g.appendChild(e)
     }));
     w.appendChild(g)
+};
+
+const updateButtonState=()=>{
+    const btn=q("#confirmarBtn");
+    btn.classList.toggle("trocar", userSeats.length > 0);
 };
 
 const load=async()=>{
@@ -223,18 +202,15 @@ const load=async()=>{
     const cfg=await fetch(`../configs/${map[currentCurso]||"0046"}.json`).then(r=>r.json());
     layout=cfg.layout;
     render(layout);
+    updateButtonState();
     anim(100);
-    setTimeout(()=>q("#progress-bar-container").remove(),600);
+    setTimeout(()=>q("#progress-bar-container").remove(), 600);
     q("#bus-wrapper").style.display="block"
 };
 
 q("#confirmarBtn").onclick = async () => {
-  if(isLocked || !sel) { alert("Selecione ou arraste para uma poltrona."); return; }
-
-  if(!confirm(`Confirma a troca para a poltrona ${sel.dataset.seat}?`)){
-    resetPositions();
-    return;
-  }
+  if(isLocked || !sel) return;
+  if(!confirm("Confirma a poltrona selecionada?")) return;
 
   isLocked = true;
   q("#confirmarBtn").disabled = true;
@@ -254,15 +230,14 @@ q("#confirmarBtn").onclick = async () => {
     });
 
     if(r.ok){
-      alert("Troca realizada com sucesso!");
-      location.reload();
+      userSeats = [nova];
+      alert("Operação realizada com sucesso!");
+      location.reload(); // Recarrega para limpar estados e refletir a nova posição
     } else {
-      alert("Erro na troca. A poltrona pode estar ocupada.");
-      resetPositions();
+      alert("Erro ao processar a troca.");
     }
   } catch {
     alert("Erro de comunicação.");
-    resetPositions();
   }
   isLocked = false;
   q("#confirmarBtn").disabled = false;
