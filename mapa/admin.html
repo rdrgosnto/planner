@@ -6,22 +6,19 @@
     <title>Planner - Glassmorphism</title>
     <style>
         :root {
-            --bg-glass-base: #e0f2fe; /* Azul claro suave */
-            --bg-glass-accent: #bfdbfe; /* Azul um pouco mais escuro */
-            --card-glass: rgba(255, 255, 255, 0.6); /* Fundo branco translúcido */
-            --primary-glass: #3b82f6; /* Azul vibrante */
-            --text-dark: #1f2937;
-            --text-muted: #6b7280;
-            --border-glass: rgba(255, 255, 255, 0.3);
-
-            --disponivel: #4CAF50;
-            --ocupado: #e74c3c;
-            --selecionado: #f1c40f;
-            --sua: #3498db;
+            --bg-glass-base: #e0f2fe;
+            --bg-glass-accent: #bfdbfe;
+            --card-glass: rgba(255, 255, 255, 0.45);
+            --primary-glass: #3b82f6;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border-glass: rgba(255, 255, 255, 0.4);
+            --disponivel: #22c55e;
+            --sua: #3b82f6;
         }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -29,193 +26,165 @@
             justify-content: center;
             align-items: center;
             background: linear-gradient(135deg, var(--bg-glass-base), var(--bg-glass-accent));
-            color: var(--text-dark);
-            transition: background 0.3s ease;
+            overflow-x: hidden;
         }
 
-        /* Elementos de decoração de fundo para o efeito glassmorphism */
-        body::before, body::after {
-            content: '';
+        /* Efeito de profundidade com esferas ao fundo */
+        .orb {
             position: absolute;
+            width: 400px;
+            height: 400px;
             border-radius: 50%;
-            opacity: 0.5;
-            filter: blur(80px); /* Suaviza as "bolhas" */
+            filter: blur(80px);
             z-index: -1;
+            opacity: 0.5;
         }
-        body::before {
-            width: 300px; height: 300px;
-            background: #93c5fd; /* Azul mais intenso */
-            top: -50px; left: -50px;
-        }
-        body::after {
-            width: 250px; height: 250px;
-            background: #a78bfa; /* Roxo suave */
-            bottom: -50px; right: -50px;
-        }
+        .orb-1 { background: #93c5fd; top: -10%; left: -10%; }
+        .orb-2 { background: #c084fc; bottom: -10%; right: -10%; }
 
-        /* Container Principal */
-        #w { transform: scale(0.9); transform-origin: top center; display: none; margin-top: 20px; }
+        #w { transform: scale(0.9); transform-origin: center; display: none; z-index: 1; }
         
         .bc {
             background: var(--card-glass);
             border: 1px solid var(--border-glass);
-            border-radius: 24px;
+            border-radius: 32px;
             padding: 40px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-            backdrop-filter: blur(15px) saturate(180%); /* Efeito de vidro fosco */
-            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
             position: relative;
+        }
+
+        .legenda { display: flex; justify-content: center; gap: 20px; margin-bottom: 35px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+        .leg-item { display: flex; align-items: center; gap: 8px; }
+        .box { width: 16px; height: 16px; border-radius: 5px; }
+
+        .bc::before {
+            content: "PALCO / FRENTE";
+            display: block;
+            width: 60%;
+            margin: 0 auto 40px;
+            padding-bottom: 10px;
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: var(--text-muted);
+            border-bottom: 2px solid rgba(0,0,0,0.05);
             text-align: center;
         }
-        
-        /* Legenda */
-        .legenda { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; font-size: 13px; font-weight: 500; color: var(--text-muted); }
-        .leg-item { display: flex; align-items: center; gap: 8px; }
-        .box { width: 18px; height: 18px; border-radius: 6px; }
 
-        /* "Frente" do ambiente */
-        .bc::before {
-            content: "FRENTE DA SALA";
-            display: block;
-            width: 85%;
-            margin: 0 auto 40px;
-            padding-bottom: 15px;
-            font-size: 11px;
-            letter-spacing: 2px;
-            color: var(--text-muted);
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-        }
-
-        /* Grid e Poltronas */
-        .g { display: grid; grid-template-columns: repeat(5, 58px); gap: 18px 15px; justify-content: center; }
-        .s, .e { width: 58px; height: 58px; border-radius: 12px; position: relative; transition: all 0.2s ease-out; }
+        .g { display: grid; grid-template-columns: repeat(5, 56px); gap: 16px 12px; justify-content: center; }
+        .s, .e { width: 56px; height: 56px; border-radius: 14px; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
         .s {
-            background: #f0f9ff; /* Azul claríssimo */
-            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid var(--border-glass);
             color: var(--text-dark);
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
+
         .s:hover:not(.mine):not(.white) {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+            background: #fff;
+            box-shadow: 0 12px 20px rgba(0,0,0,0.1);
             border-color: var(--primary-glass);
         }
 
-        /* Estados das Poltronas */
         .s.selected {
             background: var(--primary-glass)!important;
             border-color: var(--primary-glass)!important;
             color: white!important;
-            transform: scale(1.1);
-            box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
+            transform: scale(1.1) translateY(-4px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
         }
+
         .s.mine {
-            background: var(--sua)!important;
-            border-color: var(--sua)!important;
+            background: #0ea5e9!important;
+            border-color: #0ea5e9!important;
+            color: white!important;
             cursor: default;
         }
+
         .s.white {
-            background: #e2e8f0!important;
-            border: 1px dashed #cbd5e1!important;
-            color: var(--text-muted)!important;
+            background: rgba(0,0,0,0.05)!important;
+            border: 1px dashed rgba(0,0,0,0.1)!important;
+            color: transparent!important;
             pointer-events: none;
-            opacity: 0.7;
-            box-shadow: none;
         }
-        .s.lt { background: #ccc!important; border-color: #aaa!important; pointer-events: none; opacity: 0.8; }
 
-        /* Remove o pseudo-elemento da base, para um visual mais plano */
-        .s::after { display: none; }
-
-        /* Botão Confirmar */
         #btn {
             width: 100%;
             margin-top: 35px;
-            height: 55px;
+            height: 56px;
             background: var(--primary-glass);
             color: #fff;
             border: none;
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 700;
-            border-radius: 14px;
+            border-radius: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-            letter-spacing: 1px;
+            transition: all 0.3s;
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        #btn:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
-        #btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
 
-        /* Identificador Lateral (Curso) */
-        #cbx { position: absolute; top: 50px; left: calc(100% + 20px); width: 40px; height: 110px; background: var(--primary-glass); color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3); }
-        #ctx { transform: rotate(-90deg); font-size: 15px; font-weight: bold; letter-spacing: 1px; }
+        #btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        #btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-2px); }
 
-        /* Barra de Progresso */
-        #pbc { position: fixed; top: 0; width: 100%; height: 5px; background: rgba(0,0,0,0.1); z-index: 100; }
-        #pb { width: 0; height: 100%; background: var(--primary-glass); transition: width 0.3s ease; }
+        #cbx { position: absolute; top: 60px; left: calc(100% + 15px); width: 40px; height: 120px; background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); border: 1px solid var(--border-glass); display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+        #ctx { transform: rotate(-90deg); font-size: 14px; font-weight: 800; color: var(--text-dark); white-space: nowrap; }
 
-        /* Toasts (Notificações) */
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 28px; border-radius: 50px; font-size: 14px; opacity: 0; transition: 0.4s ease-out; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        #pbc { position: fixed; top: 0; width: 100%; height: 6px; background: rgba(255,255,255,0.3); z-index: 100; }
+        #pb { width: 0; height: 100%; background: var(--primary-glass); transition: width 0.4s; }
+
+        #toast { position: fixed; bottom: 30px; background: #1e293b; color: #fff; padding: 14px 28px; border-radius: 20px; font-size: 14px; opacity: 0; transition: 0.4s; z-index: 1000; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
-
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
     <div id="pbc"><div id="pb"></div></div>
     
     <div id="w">
         <div class="bc">
             <div class="legenda">
-                <div class="leg-item"><div class="box" style="background:var(--disponivel); border: 1px solid rgba(0,0,0,0.1);"></div> Livre</div>
-                <div class="leg-item"><div class="box" style="background:var(--sua);"></div> Sua</div>
-                <div class="leg-item"><div class="box" style="background:#e2e8f0; border: 1px dashed #cbd5e1;"></div> Ocupada</div>
-                <div class="leg-item"><div class="box" style="background:var(--primary-glass);"></div> Escolha</div>
+                <div class="leg-item"><div class="box" style="background:rgba(255,255,255,0.8); border:1px solid #ddd"></div> Livre</div>
+                <div class="leg-item"><div class="box" style="background:#0ea5e9"></div> Sua</div>
+                <div class="leg-item"><div class="box" style="background:rgba(0,0,0,0.1)"></div> Ocupada</div>
+                <div class="leg-item"><div class="box" style="background:var(--primary-glass)"></div> Seleção</div>
             </div>
-
             <div id="cbx"><div id="ctx"></div></div>
             <div id="grid-container"></div>
-            <button id="btn">CONFIRMAR TROCA</button>
+            <button id="btn">Confirmar Alteração</button>
         </div>
     </div>
-
     <div id="toast"></div>
 
     <script>
         const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
-        
         let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;
-        
         const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-        const showToast = (msg) => {
-            const t = q("#toast");
-            t.textContent = msg;
-            t.style.opacity = "1";
-            setTimeout(() => t.style.opacity = "0", 3000);
-        };
-
-        const an=t=>{ q("#pb").style.width=t+"%"; };
+        const showToast=(m)=>{const t=q("#toast");t.textContent=m;t.style.opacity="1";setTimeout(()=>t.style.opacity="0",3000)};
+        const an=t=>{q("#pb").style.width=t+"%"};
 
         const rd=l=>{
-            const c=q("#grid-container");
-            c.innerHTML = "";
-            const g=document.createElement("div");
-            g.className="g";
+            const c=q("#grid-container"); c.innerHTML="";
+            const g=document.createElement("div"); g.className="g";
             l.forEach(r=>r.forEach(v=>{
                 const e=document.createElement("div");
-                if(v===null) e.className="e";
-                else {
+                if(v===null)e.className="e";
+                else{
                     e.className="s";
                     const id=v.toString().padStart(2,"0");
-                    if(v!=="white"){ e.textContent=id; e.dataset.s=id }
-                    if(us.includes(id)) e.classList.add("mine");
-                    else if(bl.includes(id)||v==="white") e.classList.add("white");
+                    if(v!=="white"){e.textContent=id;e.dataset.s=id}
+                    if(us.includes(id))e.classList.add("mine");
+                    else if(bl.includes(id)||v==="white")e.classList.add("white");
                     else e.onclick=()=>sl(e);
                 }
                 g.appendChild(e);
@@ -224,35 +193,51 @@
         };
 
         const sl=e=>{
-            if(lock||e.classList.contains("white")||e.classList.contains("mine")) return;
-            if(sel) sel.classList.remove("selected");
-            if(sel === e) { sel = null; return; }
-            sel = e;
-            sel.classList.add("selected");
+            if(lock||e.classList.contains("white")||e.classList.contains("mine"))return;
+            if(sel)sel.classList.remove("selected");
+            if(sel===e){sel=null;return}
+            sel=e; sel.classList.add("selected");
         };
 
         const ld=async()=>{
             const c=sessionStorage.getItem("cpf");
-            if(!c) return location.href="https://rdrgosnto.github.io/planner";
-            cpf=nm(c);
-            an(40);
+            if(!c)return location.href="https://rdrgosnto.github.io/planner";
+            cpf=nm(c); an(40);
             try{
                 const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),d=await r.json();
                 an(70);
                 const l=d.poltronas||d.lista||[],s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
-                if(!a) { showToast("CPF não encontrado"); return; }
+                if(!a){showToast("CPF não encontrado");return}
                 cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();
                 q("#ctx").textContent=cur;
                 const rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);
                 bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];
                 us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));
                 const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());
-                rd(cfg.layout);
-                an(100);
+                rd(cfg.layout); an(100);
                 setTimeout(()=>q("#pbc").style.display="none",600);
                 q("#w").style.display="block";
-            }catch(e){ showToast("Erro ao carregar dados"); }
+            }catch(e){showToast("Erro de conexão")}
         };
 
         q("#btn").onclick=async()=>{
-            if(lock||!sel) return !sel && showToast("Por favor, selecione
+            if(lock||!sel)return !sel&&showToast("Selecione uma poltrona");
+            if(!confirm("Confirmar troca para "+sel.dataset.s+"?"))return;
+            lock=true; q("#btn").disabled=true; q("#btn").textContent="Processando...";
+            const n=sel.dataset.s,old=us[0]||null,el=sel;
+            try{
+                const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
+                r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+                if(r.ok){
+                    location.reload(); // Recarrega para garantir sincronia
+                }else{
+                    showToast("Poltrona ocupada!");
+                    el.classList.add("white");
+                }
+            }catch(e){showToast("Erro no servidor")}
+            finally{lock=false; q("#btn").disabled=false; q("#btn").textContent="Confirmar Alteração"}
+        };
+        ld();
+    </script>
+</body>
+</html>
