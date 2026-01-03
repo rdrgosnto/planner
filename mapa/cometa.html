@@ -14,15 +14,16 @@
             background: #fff;
         }
 
-        /* Camada branca fixa no topo */
+        /* Camada branca fixa no topo com sombra */
         #header-fixo {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 110px; /* Altura de aprox. 2 poltronas */
+            height: 64px; /* Altura de aprox. 1 poltrona */
             background: #fff;
             z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Sombra para efeito de sobreposição */
         }
 
         /* Container do conteúdo que desliza */
@@ -30,25 +31,26 @@
             transform: scale(.8);
             transform-origin: top center;
             display: none;
-            margin-top: 130px; /* Espaço para o texto começar abaixo da borda */
+            margin-top: 80px; /* Ajustado para começar logo abaixo da nova borda */
         }
 
         /* Container de informações do passageiro alinhado ao mapa */
         .info-passageiro {
-            width: 310px; /* Largura aproximada do grid (54px * 5 + gaps) */
+            width: 310px; 
             margin: 0 auto 15px;
             text-align: left;
             color: #4CAF50;
         }
 
         #p1-label {
-            font-size: 14px; /* Altura similar ao texto da poltrona */
+            font-size: 17px; /* Aumentado conforme solicitado */
             font-weight: 700;
-            margin: 0;
+            margin: 0 0 2px 0;
+            display: block;
         }
 
         #p1-nome {
-            font-size: 24px;
+            font-size: 24px; /* Mantido conforme solicitado */
             font-weight: 800;
             margin: 0;
             line-height: 1.2;
@@ -188,8 +190,8 @@
 
     <div id="w">
         <div class="info-passageiro">
-            <p id="p1-label">Passageiro 1</p>
-            <p id="p1-nome"></p>
+            <span id="p1-label">Passageiro 1</span>
+            <div id="p1-nome"></div>
         </div>
 
         <div class="bc">
@@ -210,7 +212,6 @@
                   }
               };
 
-        // Função para formatar o nome conforme solicitado
         const formatarNome = (str) => {
             if (!str) return "";
             const excecoes = ['da', 'das', 'de', 'do', 'dos', 'e'];
@@ -287,7 +288,6 @@
                 
                 if (!a) return alert("CPF não achado");
 
-                // Puxa e formata o nome da coluna NOME
                 const nomeBruto = gf(a, "NOME") || "";
                 q("#p1-nome").textContent = formatarNome(nomeBruto);
 
