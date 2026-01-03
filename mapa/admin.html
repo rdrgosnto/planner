@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Planner de Poltronas</title>
+    <style>
+        :root {
+            --disponivel: #4CAF50;
+            --ocupado: #e74c3c;
+            --selecionado: #f1c40f;
+            --sua: #3498db;
+            --borda: #8c96b2;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; flex-direction: column; min-height: 100vh; background: #f4f7f6; align-items: center; }
+        
+        /* Container Principal */
+        #w { transform: scale(0.9); transform-origin: top center; display: none; margin-top: 20px; }
+        
+        .bc { padding: 30px; border: 2px solid #ddd; border-radius: 20px; background: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; }
+        
+        /* Legenda */
+        .legenda { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; font-size: 12px; font-weight: bold; color: #666; }
+        .leg-item { display: flex; align-items: center; gap: 5px; }
+        .box { width: 15px; height: 15px; border-radius: 4px; }
+
+        /* Grid e Poltronas */
+        .g { display: grid; grid-template-columns: repeat(5, 54px); gap: 15px 12px; justify-content: center; }
+        .s, .e { width: 54px; height: 54px; border-radius: 12px; position: relative; transition: all 0.2s ease; }
+        
+        .s { background: var(--disponivel); border: 3px solid var(--disponivel); color: #fff; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2); }
+        
+        .s.selected { background: var(--selecionado)!important; border-color: var(--selecionado)!important; transform: scale(1.05); }
+        .s.mine { background: var(--sua)!important; border-color: var(--sua)!important; cursor: default; }
+        .s.white { background: #fff!important; border: 3px solid var(--borda)!important; color: transparent!important; pointer-events: none; opacity: 0.6; }
+        .s.lt { background: #aaa!important; border-color: #777!important; pointer-events: none; }
+
+        .s::after { content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 32px; height: 12px; border-radius: 6px; background: #fff; border: 2px solid var(--borda); }
+
+        /* Botão Confirmar */
+        #btn { width: 100%; margin-top: 30px; height: 50px; background: var(--disponivel); color: #fff; border: none; font-size: 16px; font-weight: 700; border-radius: 12px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); }
+        #btn:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
+        #btn:hover:not(:disabled) { filter: brightness(1.1); }
+
+        /* Identificador Lateral (Curso) */
+        #cbx { position: absolute; top: 40px; left: 100%; width: 35px; height: 100px; background: #333; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 0 8px 8px 0; }
+        #ctx { transform: rotate(-90deg); font-size: 14px; font-weight: bold; letter-spacing: 1px; }
+
+        /* Barra de Progresso */
+        #pbc { position: fixed; top: 0; width: 100%; height: 5px; background: #eee; z-index: 100; }
+        #pb { width: 0; height: 100%; background: var(--disponivel); transition: width 0.3s; }
+
+        /* Toasts (Notificações) */
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 25px; border-radius: 50px; font-size: 14px; opacity: 0; transition: 0.4s; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+    <div id="pbc"><div id="pb"></div></div>
+    
+    <div id="w">
+        <div class="bc">
+            <div class="legenda">
+                <div class="leg-item"><div class="box" style="background:var(--disponivel)"></div> Livre</div>
+                <div class="leg-item"><div class="box" style="background:var(--sua)"></div> Sua</div>
+                <div class="leg-item"><div class="box" style="border:1px solid var(--borda)"></div> Ocupada</div>
+                <div class="leg-item"><div class="box" style="background:var(--selecionado)"></div> Escolha</div>
+            </div>
+
+            <div id="cbx"><div id="ctx"></div></div>
+            <div id="grid-container"></div> <button id="btn">CONFIRMAR TROCA</button>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}};
+        
+        let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;
+        
+        const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
+
+        const showToast = (msg) => {
+            const t = q("#toast");
+            t.textContent = msg;
+            t.style.opacity = "1";
+            setTimeout(() => t.style.opacity = "0", 3000);
+        };
+
+        const an=t=>{ q("#pb").style.width=t+"%"; };
+
+        const rd=l=>{
+            const c=q("#grid-container");
+            c.innerHTML = "";
+            const g=document.createElement("div");
+            g.className="g";
+            l.forEach(r=>r.forEach(v=>{
+                const e=document.createElement("div");
+                if(v===null) e.className="e";
+                else {
+                    e.className="s";
+                    const id=v.toString().padStart(2,"0");
+                    if(v!=="white"){ e.textContent=id; e.dataset.s=id }
+                    if(us.includes(id)) e.classList.add("mine");
+                    else if(bl.includes(id)||v==="white") e.classList.add("white");
+                    else e.onclick=()=>sl(e);
+                }
+                g.appendChild(e);
+            }));
+            c.appendChild(g);
+        };
+
+        const sl=e=>{
+            if(lock||e.classList.contains("white")||e.classList.contains("mine")) return;
+            if(sel) sel.classList.remove("selected");
+            if(sel === e) { sel = null; return; }
+            sel = e;
+            sel.classList.add("selected");
+        };
+
+        const ld=async()=>{
+            const c=sessionStorage.getItem("cpf");
+            if(!c) return location.href="https://rdrgosnto.github.io/planner";
+            cpf=nm(c);
+            an(40);
+            try{
+                const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),d=await r.json();
+                an(70);
+                const l=d.poltronas||d.lista||[],s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
+                if(!a) { showToast("CPF não encontrado"); return; }
+                cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();
+                q("#ctx").textContent=cur;
+                const rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);
+                bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];
+                us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));
+                const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());
+                rd(cfg.layout);
+                an(100);
+                setTimeout(()=>q("#pbc").style.display="none",600);
+                q("#w").style.display="block";
+            }catch(e){ showToast("Erro ao carregar dados"); }
+        };
+
+        q("#btn").onclick=async()=>{
+            if(lock||!sel) return !sel && showToast("Por favor, selecione uma poltrona");
+            if(!confirm("Deseja confirmar a troca para a poltrona " + sel.dataset.s + "?")) return;
+            
+            lock=true;
+            q("#btn").disabled=true;
+            q("#btn").textContent = "PROCESSANDO...";
+
+            const n=sel.dataset.s, old=us[0]||null, el=sel;
+            try{
+                const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
+                      r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+                
+                if(r.ok){
+                    if(old){
+                        let oE=q(`.s[data-s="${old}"]`);
+                        if(oE){ oE.classList.remove("mine"); oE.onclick=()=>sl(oE); }
+                    }
+                    el.classList.remove("selected");
+                    el.classList.add("mine");
+                    us=[n];
+                    showToast("Sucesso! Poltrona atualizada.");
+                    sel=null;
+                } else {
+                    showToast("Esta poltrona acabou de ser ocupada.");
+                    el.classList.remove("selected");
+                    el.classList.add("lt");
+                }
+            }catch(e){ showToast("Erro na comunicação com o servidor"); }
+            finally {
+                lock=false;
+                q("#btn").disabled=false;
+                q("#btn").textContent = "CONFIRMAR TROCA";
+            }
+        };
+
+        ld();
+    </script>
+</body>
+</html>
