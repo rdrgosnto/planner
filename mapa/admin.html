@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Planner - Cinema Premium</title>
+    <title>Planner - Glassmorphism</title>
     <style>
         :root {
-            --bg-dark: #1a1a2e;
-            --card-dark: #20203a;
-            --primary-neon: #845ef7; /* Roxo neon */
-            --text-light: #e0e0e0;
-            --text-muted: #a0a0b0;
-            --border-dark: #3a3a5e;
+            --bg-glass-base: #e0f2fe; /* Azul claro suave */
+            --bg-glass-accent: #bfdbfe; /* Azul um pouco mais escuro */
+            --card-glass: rgba(255, 255, 255, 0.6); /* Fundo branco translúcido */
+            --primary-glass: #3b82f6; /* Azul vibrante */
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --border-glass: rgba(255, 255, 255, 0.3);
 
-            --disponivel: #4CAF50; /* Manter cores funcionais, mas adaptadas */
+            --disponivel: #4CAF50;
             --ocupado: #e74c3c;
             --selecionado: #f1c40f;
             --sua: #3498db;
@@ -27,20 +28,42 @@
             min-height: 100vh;
             justify-content: center;
             align-items: center;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            transition: background-color 0.3s ease;
+            background: linear-gradient(135deg, var(--bg-glass-base), var(--bg-glass-accent));
+            color: var(--text-dark);
+            transition: background 0.3s ease;
+        }
+
+        /* Elementos de decoração de fundo para o efeito glassmorphism */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.5;
+            filter: blur(80px); /* Suaviza as "bolhas" */
+            z-index: -1;
+        }
+        body::before {
+            width: 300px; height: 300px;
+            background: #93c5fd; /* Azul mais intenso */
+            top: -50px; left: -50px;
+        }
+        body::after {
+            width: 250px; height: 250px;
+            background: #a78bfa; /* Roxo suave */
+            bottom: -50px; right: -50px;
         }
 
         /* Container Principal */
         #w { transform: scale(0.9); transform-origin: top center; display: none; margin-top: 20px; }
         
         .bc {
-            background: var(--card-dark);
-            border: 1px solid var(--border-dark);
-            border-radius: 20px;
+            background: var(--card-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
             padding: 40px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(15px) saturate(180%); /* Efeito de vidro fosco */
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
             position: relative;
             text-align: center;
         }
@@ -50,9 +73,9 @@
         .leg-item { display: flex; align-items: center; gap: 8px; }
         .box { width: 18px; height: 18px; border-radius: 6px; }
 
-        /* "Tela" do Cinema */
+        /* "Frente" do ambiente */
         .bc::before {
-            content: "TELA DE PROJEÇÃO";
+            content: "FRENTE DA SALA";
             display: block;
             width: 85%;
             margin: 0 auto 40px;
@@ -60,73 +83,62 @@
             font-size: 11px;
             letter-spacing: 2px;
             color: var(--text-muted);
-            border-bottom: 2px dashed var(--border-dark);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
         }
 
         /* Grid e Poltronas */
-        .g { display: grid; grid-template-columns: repeat(5, 60px); gap: 18px 15px; justify-content: center; }
-        .s, .e { width: 60px; height: 60px; border-radius: 12px; position: relative; transition: all 0.2s ease-out; }
+        .g { display: grid; grid-template-columns: repeat(5, 58px); gap: 18px 15px; justify-content: center; }
+        .s, .e { width: 58px; height: 58px; border-radius: 12px; position: relative; transition: all 0.2s ease-out; }
         
         .s {
-            background: #444;
-            border: 2px solid #555;
-            color: var(--text-light);
-            font-weight: 700;
+            background: #f0f9ff; /* Azul claríssimo */
+            border: 1px solid rgba(0,0,0,0.1);
+            color: var(--text-dark);
+            font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 0 -4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
         }
         .s:hover:not(.mine):not(.white) {
             transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 0 20px var(--primary-neon), inset 0 -4px 8px rgba(0,0,0,0.3);
-            border-color: var(--primary-neon);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: var(--primary-glass);
         }
 
         /* Estados das Poltronas */
         .s.selected {
-            background: var(--primary-neon)!important;
-            border-color: var(--primary-neon)!important;
+            background: var(--primary-glass)!important;
+            border-color: var(--primary-glass)!important;
+            color: white!important;
             transform: scale(1.1);
-            box-shadow: 0 0 25px rgba(132, 94, 247, 0.7), inset 0 -4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
         }
         .s.mine {
             background: var(--sua)!important;
             border-color: var(--sua)!important;
             cursor: default;
-            box-shadow: inset 0 -4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.5);
         }
         .s.white {
-            background: var(--border-dark)!important;
-            border: 1px dashed var(--border-dark)!important;
+            background: #e2e8f0!important;
+            border: 1px dashed #cbd5e1!important;
             color: var(--text-muted)!important;
             pointer-events: none;
-            opacity: 0.6;
+            opacity: 0.7;
             box-shadow: none;
         }
-        .s.lt { background: #666!important; border-color: #888!important; pointer-events: none; opacity: 0.8; }
+        .s.lt { background: #ccc!important; border-color: #aaa!important; pointer-events: none; opacity: 0.8; }
 
-        /* Pseudo-elemento da base da poltrona */
-        .s::after {
-            content: "";
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40px;
-            height: 10px;
-            border-radius: 5px;
-            background: var(--border-dark);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
+        /* Remove o pseudo-elemento da base, para um visual mais plano */
+        .s::after { display: none; }
 
         /* Botão Confirmar */
         #btn {
             width: 100%;
             margin-top: 35px;
             height: 55px;
-            background: var(--primary-neon);
+            background: var(--primary-glass);
             color: #fff;
             border: none;
             font-size: 17px;
@@ -134,20 +146,20 @@
             border-radius: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(132, 94, 247, 0.4);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
             letter-spacing: 1px;
             text-transform: uppercase;
         }
-        #btn:disabled { background: #555; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
+        #btn:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
         #btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
 
         /* Identificador Lateral (Curso) */
-        #cbx { position: absolute; top: 50px; left: calc(100% + 20px); width: 40px; height: 110px; background: var(--primary-neon); color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 5px 15px rgba(132, 94, 247, 0.3); }
+        #cbx { position: absolute; top: 50px; left: calc(100% + 20px); width: 40px; height: 110px; background: var(--primary-glass); color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3); }
         #ctx { transform: rotate(-90deg); font-size: 15px; font-weight: bold; letter-spacing: 1px; }
 
         /* Barra de Progresso */
-        #pbc { position: fixed; top: 0; width: 100%; height: 5px; background: var(--border-dark); z-index: 100; }
-        #pb { width: 0; height: 100%; background: var(--primary-neon); transition: width 0.3s ease; }
+        #pbc { position: fixed; top: 0; width: 100%; height: 5px; background: rgba(0,0,0,0.1); z-index: 100; }
+        #pb { width: 0; height: 100%; background: var(--primary-glass); transition: width 0.3s ease; }
 
         /* Toasts (Notificações) */
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 28px; border-radius: 50px; font-size: 14px; opacity: 0; transition: 0.4s ease-out; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
@@ -160,10 +172,10 @@
     <div id="w">
         <div class="bc">
             <div class="legenda">
-                <div class="leg-item"><div class="box" style="background:var(--disponivel); border: 1px solid #666;"></div> Livre</div>
+                <div class="leg-item"><div class="box" style="background:var(--disponivel); border: 1px solid rgba(0,0,0,0.1);"></div> Livre</div>
                 <div class="leg-item"><div class="box" style="background:var(--sua);"></div> Sua</div>
-                <div class="leg-item"><div class="box" style="background:var(--border-dark);"></div> Ocupada</div>
-                <div class="leg-item"><div class="box" style="background:var(--primary-neon);"></div> Escolha</div>
+                <div class="leg-item"><div class="box" style="background:#e2e8f0; border: 1px dashed #cbd5e1;"></div> Ocupada</div>
+                <div class="leg-item"><div class="box" style="background:var(--primary-glass);"></div> Escolha</div>
             </div>
 
             <div id="cbx"><div id="ctx"></div></div>
@@ -243,42 +255,4 @@
         };
 
         q("#btn").onclick=async()=>{
-            if(lock||!sel) return !sel && showToast("Por favor, selecione uma poltrona");
-            if(!confirm("Deseja confirmar a troca para a poltrona " + sel.dataset.s + "?")) return;
-            
-            lock=true;
-            q("#btn").disabled=true;
-            q("#btn").textContent = "PROCESSANDO...";
-
-            const n=sel.dataset.s, old=us[0]||null, el=sel;
-            try{
-                const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
-                      r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
-                
-                if(r.ok){
-                    if(old){
-                        let oE=q(`.s[data-s="${old}"]`);
-                        if(oE){ oE.classList.remove("mine"); oE.onclick=()=>sl(oE); }
-                    }
-                    el.classList.remove("selected");
-                    el.classList.add("mine");
-                    us=[n];
-                    showToast("Sucesso! Poltrona atualizada.");
-                    sel=null;
-                } else {
-                    showToast("Esta poltrona acabou de ser ocupada.");
-                    el.classList.remove("selected");
-                    el.classList.add("lt");
-                }
-            }catch(e){ showToast("Erro na comunicação com o servidor"); }
-            finally {
-                lock=false;
-                q("#btn").disabled=false;
-                q("#btn").textContent = "CONFIRMAR TROCA";
-            }
-        };
-
-        ld();
-    </script>
-</body>
-</html>
+            if(lock||!sel) return !sel && showToast("Por favor, selecione
