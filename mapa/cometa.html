@@ -14,7 +14,7 @@
             background: #fff;
         }
 
-        /* HEADER FIXO - Altura de 1 poltrona (54px) */
+        /* HEADER FIXO - Altura de 54px */
         #header-fixo {
             position: fixed;
             top: 0;
@@ -30,7 +30,7 @@
         }
 
         #header-fixo b {
-            font-size: 28px; /* Ajustado para a nova altura da barra */
+            font-size: 28px;
             color: #4CAF50;
             width: 310px; 
             display: block;
@@ -43,7 +43,7 @@
             transform: scale(.8);
             transform-origin: top center;
             display: none;
-            margin-top: 65px; /* Ajustado para a barra menor */
+            margin-top: 65px;
         }
 
         .info-passageiro {
@@ -62,7 +62,7 @@
 
         #p1-nome {
             font-size: 22px;
-            font-weight: 500; /* Nome mais fino conforme pedido */
+            font-weight: 500;
             margin: 0;
             line-height: 1.2;
             white-space: nowrap;
@@ -81,22 +81,31 @@
             justify-content: center;
         }
 
-        /* AJUSTES PARA COMPUTADOR */
+        /* --- FOCO: COMPORTAMENTO PARA COMPUTADOR --- */
         @media (min-width: 800px) {
             #header-fixo {
                 justify-content: flex-start;
             }
             #header-fixo b {
                 width: auto;
-                padding-left: 5%;
+                padding-left: 5%; /* Alinhamento à esquerda */
             }
             #w {
-                transform: scale(0.9);
-                margin-top: 60px; /* Mapa sobe um pouco no PC */
+                transform: scale(0.95);
+                margin-top: 40px; /* Sobe o conteúdo */
             }
             .info-passageiro {
-                margin: 0 0 10px 5%; /* Alinha textos à esquerda no PC igual ao Planner */
+                margin: 0 0 10px 5%; /* Alinhado com o Planner */
                 width: auto;
+                max-width: 90%;
+            }
+            #p1-label {
+                font-size: 20px; /* Aumentado conforme pedido */
+            }
+            #p1-nome {
+                font-size: 32px; /* Aumentado conforme pedido */
+                white-space: normal; /* Permite quebra se for muito grande no PC */
+                overflow: visible;
             }
         }
 
@@ -146,14 +155,9 @@
         const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},
         fn=s=>{
             if(!s)return"";
-            let nomes = s.trim().split(' ').filter(x => x.length > 0);
-            // Lógica para exibir apenas primeiro e último se o nome for grande
-            let formatado = s;
-            if (s.length > 20 && nomes.length > 1) {
-                formatado = nomes[0] + " " + nomes[nomes.length - 1];
-            }
             const e=['da','das','de','do','dos','e'];
-            return formatado.toLowerCase().split(' ').map(p=>e.includes(p)?p:p.charAt(0).toUpperCase()+p.slice(1)).join(' ')
+            // Retorna nome completo formatado
+            return s.toLowerCase().split(' ').map(p=>e.includes(p)?p:p.charAt(0).toUpperCase()+p.slice(1)).join(' ')
         };
 
         let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;
