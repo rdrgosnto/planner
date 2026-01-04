@@ -35,14 +35,17 @@
             width: 310px; 
             display: block;
             text-align: left;
+            /* Ajuste de 18px para alinhar com o conteúdo no mobile */
+            padding-left: 18px; 
+            box-sizing: border-box;
         }
 
         /* CONTEÚDO BASE (MOBILE) */
         #w {
             transform: scale(.8);
             transform-origin: top center;
-            display: none; /* Mantém oculto até carregar os dados */
-            margin-top: 70px; /* Aproximado da barra no mobile */
+            display: none; 
+            margin-top: 70px; 
         }
 
         .info-passageiro {
@@ -61,7 +64,7 @@
         }
 
         .bc {
-            padding: 20px 22px 24px 20px; /* Ajuste visual direito solicitado */
+            padding: 20px 22px 24px 20px; 
             border: 3px solid #b0b0b0;
             border-radius: 16px;
             width: fit-content;
@@ -76,13 +79,13 @@
             #header-fixo { justify-content: flex-start; }
             #header-fixo b {
                 width: 100%;
-                padding-left: 40px; 
+                padding-left: 40px; /* Alinhamento fixo PC */
                 margin: 0;
                 box-sizing: border-box;
             }
             #w {
                 transform: none; 
-                margin-top: 94px; /* 54px barra + 40px respiro */
+                margin-top: 94px; 
                 width: 100%;
                 position: relative;
             }
@@ -90,7 +93,7 @@
                 width: auto;
                 max-width: none;
                 margin: 0;
-                padding-left: 42px; /* 40px + 2px de ajuste fino */
+                padding-left: 42px; /* 40px + 2px de ajuste fino PC */
                 box-sizing: border-box;
                 position: absolute;
                 top: 0;
