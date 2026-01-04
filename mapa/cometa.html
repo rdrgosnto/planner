@@ -12,10 +12,9 @@
             flex-direction: column;
             min-height: 100vh;
             background: #fff;
-            padding-top: 64px; /* Espaço para o header fixo não cobrir o conteúdo */
         }
 
-        /* HEADER FIXO */
+        /* HEADER FIXO CONFIGURADO */
         #header-fixo {
             position: fixed;
             top: 0;
@@ -26,24 +25,33 @@
             z-index: 1000;
             box-shadow: 0 4px 10px rgba(0,0,0,.1);
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center; /* Centraliza o conteúdo no mobile */
         }
 
-        .header-content {
-            width: 310px; /* Mesma largura da info-passageiro para alinhar */
-            padding: 0 10px;
-            font-size: 26px;
-            font-weight: 900;
+        #header-fixo b {
+            font-size: 36px; /* Tamanho original do Splash */
             color: #4CAF50;
-            text-align: left;
+            width: 310px; /* Alinha com .info-passageiro */
+            display: block;
+        }
+
+        /* AJUSTE PARA COMPUTADOR */
+        @media (min-width: 600px) {
+            #header-fixo {
+                justify-content: flex-start; /* Alinha à esquerda no PC */
+            }
+            #header-fixo b {
+                width: auto;
+                padding-left: 20px; /* Recuo da borda esquerda */
+            }
         }
 
         #w {
-            transform: scale(.85);
+            transform: scale(.8);
             transform-origin: top center;
             display: none;
-            margin-top: 20px;
+            margin-top: 80px;
         }
 
         .info-passageiro {
@@ -198,7 +206,7 @@
 <body>
 
     <div id="header-fixo">
-        <div class="header-content">Planner</div>
+        <b>Planner</b>
     </div>
 
     <div id="w">
@@ -310,7 +318,7 @@
                 setTimeout(() => q("#pbc").remove(), 600);
                 q("#w").style.display = "block"
             } catch (e) {
-                alert("Erro ao carregar dados");
+                alert("Erro");
             }
         };
 
