@@ -43,12 +43,13 @@
             transform: scale(.8);
             transform-origin: top center;
             display: none;
-            margin-top: 65px;
+            /* Aumentado para o conteúdo não ser coberto pela barra no mobile */
+            margin-top: 100px; 
         }
 
         .info-passageiro {
             width: 310px;
-            margin: 0 auto 15px;
+            margin: 0 auto 20px;
             text-align: left;
             color: #4CAF50;
         }
@@ -81,35 +82,43 @@
             justify-content: center;
         }
 
-        /* --- FOCO: COMPORTAMENTO PARA COMPUTADOR --- */
+        /* --- AJUSTES PARA COMPUTADOR (DESKTOP) --- */
         @media (min-width: 800px) {
             #header-fixo {
                 justify-content: flex-start;
             }
             #header-fixo b {
                 width: auto;
-                padding-left: 5%; /* Alinhamento à esquerda */
+                padding-left: 5%; /* Alinhamento inicial */
             }
             #w {
                 transform: scale(0.95);
-                margin-top: 40px; /* Sobe o conteúdo */
+                /* Espaço suficiente para o texto aparecer abaixo da barra no PC */
+                margin-top: 80px; 
             }
             .info-passageiro {
-                margin: 0 0 10px 5%; /* Alinhado com o Planner */
+                /* 5% de margem para alinhar exatamente com o Planner lá em cima */
+                margin: 0 0 25px 5%; 
                 width: auto;
                 max-width: 90%;
             }
             #p1-label {
-                font-size: 20px; /* Aumentado conforme pedido */
+                font-size: 20px; 
+                margin-bottom: 5px;
             }
             #p1-nome {
-                font-size: 32px; /* Aumentado conforme pedido */
-                white-space: normal; /* Permite quebra se for muito grande no PC */
+                font-size: 32px; 
+                white-space: normal; 
                 overflow: visible;
+                font-weight: 600;
+            }
+            .bc {
+                /* Mantém o mapa centralizado, mas permite que ele suba em relação ao texto lateral */
+                margin-top: -20px; 
             }
         }
 
-        /* GRID E POLTRONAS */
+        /* GRID E POLTRONAS (ORIGINAL) */
         .g { display: grid; grid-template-columns: repeat(5, 54px); gap: 14px 10px; justify-content: center; }
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative; }
         .s { background: #4CAF50; border: 3px solid #4CAF50; color: #fff; font-weight: 700; cursor: pointer; user-select: none; }
@@ -156,7 +165,6 @@
         fn=s=>{
             if(!s)return"";
             const e=['da','das','de','do','dos','e'];
-            // Retorna nome completo formatado
             return s.toLowerCase().split(' ').map(p=>e.includes(p)?p:p.charAt(0).toUpperCase()+p.slice(1)).join(' ')
         };
 
