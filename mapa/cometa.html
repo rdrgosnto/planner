@@ -14,7 +14,7 @@
             background: #fff;
         }
 
-        /* HEADER FIXO - Altura de 54px */
+        /* HEADER FIXO - Altura de 54px (1 poltrona) */
         #header-fixo {
             position: fixed;
             top: 0;
@@ -26,49 +26,44 @@
             box-shadow: 0 2px 8px rgba(0,0,0,.1);
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: center; /* Centraliza o conteúdo no mobile */
         }
 
         #header-fixo b {
             font-size: 28px;
             color: #4CAF50;
-            width: 310px; 
+            width: 310px; /* Alinha com a largura do conteúdo abaixo */
             display: block;
             text-align: left;
-            line-height: 54px;
         }
 
         /* CONTEÚDO PRINCIPAL */
         #w {
             transform: scale(.8);
-            transform-origin: top center;
+            transform-origin: top center; /* Centralizado no mobile */
             display: none;
-            /* Aumentado para o conteúdo não ser coberto pela barra no mobile */
-            margin-top: 100px; 
+            margin-top: 70px; /* Subiu o conteúdo no mobile (era 100px) */
         }
 
         .info-passageiro {
             width: 310px;
-            margin: 0 auto 20px;
+            margin: 0 auto 15px;
             text-align: left;
             color: #4CAF50;
         }
 
         #p1-label {
-            font-size: 16px;
+            font-size: 17px; /* Tamanho original */
             font-weight: 700;
             margin: 0 0 2px;
             display: block;
         }
 
         #p1-nome {
-            font-size: 22px;
-            font-weight: 500;
+            font-size: 24px; /* Tamanho original */
+            font-weight: 800;
             margin: 0;
             line-height: 1.2;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .bc {
@@ -89,32 +84,27 @@
             }
             #header-fixo b {
                 width: auto;
-                padding-left: 5%; /* Alinhamento inicial */
+                padding-left: 5%;
             }
             #w {
                 transform: scale(0.75);
-                /* Espaço suficiente para o texto aparecer abaixo da barra no PC */
-                margin-top: 80px; 
+                transform-origin: top left; /* Alinha tudo à esquerda no PC */
+                margin-top: 65px; /* Sobe o mapa e textos no PC */
+                margin-left: 5%;  /* Alinha com o Planner */
             }
             .info-passageiro {
-                /* 5% de margem para alinhar exatamente com o Planner lá em cima */
-                margin: 0 0 25px 5%; 
+                margin: 0 0 10px 0; /* Remove o auto para não centralizar */
                 width: auto;
-                max-width: 90%;
             }
             #p1-label {
-                font-size: 15px; 
-                margin-bottom: 5px;
+                font-size: 20px; /* Aumentado conforme pedido */
             }
             #p1-nome {
-                font-size: 24px; 
-                white-space: normal; 
-                overflow: visible;
-                font-weight: 600;
+                font-size: 32px; /* Aumentado conforme pedido */
             }
             .bc {
-                /* Mantém o mapa centralizado, mas permite que ele suba em relação ao texto lateral */
-                margin-top: -40px; 
+                margin: 0; /* Alinha o mapa à esquerda com os textos */
+                margin-top: 10px; /* Espaço pequeno entre nome e mapa */
             }
         }
 
@@ -161,14 +151,7 @@
     </div>
 
     <script>
-        const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},
-        fn=s=>{
-            if(!s)return"";
-            const e=['da','das','de','do','dos','e'];
-            return s.toLowerCase().split(' ').map(p=>e.includes(p)?p:p.charAt(0).toUpperCase()+p.slice(1)).join(' ')
-        };
-
-        let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;
-        const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};const an=t=>{let b=q("#pb"),w=0,i=setInterval(()=>{w>=t?clearInterval(i):(w++,b.style.width=w+"%")},10)},rd=l=>{const c=q(".bc"),o=q(".g");o&&o.remove();const g=document.createElement("div");g.className="g";l.forEach(r=>r.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)}));c.appendChild(g)},sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine")||e.classList.contains("lt"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;if(sel)sel.classList.add("selected")},ld=async()=>{const c=sessionStorage.getItem("cpf");if(!c)return location.href="https://rdrgosnto.github.io/planner";cpf=nm(c);an(40);try{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),d=await r.json();an(70);const l=d.poltronas||d.lista||[],s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);if(!a)return alert("CPF não achado");q("#p1-nome").textContent=fn(gf(a,"NOME"));cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();q("#ctx").textContent=cur;const rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());rd(cfg.layout);an(100);setTimeout(()=>q("#pbc").remove(),600);q("#w").style.display="block"}catch(e){alert("Erro")}};const pX=async()=>{if(lock||!sel)return!sel&&alert("Selecione uma poltrona");if(!confirm("Confirma troca de poltrona?"))return;lock=true;q("#btn").disabled=true;const n=sel.dataset.s,old=us[0]||null,el=sel;try{const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){if(old){let oE=q(`.s[data-s="${old}"]`);if(oE){oE.classList.remove("mine");oE.onclick=()=>sl(oE)}}el.classList.remove("selected");el.classList.add("mine");us=[n];alert("Poltrona selecionada com sucesso!");lock=false;q("#btn").disabled=false;sel=null}else{alert("Poltrona ocupada por outro usuário");el.classList.remove("selected");el.classList.add("lt");setTimeout(()=>{el.classList.remove("lt");el.classList.add("white")},9000);lock=false;q("#btn").disabled=false;sel=null}}catch(e){alert("Erro");lock=false;q("#btn").disabled=false}};q("#btn").onclick=pX;ld();</script>
+        const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},fn=s=>{if(!s)return"";const e=['da','das','de','do','dos','e'];return s.toLowerCase().split(' ').map(p=>e.includes(p)?p:p.charAt(0).toUpperCase()+p.slice(1)).join(' ')};let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};const an=t=>{let b=q("#pb"),w=0,i=setInterval(()=>{w>=t?clearInterval(i):(w++,b.style.width=w+"%")},10)},rd=l=>{const c=q(".bc"),o=q(".g");o&&o.remove();const g=document.createElement("div");g.className="g";l.forEach(r=>r.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)}));c.appendChild(g)},sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine")||e.classList.contains("lt"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;if(sel)sel.classList.add("selected")},ld=async()=>{const c=sessionStorage.getItem("cpf");if(!c)return location.href="https://rdrgosnto.github.io/planner";cpf=nm(c);an(40);try{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),d=await r.json();an(70);const l=d.poltronas||d.lista||[],s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);if(!a)return alert("CPF não achado");q("#p1-nome").textContent=fn(gf(a,"NOME"));cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();q("#ctx").textContent=cur;const rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());rd(cfg.layout);an(100);setTimeout(()=>q("#pbc").remove(),600);q("#w").style.display="block"}catch(e){alert("Erro")}};const pX=async()=>{if(lock||!sel)return!sel&&alert("Selecione uma poltrona");if(!confirm("Confirma troca de poltrona?"))return;lock=true;q("#btn").disabled=true;const n=sel.dataset.s,old=us[0]||null,el=sel;try{const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){if(old){let oE=q(`.s[data-s="${old}"]`);if(oE){oE.classList.remove("mine");oE.onclick=()=>sl(oE)}}el.classList.remove("selected");el.classList.add("mine");us=[n];alert("Poltrona selecionada com sucesso!");lock=false;q("#btn").disabled=false;sel=null}else{alert("Poltrona ocupada por outro usuário");el.classList.remove("selected");el.classList.add("lt");setTimeout(()=>{el.classList.remove("lt");el.classList.add("white")},9000);lock=false;q("#btn").disabled=false;sel=null}}catch(e){alert("Erro");lock=false;q("#btn").disabled=false}};q("#btn").onclick=pX;ld();
+    </script>
 </body>
 </html>
