@@ -14,7 +14,6 @@
             background: #fff;
         }
 
-        /* HEADER FIXO - Altura de 54px */
         #header-fixo {
             position: fixed;
             top: 0;
@@ -37,7 +36,6 @@
             text-align: left;
         }
 
-        /* CONTEÚDO BASE (MOBILE) */
         #w {
             transform: scale(.8);
             transform-origin: top center;
@@ -66,47 +64,35 @@
             justify-content: center;
         }
 
-        /* --- FOCO: AJUSTES PARA COMPUTADOR (DESKTOP) --- */
         @media (min-width: 800px) {
-            #header-fixo {
-                justify-content: flex-start;
-            }
+            #header-fixo { justify-content: flex-start; }
             #header-fixo b {
-                width: auto;
-                /* Valor fixo em PX para alinhar com o texto abaixo */
+                width: 100%;
                 padding-left: 40px; 
+                margin: 0;
+                box-sizing: border-box;
             }
             #w {
-                transform: scale(0.75);
-                transform-origin: top center;
-                /* 54px da barra + 20px de respiro = 74px */
+                transform: none; 
                 margin-top: 74px; 
                 display: block;
+                width: 100%;
             }
             .info-passageiro {
-                position: absolute; 
-                /* IDENTICO ao padding-left do header b */
-                left: 40px; 
-                top: 0;
+                width: 100%;
+                max-width: none;
                 margin: 0;
-                width: auto;
-                z-index: 2;
+                padding-left: 40px;
+                box-sizing: border-box;
             }
-            #p1-label {
-                font-size: 18px;
-            }
-            #p1-nome {
-                font-size: 28px;
-                white-space: nowrap; /* Mantém em uma linha no PC conforme pedido anterior */
-            }
+            #p1-label { font-size: 18px; }
+            #p1-nome { font-size: 28px; }
             .bc {
-                /* Mapa sobe para começar na mesma altura do texto (20px abaixo da barra) */
-                margin-top: 0; 
-                z-index: 1;
+                margin: 20px auto; 
+                transform: scale(0.8);
             }
         }
 
-        /* GRID E POLTRONAS (ORIGINAL) */
         .g { display: grid; grid-template-columns: repeat(5, 54px); gap: 14px 10px; justify-content: center; }
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative; }
         .s { background: #4CAF50; border: 3px solid #4CAF50; color: #fff; font-weight: 700; cursor: pointer; user-select: none; }
@@ -125,30 +111,20 @@
     </style>
 </head>
 <body>
-
-    <div id="header-fixo">
-        <b>Planner</b>
-    </div>
-
+    <div id="header-fixo"><b>Planner</b></div>
     <div id="w">
         <div class="info-passageiro">
             <span id="p1-label">Passageiro 1</span>
             <div id="p1-nome"></div>
         </div>
-        
         <div class="bc">
-            <div id="cbx">
-                <div id="ctx"></div>
-            </div>
+            <div id="cbx"><div id="ctx"></div></div>
             <button id="btn">CONFIRMAR</button>
         </div>
     </div>
-
-    <div id="pbc">
-        <div id="pb"></div>
-    </div>
-
+    <div id="pbc"><div id="pb"></div></div>
     <script>
-        const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},fn=s=>{if(!s)return"";const e=['da','das','de','do','dos','e'];return s.toLowerCase().split(' ').map(p=>e.includes(p)?p:p.charAt(0).toUpperCase()+p.slice(1)).join(' ')};let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};const an=t=>{let b=q("#pb"),w=0,i=setInterval(()=>{w>=t?clearInterval(i):(w++,b.style.width=w+"%")},10)},rd=l=>{const c=q(".bc"),o=q(".g");o&&o.remove();const g=document.createElement("div");g.className="g";l.forEach(r=>r.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)}));c.appendChild(g)},sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine")||e.classList.contains("lt"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;if(sel)sel.classList.add("selected")},ld=async()=>{const c=sessionStorage.getItem("cpf");if(!c)return location.href="https://rdrgosnto.github.io/planner";cpf=nm(c);an(40);try{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),d=await r.json();an(70);const l=d.poltronas||d.lista||[],s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);if(!a)return alert("CPF não achado");q("#p1-nome").textContent=fn(gf(a,"NOME"));cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();q("#ctx").textContent=cur;const rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());rd(cfg.layout);an(100);setTimeout(()=>q("#pbc").remove(),600);q("#w").style.display="block"}catch(e){alert("Erro")}};const pX=async()=>{if(lock||!sel)return!sel&&alert("Selecione uma poltrona");if(!confirm("Confirma troca de poltrona?"))return;lock=true;q("#btn").disabled=true;const n=sel.dataset.s,old=us[0]||null,el=sel;try{const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){if(old){let oE=q(`.s[data-s="${old}"]`);if(oE){oE.classList.remove("mine");oE.onclick=()=>sl(oE)}}el.classList.remove("selected");el.classList.add("mine");us=[n];alert("Poltrona selecionada com sucesso!");lock=false;q("#btn").disabled=false;sel=null}else{alert("Poltrona ocupada por outro usuário");el.classList.remove("selected");el.classList.add("lt");setTimeout(()=>{el.classList.remove("lt");el.classList.add("white")},9000);lock=false;q("#btn").disabled=false;sel=null}}catch(e){alert("Erro");lock=false;q("#btn").disabled=false}};q("#btn").onclick=pX;ld();</script>
+        const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},fn=s=>{if(!s)return"";const e=['da','das','de','do','dos','e'];return s.toLowerCase().split(' ').map(p=>e.includes(p)?p:p.charAt(0).toUpperCase()+p.slice(1)).join(' ')};let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};const an=t=>{let b=q("#pb"),w=0,i=setInterval(()=>{w>=t?clearInterval(i):(w++,b.style.width=w+"%")},10)},rd=l=>{const c=q(".bc"),o=q(".g");o&&o.remove();const g=document.createElement("div");g.className="g";l.forEach(r=>r.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)}));c.appendChild(g)},sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine")||e.classList.contains("lt"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;if(sel)sel.classList.add("selected")},ld=async()=>{const c=sessionStorage.getItem("cpf");if(!c)return location.href="https://rdrgosnto.github.io/planner";cpf=nm(c);an(40);try{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),d=await r.json();an(70);const l=d.poltronas||d.lista||[],s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);if(!a)return alert("CPF não achado");q("#p1-nome").textContent=fn(gf(a,"NOME"));cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();q("#ctx").textContent=cur;const rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());rd(cfg.layout);an(100);setTimeout(()=>q("#pbc").remove(),600);q("#w").style.display="block"}catch(e){alert("Erro")}};const pX=async()=>{if(lock||!sel)return!sel&&alert("Selecione uma poltrona");if(!confirm("Confirma troca de poltrona?"))return;lock=true;q("#btn").disabled=true;const n=sel.dataset.s,old=us[0]||null,el=sel;try{const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){if(old){let oE=q(`.s[data-s="${old}"]`);if(oE){oE.classList.remove("mine");oE.onclick=()=>sl(oE)}}el.classList.remove("selected");el.classList.add("mine");us=[n];alert("Poltrona selecionada com sucesso!");lock=false;q("#btn").disabled=false;sel=null}else{alert("Poltrona ocupada por outro usuário");el.classList.remove("selected");el.classList.add("lt");setTimeout(()=>{el.classList.remove("lt");el.classList.add("white")},9000);lock=false;q("#btn").disabled=false;sel=null}}catch(e){alert("Erro");lock=false;q("#btn").disabled=false}};q("#btn").onclick=pX;ld();
+    </script>
 </body>
 </html>
