@@ -14,6 +14,7 @@
             background: #fff;
         }
 
+        /* HEADER FIXO - Altura 54px */
         #header-fixo {
             position: fixed;
             top: 0;
@@ -36,6 +37,7 @@
             text-align: left;
         }
 
+        /* CONTEÚDO BASE (MOBILE) */
         #w {
             transform: scale(.8);
             transform-origin: top center;
@@ -64,6 +66,7 @@
             justify-content: center;
         }
 
+        /* --- FOCO: AJUSTES FINAOS PARA COMPUTADOR (DESKTOP) --- */
         @media (min-width: 800px) {
             #header-fixo { justify-content: flex-start; }
             #header-fixo b {
@@ -74,25 +77,35 @@
             }
             #w {
                 transform: none; 
-                margin-top: 74px; 
+                margin-top: 94px; /* 54px barra + 40px respiro solicitado */
                 display: block;
                 width: 100%;
+                position: relative;
             }
             .info-passageiro {
-                width: 100%;
+                width: auto;
                 max-width: none;
                 margin: 0;
-                padding-left: 40px;
+                /* 42px (40px do planner + 2px de ajuste solicitado) */
+                padding-left: 42px; 
                 box-sizing: border-box;
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 2;
             }
             #p1-label { font-size: 18px; }
             #p1-nome { font-size: 28px; }
             .bc {
-                margin: 20px auto; 
+                /* Mapa 80% conforme solicitado */
                 transform: scale(0.8);
+                transform-origin: top center;
+                margin: 0 auto; 
+                z-index: 1;
             }
         }
 
+        /* GRID E POLTRONAS */
         .g { display: grid; grid-template-columns: repeat(5, 54px); gap: 14px 10px; justify-content: center; }
         .s, .e { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border-radius: 12px; position: relative; }
         .s { background: #4CAF50; border: 3px solid #4CAF50; color: #fff; font-weight: 700; cursor: pointer; user-select: none; }
