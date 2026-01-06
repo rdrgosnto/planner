@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Planner iOS</title>
+    <style>
+        /* --- BASE & TYPOGRAPHY (iOS Style) --- */
+        :root {
+            --ios-blue: #007AFF;
+            --ios-green: #34C759; /* Verde estilo Apple */
+            --ios-bg: #F2F2F7;
+            --ios-card-bg: #ffffff;
+            --ios-separator: rgba(60, 60, 67, 0.29); /* Cor das linhas finas */
+            /* Usamos a cor original verde como tema principal, mas ajustada */
+            --theme-color: #34C759; 
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            /* Fonte nativa da Apple */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: var(--ios-bg); /* Fundo cinza claro padrão iOS */
+            -webkit-user-select: none;
+            user-select: none;
+            color: #000;
+        }
+
+        /* --- CABEÇALHO (Glassmorphism & Safe Area) --- */
+        #header-fixo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            /* Altura ajustada para incluir a safe area */
+            height: calc(44px + env(safe-area-inset-top));
+            padding-top: env(safe-area-inset-top);
+            /* Efeito de vidro fosco nativo */
+            background: rgba(249, 249, 249, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            z-index: 1000;
+            /* Borda fina inferior estilo iOS */
+            border-bottom: 0.5px solid var(--ios-separator);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #header-fixo b {
+            font-size: 17px; /* Tamanho padrão de título iOS */
+            font-weight: 600;
+            color: #000;
+            width: auto;
+            display: block;
+            text-align: center;
+            padding-left: 0;
+            pointer-events: none;
+        }
+
+        /* --- LAYOUT PRINCIPAL --- */
+        #w {
+            display: none;
+            /* Margem superior para compensar o cabeçalho translúcido */
+            margin-top: calc(44px + env(safe-area-inset-top) + 20px);
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* Espaço para o botão fixo */
+        }
+        .map-outer {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 16px; /* Margem lateral padrão iOS */
+        }
+        .info-passageiro {
+            width: 100%;
+            max-width: 343px; /* Largura típica de card iOS em telas pequenas */
+            margin-bottom: 15px;
+            text-align: left;
+            color: #000;
+            pointer-events: none;
+            padding-left: 4px;
+        }
+        #p1-label { font-size: 13px; color: #8e8e93; font-weight: 400; display: block; text-transform: uppercase; margin-bottom: 4px;}
+        #p1-nome { font-size: 22px; font-weight: 700; line-height: 1.2; color: #000;}
+
+        /* Card do Mapa (Estilo "Inset Grouped" do iOS) */
+        .bc {
+            transform: scale(0.9); /* Leve ajuste de escala */
+            transform-origin: top center;
+            padding: 24px;
+            border: none; /* Removemos a borda grossa cinza */
+            border-radius: 14px; /* Cantos arredondados padrão iOS */
+            width: fit-content;
+            position: relative;
+            background: var(--ios-card-bg);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); /* Sombra muito suave */
+        }
+
+        /* --- GRID & ASSENTOS --- */
+        .g { display: grid; grid-template-columns: repeat(5, 54px); gap: 14px 10px; justify-content: center; }
+        .s, .e {
+            width: 54px; height: 54px; display: flex; align-items: center; justify-content: center;
+            border-radius: 12px; /* Cantos um pouco mais suaves */
+            position: relative;
+            font-size: 18px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .s:active:not(.mine):not(.white) { transform: scale(0.95); opacity: 0.8; } /* Efeito de toque iOS */
+        .s { background: var(--theme-color); border: none; color: #fff; font-weight: 600; cursor: pointer; }
+        .s.selected { background: #f1c40f; /* Mantido amarelo para destaque, pode mudar */ }
+        .s.mine, .s.lt { background: #aeaeb2; color: #fff; cursor: default; pointer-events: none; }
+        .s.white { background: #fff!important; border: 2px solid #d1d1d6!important; color: transparent!important; pointer-events: none; }
+        .s::after {
+            content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+            width: 32px; height: 14px; border-radius: 8px; background: #fff;
+            border: 2px solid #d1d1d6; /* Fronteira mais sutil */
+        }
+        .e { background: 0 0; pointer-events: none; }
+
+        /* --- BOTÕES E BARRA LATERAL --- */
+        #btn {
+            width: calc(100% - 32px); /* Largura total menos margem */
+            max-width: 343px;
+            height: 50px;
+            background: var(--theme-color);
+            color: #fff;
+            border: none;
+            font-size: 17px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            position: fixed; /* Fixo na parte inferior */
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 900;
+            transition: opacity 0.2s;
+        }
+        #btn:active { opacity: 0.7; }
+        #btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        #cbx {
+            position: absolute; top: 20px; left: 100%; width: 40px; height: auto; padding: 10px 0;
+            background: var(--theme-color); color: #fff; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; pointer-events: none;
+            border-radius: 0 10px 10px 0; margin-left: -2px;
+        }
+        #ctx { transform: rotate(-90deg); font-size: 16px; white-space: nowrap; }
+
+        /* --- BARRA DE PROGRESSO --- */
+        #pbc { position: fixed; bottom: 0; width: 100%; height: 4px; background: #0001; z-index: 1001; pointer-events: none; 
+            /* A barra de progresso fica acima da safe area */
+            padding-bottom: env(safe-area-inset-bottom); background-clip: content-box;
+        }
+        #pb { width: 0; height: 100%; background: var(--theme-color); transition: width .1s ease-out; }
+
+        @media(min-width: 800px) {
+            /* Ajustes para telas maiores (iPad) */
+            #header-fixo { justify-content: center; }
+            #header-fixo b { width: auto; padding-left: 0; }
+            #w { margin-top: calc(60px + env(safe-area-inset-top)); }
+            .info-passageiro { position: relative; left: auto; top: auto; width: 100%; max-width: 400px; margin: 0 0 20px 0; text-align: center;}
+            #p1-nome { font-size: 28px; }
+            .bc { margin: 0 auto; transform: scale(1); }
+             #btn { position: absolute; bottom: -70px; width: 100%; max-width: none; left: 0; transform: none; }
+        }
+
+        /* --- CUSTOM IOS ALERT CSS (Essencial) --- */
+        #ios-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.4); z-index: 9999;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(2px);
+            opacity: 0; transition: opacity 0.2s ease-in-out;
+        }
+        #ios-overlay.show { display: flex; opacity: 1; }
+        
+        #ios-alert {
+            width: 270px;
+            background-color: rgba(249, 249, 249, 0.85); /* Vidro fosco */
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-radius: 14px;
+            text-align: center;
+            overflow: hidden;
+            transform: scale(1.1); opacity: 0; transition: all 0.2s ease-in-out;
+        }
+        #ios-overlay.show #ios-alert { transform: scale(1); opacity: 1; }
+
+        .ios-alert-content { padding: 20px 16px 20px 16px; }
+        .ios-alert-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; color: #000; }
+        .ios-alert-msg { font-size: 13px; color: #000; line-height: 1.4; }
+        
+        .ios-alert-buttons { display: flex; flex-direction: row; border-top: 0.5px solid var(--ios-separator); }
+        .ios-alert-buttons.vertical { flex-direction: column; }
+        .ios-btn {
+            flex: 1; padding: 12px 0; font-size: 17px; color: var(--ios-blue); background: transparent;
+            border: none; cursor: pointer; font-weight: 400; position: relative;
+        }
+        .ios-btn:active { background-color: rgba(0,0,0,0.05); }
+        .ios-btn.bold { font-weight: 600; }
+        .ios-btn.destructive { color: #ff3b30; }
+        
+        /* Hairline separator entre botões horizontais */
+        .ios-alert-buttons:not(.vertical) .ios-btn:not(:last-child)::after {
+            content: ''; position: absolute; right: 0; top: 0; height: 100%; width: 0.5px; background-color: var(--ios-separator);
+        }
+        /* Hairline separator entre botões verticais */
+        .ios-alert-buttons.vertical .ios-btn:not(:last-child) { border-bottom: 0.5px solid var(--ios-separator); }
+
+    </style>
+</head>
+<body>
+    <div id="header-fixo"><b>Planner</b></div>
+    
+    <div id="w">
+        <div class="map-outer">
+            <div class="info-passageiro">
+                <span id="p1-label">Passageiro</span>
+                <div id="p1-nome"></div>
+            </div>
+            <div class="bc">
+                <div id="cbx"><div id="ctx"></div></div>
+                <button id="btn">CONFIRMAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pbc"><div id="pb"></div></div>
+
+    <div id="ios-overlay">
+        <div id="ios-alert">
+            <div class="ios-alert-content">
+                <div class="ios-alert-title" id="ios-title">Aviso</div>
+                <div class="ios-alert-msg" id="ios-msg"></div>
+            </div>
+            <div class="ios-alert-buttons" id="ios-btns">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},fn=s=>{if(!s)return"";let p=s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w.charAt(0).toUpperCase()+w.slice(1));return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ')},B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};let sel=null,bl=[],us=[],cpf=null,cur="",lock=false,anim;
+        
+        // MUDANÇA 3: Funções para controlar o Alerta iOS Customizado
+        const iosOverlay = q('#ios-overlay');
+        const iosTitle = q('#ios-title');
+        const iosMsg = q('#ios-msg');
+        const iosBtns = q('#ios-btns');
+
+        function closeIosAlert() {
+            iosOverlay.classList.remove('show');
+            setTimeout(() => { iosOverlay.style.display = 'none'; }, 200);
+        }
+
+        // Substituto para window.alert()
+        function iosShowAlert(msg, title = "Aviso") {
+            return new Promise(resolve => {
+                iosTitle.textContent = title;
+                iosMsg.textContent = msg;
+                iosBtns.innerHTML = `<button class="ios-btn bold">OK</button>`;
+                iosBtns.className = 'ios-alert-buttons'; // Reset layout vertical
+                
+                iosBtns.querySelector('button').onclick = () => {
+                    closeIosAlert();
+                    resolve();
+                };
+                iosOverlay.style.display = 'flex';
+                // Força reflow para animação CSS funcionar
+                void iosOverlay.offsetWidth; 
+                iosOverlay.classList.add('show');
+            });
+        }
+
+        // Substituto para window.confirm()
+        function iosShowConfirm(msg, title = "Confirmação", okText = "Confirmar", cancelText = "Cancelar") {
+             return new Promise(resolve => {
+                iosTitle.textContent = title;
+                iosMsg.textContent = msg;
+                // Botão Cancelar primeiro (esquerda), OK depois (direita/bold)
+                iosBtns.innerHTML = `
+                    <button class="ios-btn" id="ios-cancel">${cancelText}</button>
+                    <button class="ios-btn bold" id="ios-ok">${okText}</button>
+                `;
+                iosBtns.className = 'ios-alert-buttons'; 
+
+                q('#ios-cancel').onclick = () => { closeIosAlert(); resolve(false); };
+                q('#ios-ok').onclick = () => { closeIosAlert(); resolve(true); };
+
+                iosOverlay.style.display = 'flex';
+                void iosOverlay.offsetWidth;
+                iosOverlay.classList.add('show');
+            });
+        }
+
+        const an=t=>{let b=q("#pb");clearInterval(anim);let w=parseInt(b.style.width)||0;anim=setInterval(()=>{w>=t?clearInterval(anim):(w++,b.style.width=w+"%")},5)},rd=l=>{const c=q(".bc"),o=q(".g");o?.remove();const g=document.createElement("div");g.className="g";l.forEach(r=>r.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)}));c.appendChild(g)},sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine")||e.classList.contains("lt"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")},ld=async()=>{
+            const c=sessionStorage.getItem("cpf");
+            if(!c)return location.href="https://rdrgosnto.github.io/planner";
+            cpf=nm(c);an(30);try{let d;const pre=sessionStorage.getItem("preData");if(pre){d=JSON.parse(pre);sessionStorage.removeItem("preData");an(70)}else{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});d=await r.json();an(70)}const s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
+            if(!a) return await iosShowAlert("CPF não achado", "Erro"); // MUDANÇA: iosShowAlert
+            q("#p1-nome").textContent=fn(gf(a,"NOME"));cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();q("#ctx").textContent=cur;const l=d.poltronas||d.lista||[],rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());rd(cfg.layout);an(100);setTimeout(()=>{q("#pbc").remove();q("#w").style.display="flex"},400)}catch(e){
+                await iosShowAlert("Ocorreu um erro ao carregar os dados.", "Erro"); // MUDANÇA: iosShowAlert
+            }};
+            
+        // MUDANÇA 4: Função pX agora é async e usa os novos alertas
+        pX=async()=>{
+            if(lock||!sel){
+                if(!sel) await iosShowAlert("Selecione uma poltrona");
+                return;
+            }
+            
+            // MUDANÇA: Substituição do confirm() nativo pelo iosShowConfirm com await
+            const confirmed = await iosShowConfirm("Deseja confirmar a troca de poltrona?", "Confirmar Troca");
+            if(!confirmed) return;
+
+            lock=true;q("#btn").disabled=true;const n=sel.dataset.s,old=us[0]||null,el=sel;try{const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){if(old){let oE=q(`.s[data-s="${old}"]`);if(oE)oE.classList.remove("mine"),oE.onclick=()=>sl(oE)}el.classList.remove("selected");el.classList.add("mine");us=[n];
+            
+            await iosShowAlert("Poltrona selecionada com sucesso!", "Sucesso"); // MUDANÇA: iosShowAlert
+            sel=null}else{
+            
+            await iosShowAlert("Poltrona ocupada por outro usuário", "Atenção"); // MUDANÇA: iosShowAlert
+            el.classList.replace("selected","lt");setTimeout(()=>el.classList.replace("lt","white"),4000);sel=null}}catch(e){
+                await iosShowAlert("Erro de comunicação com o servidor.", "Erro"); // MUDANÇA: iosShowAlert
+            }finally{lock=false;q("#btn").disabled=false}};q("#btn").onclick=pX;ld();
+    </script>
+</body>
+</html>
