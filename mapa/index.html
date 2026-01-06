@@ -160,4 +160,10 @@
                 const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
                 r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
                 if(r.ok) location.reload();
-                else{alert("Poltrona ocupada");el.classList.replace("selected","lt
+                else{alert("Poltrona ocupada");el.classList.replace("selected","lt");setTimeout(()=>{el.classList.replace("lt","white")},4000);sel=null}
+            }catch(e){alert("Erro")}finally{lock=false;q("#btn").disabled=false}
+        };
+        ld();
+    </script>
+</body>
+</html>
