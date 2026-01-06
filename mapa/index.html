@@ -15,8 +15,8 @@
         /* Wrapper Principal */
         #w{display:none;margin-top:70px;width:100%;flex-direction:column}
 
-        /* Textos: Mobile - Alinhado rigorosamente em 29px */
-        .info-passageiro{width:100%; max-width: 310px; padding: 0; margin: 0 0 15px 29px; text-align:left; color:#4CAF50; pointer-events:none}
+        /* Textos: Mobile - Ajustado para 31px para alinhar com o 'Planner' superior */
+        .info-passageiro{width:100%; padding: 0; margin: 0 0 15px 31px; text-align:left; color:#4CAF50; pointer-events:none}
         #p1-label{font-size:17px;font-weight:700;display:block}
         #p1-nome{font-size:24px;font-weight:bold;line-height:1.2;min-height:28px}
 
@@ -56,7 +56,7 @@
             #header-fixo{justify-content:flex-start}
             #header-fixo b{width:100%;padding-left:40px}
             #w{margin-top:94px;position:relative}
-            /* Alinhado em 40px no PC */
+            /* Alinhado em 40px no PC para combinar com o header desktop */
             .info-passageiro{position:absolute;left:40px;top:0;margin:0;z-index:10;width:auto;max-width:none}
             #p1-nome{font-size:28px}
             .map-container { margin-top: 35px; }
@@ -87,7 +87,7 @@
         fn=s=>{
             if(!s) return "";
             let p = s.toLowerCase().split(' ').map(w => ['da','das','de','do','dos','e'].includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1));
-            // Abrevia apenas se for Mobile
+            // Abrevia (Primeiro e Último) apenas no Mobile
             if(window.innerWidth < 800 && p.length > 2) {
                 return p[0] + " " + p[p.length - 1];
             }
