@@ -15,17 +15,16 @@
         /* Wrapper Principal */
         #w{display:none;margin-top:70px;width:100%;flex-direction:column}
 
-        /* Textos: Mobile (29px de margem para alinhar com Planner) */
-        .info-passageiro{width:fit-content;margin-left:29px;margin-bottom:15px;text-align:left;color:#4CAF50;pointer-events:none}
+        /* Textos: Ajustado para alinhar exatamente com os 29px do Planner no Mobile */
+        .info-passageiro{width:310px;margin-left:29px;margin-bottom:15px;text-align:left;color:#4CAF50;pointer-events:none}
         #p1-label{font-size:17px;font-weight:700;display:block}
-        #p1-nome{font-size:24px;font-weight:bold;line-height:1.2;min-height:28px}
+        #p1-nome{font-size:24px;font-weight:bold;line-height:1.2;min-height:28px;word-wrap: break-word}
 
-        /* Container do Mapa para garantir centralização com Scale */
+        /* Container do Mapa */
         .map-container {
             width: 100%;
             display: flex;
             justify-content: center;
-            overflow: visible;
         }
 
         .bc{
@@ -37,8 +36,7 @@
             width: fit-content;
             position: relative;
             background: #fff;
-            /* Compensa a redução do scale para não sobrar espaço morto gigante abaixo */
-            margin-bottom: -100px; 
+            margin-bottom: -80px; /* Ajuste do buraco branco causado pelo scale */
         }
 
         .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
@@ -64,23 +62,19 @@
             
             #w{margin-top:94px;position:relative}
             
-            /* Nome alinhado a esquerda com o Planner (40px) */
-            .info-passageiro{position:absolute;left:40px;top:0;margin-left:0;z-index:10}
+            .info-passageiro{position:absolute;left:40px;top:0;margin-left:0;z-index:10;width:auto}
             #p1-nome{font-size:28px}
-
-            .map-container { margin-top: 20px; }
+            .map-container { margin-top: 30px; }
         }
     </style>
 </head>
 <body>
     <div id="header-fixo"><b>Planner</b></div>
-    
     <div id="w">
         <div class="info-passageiro">
             <span id="p1-label">Passageiro 1</span>
-            <div id="p1-nome">Carregando...</div>
+            <div id="p1-nome"></div>
         </div>
-        
         <div class="map-container">
             <div class="bc">
                 <div id="cbx"><div id="ctx"></div></div>
@@ -88,14 +82,24 @@
             </div>
         </div>
     </div>
-
     <div id="pbc"><div id="pb"></div></div>
 
     <script>
         const q=s=>document.querySelector(s),
         nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
         gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},
-        fn=s=>s?s.toLowerCase().split(' ').map(p=>['da','das','de','do','dos','e'].includes(p)?p:p.charAt(0).toUpperCase()+p.slice(1)).join(' '):"",
+        
+        // Função atualizada: Formata nome e reduz para Primeiro e Último se necessário
+        fn=s=>{
+            if(!s) return "";
+            let p = s.toLowerCase().split(' ').map(w => ['da','das','de','do','dos','e'].includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1));
+            // Se o nome tiver mais que 3 partes ou for muito longo, pega apenas primeiro e último
+            if(p.length > 2) {
+                return p[0] + " " + p[p.length - 1];
+            }
+            return p.join(' ');
+        },
+
         B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",
         E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
         U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},
@@ -138,7 +142,6 @@
                 a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
                 if(!a) return alert("CPF não achado");
                 
-                // Exibe o Nome Corretamente
                 q("#p1-nome").textContent=fn(gf(a,"NOME"));
                 cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();
                 q("#ctx").textContent=cur;
@@ -152,9 +155,9 @@
                 an(100);
                 setTimeout(()=>q("#pbc").remove(),600);
                 q("#w").style.display="flex"; 
-            }catch(e){alert("Erro ao carregar dados")}
-        },
-        pX=async()=>{
+            }catch(e){alert("Erro ao carregar")}
+        };
+        q("#btn").onclick=async()=>{
             if(lock||!sel)return!sel&&alert("Selecione uma poltrona");
             if(!confirm("Confirma troca de poltrona?"))return;
             lock=true; q("#btn").disabled=true;
@@ -163,13 +166,10 @@
                 const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
                 r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
                 if(r.ok){
-                    if(old){let oE=q(`.s[data-s="${old}"]`);if(oE){oE.classList.remove("mine");oE.onclick=()=>sl(oE)}}
-                    el.classList.remove("selected");el.classList.add("mine");us=[n];
-                    alert("Poltrona selecionada com sucesso!"); sel=null;
+                    location.reload(); // Recarrega para atualizar status real
                 }else{alert("Poltrona ocupada");el.classList.replace("selected","lt");setTimeout(()=>{el.classList.replace("lt","white")},4000);sel=null}
             }catch(e){alert("Erro")}finally{lock=false;q("#btn").disabled=false}
         };
-        q("#btn").onclick=pX;
         ld();
     </script>
 </body>
