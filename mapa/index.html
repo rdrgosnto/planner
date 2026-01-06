@@ -15,17 +15,13 @@
         /* Wrapper Principal */
         #w{display:none;margin-top:70px;width:100%;flex-direction:column}
 
-        /* Textos: Ajustado para alinhar exatamente com os 29px do Planner no Mobile */
-        .info-passageiro{width:310px;margin-left:29px;margin-bottom:15px;text-align:left;color:#4CAF50;pointer-events:none}
+        /* Textos: Mobile - Alinhado rigorosamente em 29px */
+        .info-passageiro{width:100%; max-width: 310px; padding: 0; margin: 0 0 15px 29px; text-align:left; color:#4CAF50; pointer-events:none}
         #p1-label{font-size:17px;font-weight:700;display:block}
-        #p1-nome{font-size:24px;font-weight:bold;line-height:1.2;min-height:28px;word-wrap: break-word}
+        #p1-nome{font-size:24px;font-weight:bold;line-height:1.2;min-height:28px}
 
         /* Container do Mapa */
-        .map-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
+        .map-container { width: 100%; display: flex; justify-content: center; }
 
         .bc{
             transform: scale(0.75);
@@ -36,7 +32,7 @@
             width: fit-content;
             position: relative;
             background: #fff;
-            margin-bottom: -80px; /* Ajuste do buraco branco causado pelo scale */
+            margin-bottom: -100px; 
         }
 
         .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
@@ -59,12 +55,11 @@
         @media(min-width:800px){
             #header-fixo{justify-content:flex-start}
             #header-fixo b{width:100%;padding-left:40px}
-            
             #w{margin-top:94px;position:relative}
-            
-            .info-passageiro{position:absolute;left:40px;top:0;margin-left:0;z-index:10;width:auto}
+            /* Alinhado em 40px no PC */
+            .info-passageiro{position:absolute;left:40px;top:0;margin:0;z-index:10;width:auto;max-width:none}
             #p1-nome{font-size:28px}
-            .map-container { margin-top: 30px; }
+            .map-container { margin-top: 35px; }
         }
     </style>
 </head>
@@ -89,12 +84,11 @@
         nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
         gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},
         
-        // Função atualizada: Formata nome e reduz para Primeiro e Último se necessário
         fn=s=>{
             if(!s) return "";
             let p = s.toLowerCase().split(' ').map(w => ['da','das','de','do','dos','e'].includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1));
-            // Se o nome tiver mais que 3 partes ou for muito longo, pega apenas primeiro e último
-            if(p.length > 2) {
+            // Abrevia apenas se for Mobile
+            if(window.innerWidth < 800 && p.length > 2) {
                 return p[0] + " " + p[p.length - 1];
             }
             return p.join(' ');
@@ -106,13 +100,11 @@
         cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
         
         let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;
-        
         const an=t=>{let b=q("#pb"),w=0,i=setInterval(()=>{w>=t?clearInterval(i):(w++,b.style.width=w+"%")},10)},
         rd=l=>{
             const c=q(".bc"), o=q(".g");
             o?.remove();
-            const g=document.createElement("div");
-            g.className="g";
+            const g=document.createElement("div"); g.className="g";
             l.forEach(r=>r.forEach(v=>{
                 const e=document.createElement("div");
                 if(v===null)e.className="e";
@@ -132,28 +124,21 @@
         ld=async()=>{
             const c=sessionStorage.getItem("cpf");
             if(!c)return location.href="https://rdrgosnto.github.io/planner";
-            cpf=nm(c);
-            an(40);
+            cpf=nm(c); an(40);
             try{
                 const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),
-                d=await r.json();
-                an(70);
-                const l=d.poltronas||d.lista||[], s=d.codigo||d.cursos||[],
-                a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
+                d=await r.json(); an(70);
+                const l=d.poltronas||d.lista||[], s=d.codigo||d.cursos||[], a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
                 if(!a) return alert("CPF não achado");
-                
                 q("#p1-nome").textContent=fn(gf(a,"NOME"));
                 cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();
                 q("#ctx").textContent=cur;
-                
                 const rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);
                 bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];
                 us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));
-                
                 const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());
                 rd(cfg.layout);
-                an(100);
-                setTimeout(()=>q("#pbc").remove(),600);
+                an(100); setTimeout(()=>q("#pbc").remove(),600);
                 q("#w").style.display="flex"; 
             }catch(e){alert("Erro ao carregar")}
         };
@@ -165,9 +150,8 @@
             try{
                 const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
                 r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
-                if(r.ok){
-                    location.reload(); // Recarrega para atualizar status real
-                }else{alert("Poltrona ocupada");el.classList.replace("selected","lt");setTimeout(()=>{el.classList.replace("lt","white")},4000);sel=null}
+                if(r.ok) location.reload();
+                else{alert("Poltrona ocupada");el.classList.replace("selected","lt");setTimeout(()=>{el.classList.replace("lt","white")},4000);sel=null}
             }catch(e){alert("Erro")}finally{lock=false;q("#btn").disabled=false}
         };
         ld();
