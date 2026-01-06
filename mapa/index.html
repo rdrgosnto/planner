@@ -11,15 +11,13 @@
         #header-fixo{position:fixed;top:0;left:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
         #header-fixo b{font-size:28px;color:#4CAF50;width:310px;display:block;text-align:left;padding-left:29px;pointer-events:none}
         
-        /* Container Principal */
         #w{display:none;margin-top:70px;width:100%;flex-direction:column;position:relative}
 
-        /* Texto Passageiro - MOBILE (29px para alinhar com o Planner) */
-        .info-passageiro{width:310px;margin:0 0 15px 29px;text-align:left;color:#4CAF50;pointer-events:none}
+        /* AJUSTE FINAL MOBILE: 32px para alinhar visualmente com o Header */
+        .info-passageiro{width:310px;margin:0 0 15px 32px;text-align:left;color:#4CAF50;pointer-events:none}
         #p1-label{font-size:17px;font-weight:700;display:block}
         #p1-nome{font-size:24px;font-weight:bold;line-height:1.2}
 
-        /* Mapa - MOBILE */
         .bc{transform:scale(.75);transform-origin:top center;padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:0 auto 20px;position:relative;display:flex;justify-content:center}
         
         .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
@@ -42,16 +40,10 @@
         @media(min-width:800px){
             #header-fixo{justify-content:flex-start}
             #header-fixo b{width:100%;padding-left:40px}
-            
-            /* Ajuste Vertical COMPUTADOR: Mesma altura para texto e mapa */
             #w{margin-top:94px;display: flex !important; flex-direction: row; justify-content: center;}
-            
-            /* Texto COMPUTADOR - 40px de margem lateral */
             .info-passageiro{position:absolute;left:40px;top:0;margin:0;width:auto;z-index:2}
             #p1-label{font-size:18px}
             #p1-nome{font-size:28px}
-            
-            /* Mapa COMPUTADOR - Centralizado e na mesma altura (top:0) */
             .bc{margin:0; transform:scale(.75); transform-origin: top center; z-index:1}
         }
     </style>
@@ -74,7 +66,6 @@
         const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
         gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},
         
-        // Lógica de nome: Abreviado apenas no mobile
         fn=s=>{
             if(!s) return "";
             let p = s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w.charAt(0).toUpperCase()+w.slice(1));
@@ -123,11 +114,8 @@
                 const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
                 r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
                 if(r.ok){
-                    // Atualização visual sem recarregar a página
                     if(old){let oE=q(`.s[data-s="${old}"]`);if(oE){oE.classList.remove("mine");oE.onclick=()=>sl(oE)}}
-                    el.classList.remove("selected");
-                    el.classList.add("mine");
-                    us=[n];
+                    el.classList.remove("selected");el.classList.add("mine");us=[n];
                     alert("Poltrona selecionada com sucesso!");
                     sel=null;
                 }else{alert("Poltrona ocupada");el.classList.replace("selected","lt");setTimeout(()=>{el.classList.replace("lt","white")},4000);sel=null}
