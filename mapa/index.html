@@ -8,23 +8,33 @@
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         body{font-family:Arial,sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none}
         
-        /* Header */
-        #header-fixo{position:fixed;top:0;left:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
-        
-        /* Planner Mobile: 29px + 10px de deslocamento = 39px */
-        #header-fixo b{font-size:28px;color:#4CAF50;width:310px;display:block;text-align:left;padding-left:39px;pointer-events:none}
+        /* Header: Ocupa 100%, mas o texto interno manda no alinhamento */
+        #header-fixo{position:fixed;top:0;left:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center}
+        #header-fixo b{font-size:28px;color:#4CAF50;padding-left:29px;pointer-events:none}
         
         /* Wrapper Principal */
-        #w{display:none;margin-top:70px;width:100%;flex-direction:column;position:relative}
+        #w{display:none;margin-top:70px;width:100%;flex-direction:column}
 
-        /* Textos Mobile: 31px + 4px de deslocamento = 35px */
-        .info-passageiro{width:fit-content;margin:0 0 15px 35px;text-align:left;color:#4CAF50;pointer-events:none}
+        /* Textos Mobile: Alinhados exatamente nos 29px do header */
+        .info-passageiro{margin-left:29px;margin-bottom:15px;text-align:left;color:#4CAF50;pointer-events:none}
         #p1-label{font-size:17px;font-weight:700;display:block}
         #p1-nome{font-size:24px;font-weight:bold;line-height:1.2}
 
-        /* Mapa: 80% Centralizado */
-        .bc{transform:scale(0.8);transform-origin:top center;padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:0 auto 20px;position:relative;display:flex;justify-content:center}
-        
+        /* Container que centraliza o mapa sem quebrar o alinhamento do texto */
+        .map-outer { width: 100%; display: flex; justify-content: center; }
+
+        .bc{
+            transform: scale(0.8);
+            transform-origin: top center;
+            padding: 20px;
+            border: 3px solid #b0b0b0;
+            border-radius: 16px;
+            width: fit-content;
+            position: relative;
+            background: #fff;
+            margin-bottom: 20px;
+        }
+
         .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
         .s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
         .s{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:700;cursor:pointer}
@@ -44,18 +54,17 @@
 
         /* Desktop */
         @media(min-width:800px){
-            #header-fixo{justify-content:flex-start}
-            #header-fixo b{width:100%;padding-left:40px}
+            #header-fixo{justify-content: flex-start;}
+            #header-fixo b{padding-left:40px}
             
-            #w{margin-top:94px;display: block !important;}
+            #w{margin-top:94px; position: relative; align-items: center;}
             
-            /* Nome no PC volta a ficar alinhado a esquerda (40px) */
-            .info-passageiro{position:absolute;left:40px;top:0;margin:0;width:auto;z-index:10}
-            #p1-label{font-size:18px}
+            /* Nome no PC: Alinhado a esquerda (40px) */
+            .info-passageiro{position:absolute; left:40px; top:0; margin:0; z-index:10}
             #p1-nome{font-size:28px}
             
-            /* Mapa no PC fica no centro e compartilha altura */
-            .bc{margin:0 auto; transform:scale(0.8); transform-origin: top center; z-index:1}
+            /* Mapa no PC: Centralizado e na mesma altura (top:0) */
+            .bc{margin:0 auto;}
         }
     </style>
 </head>
@@ -66,9 +75,11 @@
             <span id="p1-label">Passageiro 1</span>
             <div id="p1-nome"></div>
         </div>
-        <div class="bc">
-            <div id="cbx"><div id="ctx"></div></div>
-            <button id="btn">CONFIRMAR</button>
+        <div class="map-outer">
+            <div class="bc">
+                <div id="cbx"><div id="ctx"></div></div>
+                <button id="btn">CONFIRMAR</button>
+            </div>
         </div>
     </div>
     <div id="pbc"><div id="pb"></div></div>
@@ -80,6 +91,7 @@
         fn=s=>{
             if(!s) return "";
             let p = s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w.charAt(0).toUpperCase()+w.slice(1));
+            // Abrevia apenas se for Mobile
             if(window.innerWidth < 800 && p.length > 2) return p[0] + " " + p[p.length - 1];
             return p.join(' ');
         },
@@ -111,7 +123,7 @@
                 const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());
                 rd(cfg.layout);
                 an(100);setTimeout(()=>q("#pbc").remove(),600);
-                q("#w").style.display="block";
+                q("#w").style.display="flex";
             }catch(e){alert("Erro")}
         },
         
