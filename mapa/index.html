@@ -12,16 +12,21 @@
         #header-fixo{position:fixed;top:0;left:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
         #header-fixo b{font-size:28px;color:#4CAF50;width:310px;display:block;text-align:left;padding-left:29px;pointer-events:none}
         
-        /* Wrapper Principal */
-        #w{display:none;margin-top:70px;width:100%;flex-direction:column}
+        /* Wrapper Principal: O padding-left aqui define o alinhamento de tudo */
+        #w{display:none;margin-top:70px;width:100%;flex-direction:column;padding-left:29px}
 
-        /* Textos: Mobile - Ajustado para 31px para alinhar com o 'Planner' superior */
-        .info-passageiro{width:100%; padding: 0; margin: 0 0 15px 31px; text-align:left; color:#4CAF50; pointer-events:none}
+        /* Textos: Agora sem margem lateral, pois herdam o padding do pai */
+        .info-passageiro{width:100%; padding: 0; margin: 0 0 15px 0; text-align:left; color:#4CAF50; pointer-events:none}
         #p1-label{font-size:17px;font-weight:700;display:block}
         #p1-nome{font-size:24px;font-weight:bold;line-height:1.2;min-height:28px}
 
-        /* Container do Mapa */
-        .map-container { width: 100%; display: flex; justify-content: center; }
+        /* Container do Mapa: Garante centralização ignorando o padding do pai para o mapa */
+        .map-container { 
+            width: calc(100% + 29px); 
+            margin-left: -29px; 
+            display: flex; 
+            justify-content: center; 
+        }
 
         .bc{
             transform: scale(0.75);
@@ -55,11 +60,15 @@
         @media(min-width:800px){
             #header-fixo{justify-content:flex-start}
             #header-fixo b{width:100%;padding-left:40px}
-            #w{margin-top:94px;position:relative}
-            /* Alinhado em 40px no PC para combinar com o header desktop */
-            .info-passageiro{position:absolute;left:40px;top:0;margin:0;z-index:10;width:auto;max-width:none}
+            #w{margin-top:94px;position:relative;padding-left:40px}
+            
+            .info-passageiro{position:absolute;left:0;top:0;margin:0;z-index:10;width:auto;max-width:none}
             #p1-nome{font-size:28px}
-            .map-container { margin-top: 35px; }
+            .map-container { 
+                width: calc(100% + 40px); 
+                margin-left: -40px; 
+                margin-top: 35px; 
+            }
         }
     </style>
 </head>
@@ -87,7 +96,7 @@
         fn=s=>{
             if(!s) return "";
             let p = s.toLowerCase().split(' ').map(w => ['da','das','de','do','dos','e'].includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1));
-            // Abrevia (Primeiro e Último) apenas no Mobile
+            // Abrevia apenas se for Mobile
             if(window.innerWidth < 800 && p.length > 2) {
                 return p[0] + " " + p[p.length - 1];
             }
@@ -151,10 +160,4 @@
                 const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
                 r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
                 if(r.ok) location.reload();
-                else{alert("Poltrona ocupada");el.classList.replace("selected","lt");setTimeout(()=>{el.classList.replace("lt","white")},4000);sel=null}
-            }catch(e){alert("Erro")}finally{lock=false;q("#btn").disabled=false}
-        };
-        ld();
-    </script>
-</body>
-</html>
+                else{alert("Poltrona ocupada");el.classList.replace("selected","lt
