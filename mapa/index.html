@@ -8,38 +8,20 @@
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         body{font-family:Arial,sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none}
         
-        /* Header */
         #header-fixo{position:fixed;top:0;left:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
         #header-fixo b{font-size:28px;color:#4CAF50;width:310px;display:block;text-align:left;padding-left:29px;pointer-events:none}
         
-        /* Wrapper Principal: O padding-left aqui define o alinhamento de tudo */
-        #w{display:none;margin-top:70px;width:100%;flex-direction:column;padding-left:29px}
+        /* Container Principal */
+        #w{display:none;margin-top:70px;width:100%;flex-direction:column;position:relative}
 
-        /* Textos: Agora sem margem lateral, pois herdam o padding do pai */
-        .info-passageiro{width:100%; padding: 0; margin: 0 0 15px 0; text-align:left; color:#4CAF50; pointer-events:none}
+        /* Texto Passageiro - MOBILE (29px para alinhar com o Planner) */
+        .info-passageiro{width:310px;margin:0 0 15px 29px;text-align:left;color:#4CAF50;pointer-events:none}
         #p1-label{font-size:17px;font-weight:700;display:block}
-        #p1-nome{font-size:24px;font-weight:bold;line-height:1.2;min-height:28px}
+        #p1-nome{font-size:24px;font-weight:bold;line-height:1.2}
 
-        /* Container do Mapa: Garante centralização ignorando o padding do pai para o mapa */
-        .map-container { 
-            width: calc(100% + 29px); 
-            margin-left: -29px; 
-            display: flex; 
-            justify-content: center; 
-        }
-
-        .bc{
-            transform: scale(0.75);
-            transform-origin: top center;
-            padding: 20px 20px 24px 20px;
-            border: 3px solid #b0b0b0;
-            border-radius: 16px;
-            width: fit-content;
-            position: relative;
-            background: #fff;
-            margin-bottom: -100px; 
-        }
-
+        /* Mapa - MOBILE */
+        .bc{transform:scale(.75);transform-origin:top center;padding:20px 20px 24px 20px;border:3px solid #b0b0b0;border-radius:16px;width:fit-content;margin:0 auto 20px;position:relative;display:flex;justify-content:center}
+        
         .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
         .s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
         .s{background:#4CAF50;border:3px solid #4CAF50;color:#fff;font-weight:700;cursor:pointer}
@@ -53,22 +35,24 @@
         #btn:disabled{opacity:.6;cursor:not-allowed}
         #cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#4CAF50;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:none}
         #ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
+        
         #pbc{position:fixed;bottom:0;width:100%;height:8px;background:#0001;z-index:1001;pointer-events:none}
         #pb{width:0;height:100%;background:#4CAF50;transition:width .1s}
 
-        /* Desktop */
         @media(min-width:800px){
             #header-fixo{justify-content:flex-start}
             #header-fixo b{width:100%;padding-left:40px}
-            #w{margin-top:94px;position:relative;padding-left:40px}
             
-            .info-passageiro{position:absolute;left:0;top:0;margin:0;z-index:10;width:auto;max-width:none}
+            /* Ajuste Vertical COMPUTADOR: Mesma altura para texto e mapa */
+            #w{margin-top:94px;display: flex !important; flex-direction: row; justify-content: center;}
+            
+            /* Texto COMPUTADOR - 40px de margem lateral */
+            .info-passageiro{position:absolute;left:40px;top:0;margin:0;width:auto;z-index:2}
+            #p1-label{font-size:18px}
             #p1-nome{font-size:28px}
-            .map-container { 
-                width: calc(100% + 40px); 
-                margin-left: -40px; 
-                margin-top: 35px; 
-            }
+            
+            /* Mapa COMPUTADOR - Centralizado e na mesma altura (top:0) */
+            .bc{margin:0; transform:scale(.75); transform-origin: top center; z-index:1}
         }
     </style>
 </head>
@@ -79,27 +63,22 @@
             <span id="p1-label">Passageiro 1</span>
             <div id="p1-nome"></div>
         </div>
-        <div class="map-container">
-            <div class="bc">
-                <div id="cbx"><div id="ctx"></div></div>
-                <button id="btn">CONFIRMAR</button>
-            </div>
+        <div class="bc">
+            <div id="cbx"><div id="ctx"></div></div>
+            <button id="btn">CONFIRMAR</button>
         </div>
     </div>
     <div id="pbc"><div id="pb"></div></div>
 
     <script>
-        const q=s=>document.querySelector(s),
-        nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
+        const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
         gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},
         
+        // Lógica de nome: Abreviado apenas no mobile
         fn=s=>{
             if(!s) return "";
-            let p = s.toLowerCase().split(' ').map(w => ['da','das','de','do','dos','e'].includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1));
-            // Abrevia apenas se for Mobile
-            if(window.innerWidth < 800 && p.length > 2) {
-                return p[0] + " " + p[p.length - 1];
-            }
+            let p = s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w.charAt(0).toUpperCase()+w.slice(1));
+            if(window.innerWidth < 800 && p.length > 2) return p[0] + " " + p[p.length - 1];
             return p.join(' ');
         },
 
@@ -109,36 +88,19 @@
         cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
         
         let sel=null,bl=[],us=[],cpf=null,cur="",lock=false;
+        
         const an=t=>{let b=q("#pb"),w=0,i=setInterval(()=>{w>=t?clearInterval(i):(w++,b.style.width=w+"%")},10)},
-        rd=l=>{
-            const c=q(".bc"), o=q(".g");
-            o?.remove();
-            const g=document.createElement("div"); g.className="g";
-            l.forEach(r=>r.forEach(v=>{
-                const e=document.createElement("div");
-                if(v===null)e.className="e";
-                else{
-                    e.className="s";
-                    const id=v.toString().padStart(2,"0");
-                    if(v!=="white"){e.textContent=id;e.dataset.s=id}
-                    if(us.includes(id))e.classList.add("mine");
-                    else if(bl.includes(id)||v==="white")e.classList.add("white");
-                    else e.onclick=()=>sl(e);
-                }
-                g.appendChild(e);
-            }));
-            c.appendChild(g);
-        },
+        rd=l=>{const c=q(".bc"),o=q(".g");o?.remove();const g=document.createElement("div");g.className="g";l.forEach(r=>r.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)}));c.appendChild(g)},
         sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine")||e.classList.contains("lt"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")},
+        
         ld=async()=>{
             const c=sessionStorage.getItem("cpf");
             if(!c)return location.href="https://rdrgosnto.github.io/planner";
-            cpf=nm(c); an(40);
+            cpf=nm(c);an(40);
             try{
-                const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),
-                d=await r.json(); an(70);
-                const l=d.poltronas||d.lista||[], s=d.codigo||d.cursos||[], a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
-                if(!a) return alert("CPF não achado");
+                const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})}),d=await r.json();an(70);
+                const l=d.poltronas||d.lista||[],s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
+                if(!a)return alert("CPF não achado");
                 q("#p1-nome").textContent=fn(gf(a,"NOME"));
                 cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();
                 q("#ctx").textContent=cur;
@@ -147,23 +109,32 @@
                 us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));
                 const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());
                 rd(cfg.layout);
-                an(100); setTimeout(()=>q("#pbc").remove(),600);
-                q("#w").style.display="flex"; 
-            }catch(e){alert("Erro ao carregar")}
-        };
-        q("#btn").onclick=async()=>{
+                an(100);setTimeout(()=>q("#pbc").remove(),600);
+                q("#w").style.display="flex";
+            }catch(e){alert("Erro")}
+        },
+        
+        pX=async()=>{
             if(lock||!sel)return!sel&&alert("Selecione uma poltrona");
             if(!confirm("Confirma troca de poltrona?"))return;
-            lock=true; q("#btn").disabled=true;
-            const n=sel.dataset.s, old=us[0]||null, el=sel;
+            lock=true;q("#btn").disabled=true;
+            const n=sel.dataset.s,old=us[0]||null,el=sel;
             try{
                 const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
                 r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
-                if(r.ok) location.reload();
-                else{alert("Poltrona ocupada");el.classList.replace("selected","lt");setTimeout(()=>{el.classList.replace("lt","white")},4000);sel=null}
+                if(r.ok){
+                    // Atualização visual sem recarregar a página
+                    if(old){let oE=q(`.s[data-s="${old}"]`);if(oE){oE.classList.remove("mine");oE.onclick=()=>sl(oE)}}
+                    el.classList.remove("selected");
+                    el.classList.add("mine");
+                    us=[n];
+                    alert("Poltrona selecionada com sucesso!");
+                    sel=null;
+                }else{alert("Poltrona ocupada");el.classList.replace("selected","lt");setTimeout(()=>{el.classList.replace("lt","white")},4000);sel=null}
             }catch(e){alert("Erro")}finally{lock=false;q("#btn").disabled=false}
         };
-        ld();
+        
+        q("#btn").onclick=pX;ld();
     </script>
 </body>
 </html>
