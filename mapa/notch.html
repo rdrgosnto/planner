@@ -3,333 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Planner iOS</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Planner</title>
     <style>
-        /* --- BASE & TYPOGRAPHY (iOS Style) --- */
+        /* --- CORE VARIABLES & APPLE SYSTEM FONTS --- */
         :root {
             --ios-blue: #007AFF;
-            --ios-green: #34C759; /* Verde estilo Apple */
-            --ios-bg: #F2F2F7;
-            --ios-card-bg: #ffffff;
-            --ios-separator: rgba(60, 60, 67, 0.29); /* Cor das linhas finas */
-            /* Usamos a cor original verde como tema principal, mas ajustada */
-            --theme-color: #34C759; 
+            --ios-green: #34C759;
+            --ios-red: #FF3B30;
+            --ios-gray: #8E8E93;
+            --ios-bg-mobile: #F2F2F7;
+            --ios-bg-desktop: #e5e5ea; /* Fundo de mesa */
+            --ios-card: #FFFFFF;
+            --ios-separator: rgba(60, 60, 67, 0.18);
+            --ios-shadow: 0 8px 40px rgba(0,0,0,0.12);
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
         body {
-            /* Fonte nativa da Apple */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-stack);
             margin: 0;
+            background-color: var(--ios-bg-mobile);
+            color: #1c1c1e;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            background: var(--ios-bg); /* Fundo cinza claro padrão iOS */
+            overflow-x: hidden;
             -webkit-user-select: none;
             user-select: none;
-            color: #000;
         }
 
-        /* --- CABEÇALHO (Glassmorphism & Safe Area) --- */
+        /* --- BACKGROUND WALLPAPER (MAC/IPAD ONLY) --- */
+        .desktop-bg {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            /* Um gradiente sutil estilo macOS Big Sur/Sonoma */
+            background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%); 
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        /* --- HEADER (Adaptive) --- */
         #header-fixo {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            /* Altura ajustada para incluir a safe area */
-            height: calc(44px + env(safe-area-inset-top));
-            padding-top: env(safe-area-inset-top);
-            /* Efeito de vidro fosco nativo */
-            background: rgba(249, 249, 249, 0.8);
+            position: fixed; top: 0; left: 0; width: 100%;
+            height: calc(44px + var(--safe-top));
+            padding-top: var(--safe-top);
+            background: rgba(255,255,255,0.85);
             backdrop-filter: saturate(180%) blur(20px);
             -webkit-backdrop-filter: saturate(180%) blur(20px);
-            z-index: 1000;
-            /* Borda fina inferior estilo iOS */
             border-bottom: 0.5px solid var(--ios-separator);
+            z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.3s ease;
         }
-        #header-fixo b {
-            font-size: 17px; /* Tamanho padrão de título iOS */
-            font-weight: 600;
-            color: #000;
-            width: auto;
-            display: block;
-            text-align: center;
-            padding-left: 0;
-            pointer-events: none;
+        #header-title {
+            font-size: 17px; font-weight: 600; letter-spacing: -0.4px;
         }
 
-        /* --- LAYOUT PRINCIPAL --- */
+        /* --- MAIN CONTAINER --- */
         #w {
-            display: none;
-            /* Margem superior para compensar o cabeçalho translúcido */
-            margin-top: calc(44px + env(safe-area-inset-top) + 20px);
-            width: 100%;
+            display: none; /* Inicia oculto até carregar */
             flex-direction: column;
-            align-items: center;
-            padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* Espaço para o botão fixo */
-        }
-        .map-outer {
             width: 100%;
-            display: flex;
-            flex-direction: column;
+            margin-top: calc(44px + var(--safe-top));
+            padding-bottom: calc(80px + var(--safe-bottom));
             align-items: center;
-            padding: 0 16px; /* Margem lateral padrão iOS */
         }
-        .info-passageiro {
-            width: 100%;
-            max-width: 343px; /* Largura típica de card iOS em telas pequenas */
-            margin-bottom: 15px;
-            text-align: left;
+
+        /* --- INFO CARD (Passageiro) --- */
+        .info-group {
+            width: 100%; max-width: 400px;
+            padding: 20px 16px 10px 16px;
+            text-align: center; /* Centralizado estilo App moderno */
+        }
+        .info-label {
+            font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--ios-gray); margin-bottom: 4px;
+        }
+        .info-name {
+            font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
             color: #000;
-            pointer-events: none;
-            padding-left: 4px;
         }
-        #p1-label { font-size: 13px; color: #8e8e93; font-weight: 400; display: block; text-transform: uppercase; margin-bottom: 4px;}
-        #p1-nome { font-size: 22px; font-weight: 700; line-height: 1.2; color: #000;}
 
-        /* Card do Mapa (Estilo "Inset Grouped" do iOS) */
+        /* --- SEAT MAP CONTAINER (The Card) --- */
         .bc {
-            transform: scale(0.9); /* Leve ajuste de escala */
-            transform-origin: top center;
+            background: var(--ios-card);
+            border-radius: 22px; /* Curva mais acentuada Apple */
             padding: 24px;
-            border: none; /* Removemos a borda grossa cinza */
-            border-radius: 14px; /* Cantos arredondados padrão iOS */
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             width: fit-content;
-            position: relative;
-            background: var(--ios-card-bg);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); /* Sombra muito suave */
+            margin: 10px auto;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        /* --- GRID & ASSENTOS --- */
-        .g { display: grid; grid-template-columns: repeat(5, 54px); gap: 14px 10px; justify-content: center; }
+        /* --- SEAT GRID --- */
+        .g { display: grid; grid-template-columns: repeat(5, 50px); gap: 12px; }
+        
         .s, .e {
-            width: 54px; height: 54px; display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; /* Cantos um pouco mais suaves */
+            width: 50px; height: 50px;
+            border-radius: 14px; /* Squircle visual */
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px; font-weight: 600;
             position: relative;
-            font-size: 18px;
-            transition: background-color 0.2s, transform 0.1s;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .s:active:not(.mine):not(.white) { transform: scale(0.95); opacity: 0.8; } /* Efeito de toque iOS */
-        .s { background: var(--theme-color); border: none; color: #fff; font-weight: 600; cursor: pointer; }
-        .s.selected { background: #f1c40f; /* Mantido amarelo para destaque, pode mudar */ }
-        .s.mine, .s.lt { background: #aeaeb2; color: #fff; cursor: default; pointer-events: none; }
-        .s.white { background: #fff!important; border: 2px solid #d1d1d6!important; color: transparent!important; pointer-events: none; }
-        .s::after {
-            content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
-            width: 32px; height: 14px; border-radius: 8px; background: #fff;
-            border: 2px solid #d1d1d6; /* Fronteira mais sutil */
+        
+        /* Seat Styling */
+        .s { background-color: var(--ios-green); color: white; cursor: pointer; }
+        
+        /* Seat Shapes - simulando cadeira */
+        .s::before {
+            content: ''; position: absolute; top: 6px; width: 30px; height: 4px;
+            background: rgba(255,255,255,0.3); border-radius: 2px;
         }
-        .e { background: 0 0; pointer-events: none; }
+        
+        /* States */
+        .s:active { transform: scale(0.92); filter: brightness(0.9); }
+        .s.selected { 
+            background-color: #FFcc00; 
+            color: #000;
+            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.3);
+            transform: scale(1.05);
+            z-index: 2;
+        }
+        .s.mine { background-color: #8E8E93; cursor: default; box-shadow: none; }
+        .s.white { 
+            background: #fff!important; 
+            border: 2px solid #E5E5EA!important; 
+            color: transparent!important; 
+            box-shadow: none; pointer-events: none; 
+        }
 
-        /* --- BOTÕES E BARRA LATERAL --- */
-        #btn {
-            width: calc(100% - 32px); /* Largura total menos margem */
-            max-width: 343px;
-            height: 50px;
-            background: var(--theme-color);
-            color: #fff;
-            border: none;
-            font-size: 17px;
-            font-weight: 600;
-            border-radius: 12px;
-            cursor: pointer;
-            position: fixed; /* Fixo na parte inferior */
-            bottom: calc(20px + env(safe-area-inset-bottom));
-            left: 50%;
-            transform: translateX(-50%);
+        /* --- ACTION BUTTON --- */
+        #btn-container {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 16px 20px calc(16px + var(--safe-bottom)) 20px;
+            border-top: 0.5px solid var(--ios-separator);
             z-index: 900;
-            transition: opacity 0.2s;
+            display: flex; justify-content: center;
         }
-        #btn:active { opacity: 0.7; }
-        #btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+        #btn {
+            width: 100%; max-width: 400px; height: 50px;
+            background: var(--ios-blue); /* Azul padrão iOS para ações */
+            color: white; border: none;
+            border-radius: 14px;
+            font-size: 17px; font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        #btn:active { transform: scale(0.98); opacity: 0.8; }
+        #btn:disabled { background-color: #d1d1d6; color: #8e8e93; cursor: not-allowed; transform: none; }
+
+        /* Curso Indicator */
         #cbx {
-            position: absolute; top: 20px; left: 100%; width: 40px; height: auto; padding: 10px 0;
-            background: var(--theme-color); color: #fff; font-weight: 700;
-            display: flex; align-items: center; justify-content: center; pointer-events: none;
-            border-radius: 0 10px 10px 0; margin-left: -2px;
+            position: absolute; top: 20px; left: -32px; height: 100px; width: 30px;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: none;
         }
-        #ctx { transform: rotate(-90deg); font-size: 16px; white-space: nowrap; }
-
-        /* --- BARRA DE PROGRESSO --- */
-        #pbc { position: fixed; bottom: 0; width: 100%; height: 4px; background: #0001; z-index: 1001; pointer-events: none; 
-            /* A barra de progresso fica acima da safe area */
-            padding-bottom: env(safe-area-inset-bottom); background-clip: content-box;
-        }
-        #pb { width: 0; height: 100%; background: var(--theme-color); transition: width .1s ease-out; }
-
-        @media(min-width: 800px) {
-            /* Ajustes para telas maiores (iPad) */
-            #header-fixo { justify-content: center; }
-            #header-fixo b { width: auto; padding-left: 0; }
-            #w { margin-top: calc(60px + env(safe-area-inset-top)); }
-            .info-passageiro { position: relative; left: auto; top: auto; width: 100%; max-width: 400px; margin: 0 0 20px 0; text-align: center;}
-            #p1-nome { font-size: 28px; }
-            .bc { margin: 0 auto; transform: scale(1); }
-             #btn { position: absolute; bottom: -70px; width: 100%; max-width: none; left: 0; transform: none; }
+        #ctx { 
+            transform: rotate(-90deg); font-size: 14px; font-weight: 700; color: var(--ios-gray); letter-spacing: 1px;
         }
 
-        /* --- CUSTOM IOS ALERT CSS (Essencial) --- */
+        /* Loading Bar */
+        #pbc { position: fixed; top: 0; width: 100%; height: 3px; z-index: 2000; pointer-events: none; }
+        #pb { width: 0; height: 100%; background: var(--ios-blue); transition: width 0.2s ease; border-radius: 0 2px 2px 0; }
+
+        /* --- DESKTOP / IPAD MODE (MEDIA QUERY MAGIC) --- */
+        @media (min-width: 768px) {
+            body {
+                background-color: transparent; /* Permite ver o gradiente */
+                justify-content: center; /* Centraliza verticalmente */
+                align-items: center;
+            }
+            .desktop-bg { display: block; } /* Ativa wallpaper */
+
+            /* Esconder Header Mobile */
+            #header-fixo { display: none; }
+
+            /* Transformar #w em uma "Janela" */
+            #w {
+                margin-top: 0; padding-bottom: 0;
+                width: auto; height: auto;
+                display: flex; /* Flex para centralizar */
+            }
+
+            /* Container que vira a Janela do App */
+            .app-window {
+                background: rgba(255, 255, 255, 0.65); /* Efeito vidro fosco do macOS */
+                backdrop-filter: saturate(180%) blur(50px);
+                -webkit-backdrop-filter: saturate(180%) blur(50px);
+                border: 1px solid rgba(255,255,255,0.4);
+                box-shadow: var(--ios-shadow);
+                border-radius: 20px;
+                padding: 40px 60px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                max-width: 900px;
+                animation: windowPop 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            }
+
+            .info-group { text-align: left; width: 100%; padding: 0 0 20px 0; border-bottom: 1px solid rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;}
+            .info-label { font-size: 14px; }
+            .info-name { font-size: 32px; }
+            
+            /* Ajuste do Mapa */
+            .bc { 
+                background: white; 
+                box-shadow: 0 2px 10px rgba(0,0,0,0.08); 
+                margin: 0;
+            }
+
+            /* Botão dentro da janela e não fixo embaixo */
+            #btn-container {
+                position: static;
+                background: transparent;
+                border: none;
+                padding: 30px 0 0 0;
+                width: 100%;
+                backdrop-filter: none;
+            }
+            #btn { 
+                width: 100%; 
+                height: 44px; /* Altura padrão macOS */
+                font-size: 15px;
+            }
+            #btn:hover { background-color: #0063CC; transition: 0.2s; } /* Hover apenas desktop */
+        }
+        
+        @keyframes windowPop {
+            0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* --- IOS ALERTS (Nativo Visual) --- */
         #ios-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.4); z-index: 9999;
+            background-color: rgba(0,0,0,0.3); z-index: 9999;
             align-items: center; justify-content: center;
-            backdrop-filter: blur(2px);
-            opacity: 0; transition: opacity 0.2s ease-in-out;
+            backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.25s;
         }
         #ios-overlay.show { display: flex; opacity: 1; }
         
         #ios-alert {
             width: 270px;
-            background-color: rgba(249, 249, 249, 0.85); /* Vidro fosco */
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            background: rgba(245, 245, 245, 0.88);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-radius: 14px;
-            text-align: center;
-            overflow: hidden;
-            transform: scale(1.1); opacity: 0; transition: all 0.2s ease-in-out;
+            text-align: center; overflow: hidden;
+            transform: scale(1.15); opacity: 0; transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s;
         }
         #ios-overlay.show #ios-alert { transform: scale(1); opacity: 1; }
 
-        .ios-alert-content { padding: 20px 16px 20px 16px; }
-        .ios-alert-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; color: #000; }
-        .ios-alert-msg { font-size: 13px; color: #000; line-height: 1.4; }
-        
-        .ios-alert-buttons { display: flex; flex-direction: row; border-top: 0.5px solid var(--ios-separator); }
-        .ios-alert-buttons.vertical { flex-direction: column; }
+        .ios-content { padding: 20px 16px; }
+        .ios-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; color: #000; }
+        .ios-msg { font-size: 13px; color: #000; line-height: 1.4; }
+        .ios-btns { display: flex; border-top: 0.5px solid rgba(60,60,67,0.29); }
         .ios-btn {
-            flex: 1; padding: 12px 0; font-size: 17px; color: var(--ios-blue); background: transparent;
-            border: none; cursor: pointer; font-weight: 400; position: relative;
+            flex: 1; padding: 12px 0; font-size: 17px; color: var(--ios-blue);
+            background: transparent; border: none; cursor: pointer; border-right: 0.5px solid rgba(60,60,67,0.29);
         }
-        .ios-btn:active { background-color: rgba(0,0,0,0.05); }
+        .ios-btn:last-child { border-right: none; }
+        .ios-btn:active { background: rgba(0,0,0,0.05); }
         .ios-btn.bold { font-weight: 600; }
-        .ios-btn.destructive { color: #ff3b30; }
-        
-        /* Hairline separator entre botões horizontais */
-        .ios-alert-buttons:not(.vertical) .ios-btn:not(:last-child)::after {
-            content: ''; position: absolute; right: 0; top: 0; height: 100%; width: 0.5px; background-color: var(--ios-separator);
-        }
-        /* Hairline separator entre botões verticais */
-        .ios-alert-buttons.vertical .ios-btn:not(:last-child) { border-bottom: 0.5px solid var(--ios-separator); }
-
     </style>
 </head>
 <body>
-    <div id="header-fixo"><b>Planner</b></div>
+    <div class="desktop-bg"></div> <div id="pbc"><div id="pb"></div></div>
+
+    <div id="header-fixo"><span id="header-title">Planner</span></div>
     
     <div id="w">
-        <div class="map-outer">
-            <div class="info-passageiro">
-                <span id="p1-label">Passageiro</span>
-                <div id="p1-nome"></div>
+        <div class="app-window">
+            
+            <div class="info-group">
+                <div>
+                    <div class="info-label">Passageiro</div>
+                    <div class="info-name" id="p1-nome">Carregando...</div>
+                </div>
+                <div id="ctx-desktop" style="font-weight:700; color:#8E8E93; display:none;"></div>
             </div>
+
             <div class="bc">
                 <div id="cbx"><div id="ctx"></div></div>
-                <button id="btn">CONFIRMAR</button>
+                </div>
+
+            <div id="btn-container">
+                <button id="btn">Confirmar Seleção</button>
             </div>
         </div>
     </div>
 
-    <div id="pbc"><div id="pb"></div></div>
-
     <div id="ios-overlay">
         <div id="ios-alert">
-            <div class="ios-alert-content">
-                <div class="ios-alert-title" id="ios-title">Aviso</div>
-                <div class="ios-alert-msg" id="ios-msg"></div>
+            <div class="ios-content">
+                <div class="ios-title" id="al-t"></div>
+                <div class="ios-msg" id="al-m"></div>
             </div>
-            <div class="ios-alert-buttons" id="ios-btns">
-                </div>
+            <div class="ios-btns" id="al-b"></div>
         </div>
     </div>
 
     <script>
         const q=s=>document.querySelector(s),nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}},fn=s=>{if(!s)return"";let p=s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w.charAt(0).toUpperCase()+w.slice(1));return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ')},B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:`${B}239ef024d32946f99a66585bed86d236${E}ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA`,P:`${B}478aac5453024f5cb3d3b26495d9b7e0${E}H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0`,S:`${B}1d167b2351e14940acb006f964b87cef${E}V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg`},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};let sel=null,bl=[],us=[],cpf=null,cur="",lock=false,anim;
-        
-        // MUDANÇA 3: Funções para controlar o Alerta iOS Customizado
-        const iosOverlay = q('#ios-overlay');
-        const iosTitle = q('#ios-title');
-        const iosMsg = q('#ios-msg');
-        const iosBtns = q('#ios-btns');
 
-        function closeIosAlert() {
-            iosOverlay.classList.remove('show');
-            setTimeout(() => { iosOverlay.style.display = 'none'; }, 200);
-        }
-
-        // Substituto para window.alert()
-        function iosShowAlert(msg, title = "Aviso") {
+        // --- SISTEMA DE ALERTA IOS UNIFICADO ---
+        const alertsys = (msg, title="Aviso", isConfirm=false) => {
             return new Promise(resolve => {
-                iosTitle.textContent = title;
-                iosMsg.textContent = msg;
-                iosBtns.innerHTML = `<button class="ios-btn bold">OK</button>`;
-                iosBtns.className = 'ios-alert-buttons'; // Reset layout vertical
+                q("#al-t").textContent = title; q("#al-m").textContent = msg;
+                const b = q("#al-b"); b.innerHTML = "";
                 
-                iosBtns.querySelector('button').onclick = () => {
-                    closeIosAlert();
-                    resolve();
+                const mkBtn = (txt, bold, val) => {
+                    const btn = document.createElement("button");
+                    btn.className = `ios-btn ${bold?'bold':''}`;
+                    btn.textContent = txt;
+                    btn.onclick = () => { q("#ios-overlay").classList.remove("show"); setTimeout(()=>q("#ios-overlay").style.display="none",200); resolve(val); };
+                    return btn;
                 };
-                iosOverlay.style.display = 'flex';
-                // Força reflow para animação CSS funcionar
-                void iosOverlay.offsetWidth; 
-                iosOverlay.classList.add('show');
+
+                if(isConfirm) {
+                    b.appendChild(mkBtn("Cancelar", false, false));
+                    b.appendChild(mkBtn("Confirmar", true, true));
+                } else {
+                    b.appendChild(mkBtn("OK", true, true));
+                }
+                
+                const ov = q("#ios-overlay"); ov.style.display="flex"; 
+                void ov.offsetWidth; ov.classList.add("show");
             });
-        }
+        };
+        const iosAlert = (m,t) => alertsys(m,t,false);
+        const iosConfirm = (m,t) => alertsys(m,t,true);
 
-        // Substituto para window.confirm()
-        function iosShowConfirm(msg, title = "Confirmação", okText = "Confirmar", cancelText = "Cancelar") {
-             return new Promise(resolve => {
-                iosTitle.textContent = title;
-                iosMsg.textContent = msg;
-                // Botão Cancelar primeiro (esquerda), OK depois (direita/bold)
-                iosBtns.innerHTML = `
-                    <button class="ios-btn" id="ios-cancel">${cancelText}</button>
-                    <button class="ios-btn bold" id="ios-ok">${okText}</button>
-                `;
-                iosBtns.className = 'ios-alert-buttons'; 
-
-                q('#ios-cancel').onclick = () => { closeIosAlert(); resolve(false); };
-                q('#ios-ok').onclick = () => { closeIosAlert(); resolve(true); };
-
-                iosOverlay.style.display = 'flex';
-                void iosOverlay.offsetWidth;
-                iosOverlay.classList.add('show');
-            });
-        }
-
-        const an=t=>{let b=q("#pb");clearInterval(anim);let w=parseInt(b.style.width)||0;anim=setInterval(()=>{w>=t?clearInterval(anim):(w++,b.style.width=w+"%")},5)},rd=l=>{const c=q(".bc"),o=q(".g");o?.remove();const g=document.createElement("div");g.className="g";l.forEach(r=>r.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)}));c.appendChild(g)},sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine")||e.classList.contains("lt"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")},ld=async()=>{
+        const an=t=>{let b=q("#pb");clearInterval(anim);let w=parseInt(b.style.width)||0;anim=setInterval(()=>{w>=t?clearInterval(anim):(w++,b.style.width=w+"%")},10)},rd=l=>{const c=q(".bc"),o=q(".g");o?.remove();const g=document.createElement("div");g.className="g";l.forEach(r=>r.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)}));c.appendChild(g)},sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")},ld=async()=>{
             const c=sessionStorage.getItem("cpf");
-            if(!c)return location.href="https://rdrgosnto.github.io/planner";
-            cpf=nm(c);an(30);try{let d;const pre=sessionStorage.getItem("preData");if(pre){d=JSON.parse(pre);sessionStorage.removeItem("preData");an(70)}else{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});d=await r.json();an(70)}const s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
-            if(!a) return await iosShowAlert("CPF não achado", "Erro"); // MUDANÇA: iosShowAlert
-            q("#p1-nome").textContent=fn(gf(a,"NOME"));cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();q("#ctx").textContent=cur;const l=d.poltronas||d.lista||[],rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());rd(cfg.layout);an(100);setTimeout(()=>{q("#pbc").remove();q("#w").style.display="flex"},400)}catch(e){
-                await iosShowAlert("Ocorreu um erro ao carregar os dados.", "Erro"); // MUDANÇA: iosShowAlert
-            }};
-            
-        // MUDANÇA 4: Função pX agora é async e usa os novos alertas
-        pX=async()=>{
-            if(lock||!sel){
-                if(!sel) await iosShowAlert("Selecione uma poltrona");
-                return;
-            }
-            
-            // MUDANÇA: Substituição do confirm() nativo pelo iosShowConfirm com await
-            const confirmed = await iosShowConfirm("Deseja confirmar a troca de poltrona?", "Confirmar Troca");
-            if(!confirmed) return;
+            if(!c) return location.href="https://rdrgosnto.github.io/planner";
+            cpf=nm(c);an(30);
+            try{
+                let d;const pre=sessionStorage.getItem("preData");
+                if(pre){d=JSON.parse(pre);sessionStorage.removeItem("preData");an(60)}else{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});d=await r.json();an(60)}
+                const s=d.codigo||d.cursos||[],a=s.find(x=>nm(gf(x,"CPF2","CPF"))===cpf);
+                if(!a) return await iosAlert("CPF não encontrado na lista.");
+                
+                q("#p1-nome").textContent=fn(gf(a,"NOME"));
+                cur=gf(a,"CODIGO","Codigo").toString().trim().toUpperCase();
+                q("#ctx").textContent=cur;
+                
+                // Desktop tweak
+                if(window.innerWidth > 768) { q("#ctx-desktop").textContent = cur; q("#ctx-desktop").style.display="block"; q("#cbx").style.display="none"; }
 
-            lock=true;q("#btn").disabled=true;const n=sel.dataset.s,old=us[0]||null,el=sel;try{const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){if(old){let oE=q(`.s[data-s="${old}"]`);if(oE)oE.classList.remove("mine"),oE.onclick=()=>sl(oE)}el.classList.remove("selected");el.classList.add("mine");us=[n];
+                const l=d.poltronas||d.lista||[],rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);
+                bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];
+                us=rows.filter(x=>nm(gf(x,"CPF2","CPF"))===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));
+                
+                const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());
+                rd(cfg.layout);an(100);
+                setTimeout(()=>{q("#pbc").style.opacity="0";q("#w").style.display="flex"},500);
+            }catch(e){ await iosAlert("Erro de conexão."); }
+        },pX=async()=>{
+            if(lock)return;
+            if(!sel) return await iosAlert("Selecione uma poltrona disponível.");
+            if(!await iosConfirm("Deseja confirmar a troca?")) return;
             
-            await iosShowAlert("Poltrona selecionada com sucesso!", "Sucesso"); // MUDANÇA: iosShowAlert
-            sel=null}else{
-            
-            await iosShowAlert("Poltrona ocupada por outro usuário", "Atenção"); // MUDANÇA: iosShowAlert
-            el.classList.replace("selected","lt");setTimeout(()=>el.classList.replace("lt","white"),4000);sel=null}}catch(e){
-                await iosShowAlert("Erro de comunicação com o servidor.", "Erro"); // MUDANÇA: iosShowAlert
-            }finally{lock=false;q("#btn").disabled=false}};q("#btn").onclick=pX;ld();
+            lock=true; const btn=q("#btn"); btn.disabled=true; btn.textContent="Processando...";
+            const n=sel.dataset.s,old=us[0]||null,el=sel;
+            try{
+                const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf};
+                const r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+                if(r.ok){
+                    if(old){let oE=q(`.s[data-s="${old}"]`);if(oE){oE.classList.remove("mine");oE.onclick=()=>sl(oE)}}
+                    el.classList.remove("selected");el.classList.add("mine");us=[n];sel=null;
+                    await iosAlert("Sucesso! Poltrona confirmada.");
+                }else{
+                    await iosAlert("Poltrona já ocupada. A página será atualizada.");
+                    setTimeout(()=>location.reload(), 2000);
+                }
+            }catch(e){ await iosAlert("Erro ao processar."); }
+            finally{ lock=false; btn.disabled=false; btn.textContent="Confirmar Seleção"; }
+        };
+        q("#btn").onclick=pX; ld();
     </script>
 </body>
 </html>
