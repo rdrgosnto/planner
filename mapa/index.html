@@ -10,51 +10,49 @@
   
   /* HEADER */
   #header-fixo{position:fixed;top:0;left:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
-  /* TEXTO: Cor alterada para #38BA54 */
   #header-fixo b{font-size:28px;color:#38BA54;width:248px;display:block;text-align:left;padding-left:0;pointer-events:none}
   
   #w{display:none;margin-top:70px;width:100%;flex-direction:column;align-items:center}
   .map-outer{width:100%;display:flex;flex-direction:column;align-items:center}
   
-  /* INFO PASSAGEIRO: Cor alterada para #38BA54 */
+  /* INFO PASSAGEIRO */
   .info-passageiro{width:248px;margin-bottom:10px;text-align:left;color:#38BA54;pointer-events:none}
   #p1-label{font-size:16px;font-weight:700;display:block}
   #p1-nome{font-size:20px;font-weight:bold;line-height:1.2}
   
-  /* CONTAINER DAS POLTRONAS: Borda alterada para #38BA54 */
+  /* CONTAINER DAS POLTRONAS */
   .bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #38BA54;border-radius:16px;width:fit-content;position:relative;background:#fff}
   
   .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
   .s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
   
-  /* POLTRONA LIVRE: Fundo e Borda alterados para #38BA54 */
+  /* POLTRONA LIVRE */
   .s{background:#38BA54;border:3px solid #38BA54;color:#fff;font-weight:700;cursor:pointer}
   
-  /* SELECIONADA TEMPORARIAMENTE: Cor alterada para #77C688 */
-  .s.selected{background:#77C688;border-color:#77C688}
+  /* SELECIONADA TEMPORARIAMENTE: Cor alterada para #123B1A */
+  .s.selected{background:#123B1A;border-color:#123B1A}
   
-  /* MINHA POLTRONA (DEFINITIVA): Cor alterada para #77C688 */
-  .s.mine,.s.lt{background:#77C688;border-color:#77C688;cursor:default;pointer-events:none}
+  /* MINHA POLTRONA (DEFINITIVA): Cor alterada para #123B1A */
+  .s.mine,.s.lt{background:#123B1A;border-color:#123B1A;cursor:default;pointer-events:none}
   
-  /* POLTRONA BRANCA (OCUPADA): Borda alterada para #38BA54 */
+  /* POLTRONA BRANCA (OCUPADA) */
   .s.white{background:#fff!important;border:3px solid #38BA54!important;color:transparent!important;pointer-events:none}
   
-  /* TRAVESSEIRO: Borda alterada para #38BA54 */
+  /* TRAVESSEIRO */
   .s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #38BA54}
   
   .e{background:0 0;pointer-events:none}
   
-  /* BOTÃO: Fundo alterado para #38BA54 */
+  /* BOTÃO */
   #btn{width:112px;height:54px;background:#38BA54;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
   #btn:disabled{opacity:.6;cursor:not-allowed}
   
-  /* CAIXA DA TURMA (LATERAL): Fundo alterado para #38BA54 */
+  /* CAIXA DA TURMA (LATERAL) */
   #cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#38BA54;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;pointer-events:none}
   #ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
   
   /* PROGRESS BAR */
   #pbc{position:fixed;bottom:0;width:100%;height:8px;background:#0001;z-index:1001;pointer-events:none}
-  /* BARRA DE PROGRESSO: Cor alterada para #38BA54 */
   #pb{width:0;height:100%;background:#38BA54;transition:width .1s}
   
   @media(min-width:800px){
