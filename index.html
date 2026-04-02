@@ -27,7 +27,7 @@
 
         input { flex: 1; border: 0; padding: 12px 2px; font-size: 18px; outline: 0; background: 0; width: 100%; }
 
-        /* Botão Ajustado (Justo ao texto) */
+        /* Botão Ajustado */
         button { 
             padding: 5px 12px; 
             border: 1px solid #aaa; 
@@ -42,19 +42,25 @@
         }
         button.ready { background: #38BA54; color: #fff; border-color: #38BA54; cursor: pointer; }
 
-        /* Mensagens de Status */
+        /* Mensagens de Status (Cores Refinadas) */
         .status-msg { 
             font-size: 13px; 
             margin-top: 10px; 
             display: none; 
             padding: 8px 10px; 
             border-radius: 4px; 
-            font-weight: 500;
+            font-weight: bold;
             line-height: 1.4;
         }
-        .m-typing { background: #fff9c4; color: #856404; display: block; border: 1px solid #fff59d; }
-        .m-err { background: #ffebee; color: #e53935; display: block; border: 1px solid #ffcdd2; animation: shake 0.4s; }
-        .m-ok { background: #e8f5e9; color: #2e7d32; display: block; border: 1px solid #c8e6c9; }
+
+        /* Amarelo: Fundo claro, Texto e Borda escuros */
+        .m-typing { background: #fff9c4; color: #856404; display: block; border: 1px solid #fbc02d; }
+        
+        /* Vermelho: Fundo claro, Texto e Borda escuros */
+        .m-err { background: #ffebee; color: #b71c1c; display: block; border: 1px solid #ef9a9a; animation: shake 0.4s; }
+        
+        /* Verde: Fundo claro, Texto e Borda escuros */
+        .m-ok { background: #e8f5e9; color: #1b5e20; display: block; border: 1px solid #a5d6a7; }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -80,10 +86,8 @@
               nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
               $c=q("#cpf"),$b=q("#btn"),$m=q("#msg"),$r=q("#r");
 
-        // Splash screen timeout
         setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"}, 1600);
 
-        // Validação CPF
         const vld=c=>{
             if(!c||/^(\d)\1+$/.test(c))return 0;
             return [9,10].every(t=>{
@@ -92,7 +96,6 @@
             })
         };
 
-        // Função para atualizar interface
         const setStatus=(txt, cls, rowCls, btnReady=false)=>{
             if(!txt) { $m.style.display="none"; $r.className="row"; return; }
             $m.innerHTML=txt;
@@ -104,7 +107,6 @@
 
         let tm;
         $c.oninput=()=>{
-            // Limpa caracteres não numéricos
             $c.value=$c.value.replace(/\D/g,"");
             if(tm)clearTimeout(tm);
             
@@ -116,22 +118,19 @@
             }
 
             if(len < 11){
-                setStatus("✍️ digitando...", "m-typing", "load");
+                setStatus("✍️ Digitando...", "m-typing", "load");
                 return;
             }
 
-            // Agressividade: Perda de foco ao atingir 11 dígitos
             $c.blur();
             const val = nm($c.value);
 
-            // Validação local
             if(!vld(val)){
                 setStatus("❌ CPF inválido", "m-err", "err");
                 return;
             }
 
-            // Início da busca
-            setStatus("⏳ carregando...", "m-typing", "load");
+            setStatus("⏳ Verificando...", "m-typing", "load");
 
             tm=setTimeout(async()=>{
                 try{
@@ -143,12 +142,10 @@
                     const list=d.codigo||[];
                     const reg=list.find(x=>nm(String(x.CPF2||""))===val);
 
-                    // Unificação: Não localizado ou sem '#' no ID (sem acesso)
                     if(!reg || !String(reg.ID||"").includes("#")){
                         throw "CPF não localizado ou sem acesso";
                     }
 
-                    // Sucesso
                     sessionStorage.setItem("preData",JSON.stringify(d));
                     setStatus("✅ CPF encontrado", "m-ok", "ok", true);
                     
