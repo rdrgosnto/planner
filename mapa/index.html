@@ -45,7 +45,7 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
           S:B+"1d167b2351e14940acb006f964b87cef"+E+"V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"
       };
 
-// MAPEAMENTO DOS CURSOS
+// MAPEAMENTO COM CURSO UEE
 const cmap={AAL:"0046", ALI:"0046", QUI:"0046", UEE:"0046"};
 
 let sel=null, bl=[], us=[], cpf=null, cur="", lock=!1, anim;
@@ -76,45 +76,27 @@ const sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine"
 
 const ld=async()=>{
     const c=sessionStorage.getItem("cpf");
-    if(!c)return location.href="index.html"; 
+    if(!c)return location.href="../index.html"; 
     cpf=nm(c);
     an(30);
     try{
         let d;
         const pre = sessionStorage.getItem("preData");
-        if(pre){ 
-            d = JSON.parse(pre); 
-            sessionStorage.removeItem("preData"); 
-            an(70); 
-        } else {
+        if(pre){ d = JSON.parse(pre); sessionStorage.removeItem("preData"); an(70); }
+        else {
             const r = await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});
-            d = await r.json(); 
-            an(70);
+            d = await r.json(); an(70);
         }
 
         const s = d.codigo || d.cursos || [];
-        
-        // Busca estrita por CPF2
         const a = s.find(x => nm(x.CPF2) === cpf); 
         
-        if(!a) {
-            alert("CPF não localizado na coluna CPF2. Verifique sua planilha.");
-            return;
-        }
+        if(!a) throw new Error("CPF não localizado na coluna CPF2.");
 
         q("#p1-nome").textContent = fn(gf(a,"NOME") || "Passageiro");
         
-        // --- PROTEÇÃO CONTRA CAMPO VAZIO (PREVINE ERRO TOUPPERCASE) ---
         let rawCur = gf(a, "CODIGO", "Codigo");
-        
-        if(!rawCur) {
-            console.warn("Aviso: Campo CODIGO vazio para este CPF. Usando UEE por padrão.");
-            cur = "UEE";
-        } else {
-            cur = rawCur.toString().trim().toUpperCase();
-        }
-        // -------------------------------------------------------------
-
+        cur = rawCur ? rawCur.toString().trim().toUpperCase() : "UEE";
         q("#ctx").textContent = cur;
 
         const l = d.poltronas || d.lista || [];
@@ -127,15 +109,28 @@ const ld=async()=>{
         us = rows.filter(x => nm(x.CPF2) === cpf).map(x => gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean);
 
         const layoutAlvo = cmap[cur] || "0046";
-        const cfg = await fetch(`../configs/${layoutAlvo}.json`).then(r => r.json());
-        rd(cfg.layout);
+        
+        // Tenta carregar o JSON saindo da pasta 'mapa'
+        let urlJson = `../configs/${layoutAlvo}.json`;
+        
+        try {
+            const resCfg = await fetch(urlJson);
+            if(!resCfg.ok) throw new Error("Arquivo não achado");
+            const cfg = await resCfg.json();
+            rd(cfg.layout);
+        } catch(e) {
+            // Se falhou, tenta sem o '../' por segurança
+            const resCfg2 = await fetch(`configs/${layoutAlvo}.json`);
+            const cfg2 = await resCfg2.json();
+            rd(cfg2.layout);
+        }
 
         an(100);
         setTimeout(()=>{ if(q("#pbc")) q("#pbc").remove(); q("#w").style.display="flex" }, 400);
 
     } catch(err) {
         console.error(err);
-        alert("Erro ao carregar o mapa. Tente novamente.");
+        alert("Erro Crítico: " + err.message);
     }
 };
 
@@ -157,7 +152,7 @@ const pX=async()=>{
             el.classList.replace("selected","lt");
             setTimeout(()=>el.classList.replace("lt","white"), 4000); sel=null;
         }
-    }catch(e){alert("Erro ao salvar poltrona.")}finally{lock=!1; q("#btn").disabled=!1}
+    }catch(e){alert("Erro ao salvar.")}finally{lock=!1; q("#btn").disabled=!1}
 };
 
 q("#btn").onclick=pX;
