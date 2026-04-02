@@ -5,15 +5,33 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Planner - Login</title>
     <style>
-        *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
+        *{box-sizing:border-box}
+        body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
+        
+        /* Splash & Loader */
         #s{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#38BA54;color:#fff}
-        #s b{font-size:36px;margin-bottom:10px}#s i{width:120px;height:2px;background:rgba(255,255,255,.3);position:relative;overflow:hidden}
+        #s b{font-size:36px;margin-bottom:10px}
+        #s i{width:120px;height:2px;background:rgba(255,255,255,.3);position:relative;overflow:hidden}
         #s i:after{content:"";display:block;width:40px;height:100%;background:#fff;animation:l .9s infinite;position:absolute}
-        @keyframes l{from{left:-40px}to{left:120px}}.app{width:90%;max-width:300px;visibility:hidden}
-        label{font-size:16px;color:#333;margin:0 0 6px 2px;display:block}.row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc;padding:4px 0}
-        .row.err{border-color:#e53935}.row.ok{border-color:#38BA54}input{flex:1;border:0;padding:12px 2px;font-size:18px;outline:0;background:0}
-        button{width:70px;padding:6px 0;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:12px;font-weight:bold;cursor:not-allowed}
-        button.ready{background:#38BA54;color:#fff;border-color:#38BA54;cursor:pointer}.errmsg{font-size:13px;color:#e53935;margin-top:14px;display:none;background:#ffebee;padding:8px;border-radius:4px;line-height:1.4}
+        @keyframes l{from{left:-40px}to{left:120px}}
+
+        .app{width:90%;max-width:320px;visibility:hidden}
+        label{font-size:16px;color:#333;margin:0 0 6px 2px;display:block}
+        
+        .row{display:flex;align-items:center;gap:8px;border-bottom:2px solid #ccc;padding:4px 0;transition:.3s}
+        .row.load{border-color:#ffd600} .row.err{border-color:#e53935} .row.ok{border-color:#38BA54}
+        
+        input{flex:1;border:0;padding:12px 2px;font-size:18px;outline:0;background:0;width:100%}
+        
+        button{padding:5px 12px;border:1px solid #aaa;border-radius:15px;background:0;color:#aaa;font-size:12px;font-weight:700;cursor:not-allowed;white-space:nowrap;transition:.2s}
+        button.ready{background:#38BA54;color:#fff;border-color:#38BA54;cursor:pointer}
+
+        .status-msg{font-size:13px;margin-top:10px;display:none;padding:8px 10px;border-radius:4px;line-height:1.4}
+        .m-typing{background:#fff9c4;color:#745600;display:block;border:1px solid #fbc02d}
+        .m-err{background:#ffebee;color:#b71c1c;display:block;border:1px solid #ef9a9a;animation:sh .4s}
+        .m-ok{background:#e8f5e9;color:#1b5e20;display:block;border:1px solid #a5d6a7}
+
+        @keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
     </style>
 </head>
 <body>
@@ -24,12 +42,13 @@
             <input id="cpf" placeholder="CPF (somente números)" inputmode="numeric" maxlength="11">
             <button id="btn" disabled>ENTRAR</button>
         </div>
-        <div class="errmsg" id="e"></div>
+        <div id="msg" class="status-msg"></div>
     </div>
+
     <script>
         const q=s=>document.querySelector(s),
               nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
-              $c=q("#cpf"),$b=q("#btn"),$e=q("#e"),$r=q("#r");
+              $c=q("#cpf"),$b=q("#btn"),$m=q("#msg"),$r=q("#r");
 
         setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"},1600);
 
@@ -41,37 +60,41 @@
             })
         };
 
-        const reset=()=>{ $b.disabled=1;$b.className="";$r.className="row";$e.style.display="none" };
+        const set=(txt,cls,row,ok=0)=>{
+            if(!txt)return($m.style.display="none",$r.className="row");
+            $m.innerHTML=txt;$m.className="status-msg "+cls;$r.className="row "+row;
+            $b.disabled=!ok;$b.classList.toggle("ready",ok);
+        };
 
         let tm;
         $c.oninput=()=>{
             $c.value=$c.value.replace(/\D/g,"");
             if(tm)clearTimeout(tm);
-            reset();
-            if($c.value.length<11)return;
-            $c.blur();
-            const val=nm($c.value);
-            if(!vld(val)){$e.innerHTML="❌ CPF inválido";$e.style.display="block";$r.classList.add("err");return}
+            const v=$c.value;
+            if(!v.length)return set();
+            if(v.length<11)return set("✍️ Digitando...","m-typing","load");
 
+            $c.blur();
+            if(!vld(nm(v)))return set("❌ CPF inválido","m-err","err");
+
+            set("⏳ Verificando...","m-typing","load");
             tm=setTimeout(async()=>{
                 try{
                     const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
-                        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:val})
+                        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:nm(v)})
                     });
-                    const d=await r.json();
-                    const list=d.codigo||[];
-                    const reg=list.find(x=>nm(String(x.CPF2||""))===val);
-
-                    if(!reg)throw "CPF não localizado";
-                    if(!String(reg.ID||"").includes("#"))throw "CPF não autorizado";
-
+                    const d=await r.json(),
+                          reg=(d.codigo||[]).find(x=>nm(String(x.CPF2||""))===nm(v));
+                    
+                    if(!reg||!String(reg.ID||"").includes("#"))throw "CPF não localizado ou sem acesso";
+                    
                     sessionStorage.setItem("preData",JSON.stringify(d));
-                    $b.disabled=0;$b.classList.add("ready");$r.classList.add("ok");
-                }catch(m){$e.innerHTML="<b>Erro:</b><br>"+m;$e.style.display="block";$r.classList.add("err")}
+                    set("✅ CPF encontrado","m-ok","ok",1);
+                }catch(e){set("❌ "+e,"m-err","err")}
             },400);
         };
 
-        $b.onclick=()=>{if(!$b.disabled){sessionStorage.setItem("cpf",nm($c.value));location.href="mapa/index.html"}};
+        $b.onclick=()=>!$b.disabled&&(sessionStorage.setItem("cpf",nm($c.value)),location.href="mapa/index.html");
     </script>
 </body>
 </html>
