@@ -5,73 +5,37 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Planner - Login</title>
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #fff; }
+        *{box-sizing:border-box}
+        body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
         
-        /* Splash Screen */
-        #s { position: fixed; inset: 0; z-index: 9; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #38BA54; color: #fff; }
-        #s b { font-size: 36px; margin-bottom: 10px; }
-        #s i { width: 120px; height: 2px; background: rgba(255,255,255,.3); position: relative; overflow: hidden; }
-        #s i:after { content: ""; display: block; width: 40px; height: 100%; background: #fff; animation: l .9s infinite; position: absolute; }
-        @keyframes l { from { left: -40px; } to { left: 120px; } }
+        /* Splash & Loader */
+        #s{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#38BA54;color:#fff}
+        #s b{font-size:36px;margin-bottom:10px}
+        #s i{width:120px;height:2px;background:rgba(255,255,255,.3);position:relative;overflow:hidden}
+        #s i:after{content:"";display:block;width:40px;height:100%;background:#fff;animation:l .9s infinite;position:absolute}
+        @keyframes l{from{left:-40px}to{left:120px}}
 
-        /* Container */
-        .app { width: 90%; max-width: 320px; visibility: hidden; }
-        label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block; }
-
-        /* Linha de Input */
-        .row { display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #ccc; padding: 4px 0; transition: border-color 0.3s; }
-        .row.load { border-color: #ffd600; } 
-        .row.err { border-color: #e53935; }  
-        .row.ok { border-color: #38BA54; }   
-
-        input { flex: 1; border: 0; padding: 12px 2px; font-size: 18px; outline: 0; background: 0; width: 100%; }
-
-        /* Botão Ajustado */
-        button { 
-            padding: 5px 12px; 
-            border: 1px solid #aaa; 
-            border-radius: 15px; 
-            background: 0; 
-            color: #aaa; 
-            font-size: 12px; 
-            font-weight: bold; 
-            cursor: not-allowed; 
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-        button.ready { background: #38BA54; color: #fff; border-color: #38BA54; cursor: pointer; }
-
-        /* Mensagens de Status (Ajustadas para peso normal) */
-        .status-msg { 
-            font-size: 13px; 
-            margin-top: 10px; 
-            display: none; 
-            padding: 8px 10px; 
-            border-radius: 4px; 
-            font-weight: normal; /* Removido o negrito aqui */
-            line-height: 1.4;
-        }
-
-        /* Amarelo: Digitando / Verificando */
-        .m-typing { background: #fff9c4; color: #745600; display: block; border: 1px solid #fbc02d; }
+        .app{width:90%;max-width:320px;visibility:hidden}
+        label{font-size:16px;color:#333;margin:0 0 6px 2px;display:block}
         
-        /* Vermelho: Erro */
-        .m-err { background: #ffebee; color: #b71c1c; display: block; border: 1px solid #ef9a9a; animation: shake 0.4s; }
+        .row{display:flex;align-items:center;gap:8px;border-bottom:2px solid #ccc;padding:4px 0;transition:.3s}
+        .row.load{border-color:#ffd600} .row.err{border-color:#e53935} .row.ok{border-color:#38BA54}
         
-        /* Verde: Sucesso */
-        .m-ok { background: #e8f5e9; color: #1b5e20; display: block; border: 1px solid #a5d6a7; }
+        input{flex:1;border:0;padding:12px 2px;font-size:18px;outline:0;background:0;width:100%}
+        
+        button{padding:5px 12px;border:1px solid #aaa;border-radius:15px;background:0;color:#aaa;font-size:12px;font-weight:700;cursor:not-allowed;white-space:nowrap;transition:.2s}
+        button.ready{background:#38BA54;color:#fff;border-color:#38BA54;cursor:pointer}
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-4px); }
-            75% { transform: translateX(4px); }
-        }
+        .status-msg{font-size:13px;margin-top:10px;display:none;padding:8px 10px;border-radius:4px;line-height:1.4}
+        .m-typing{background:#fff9c4;color:#745600;display:block;border:1px solid #fbc02d}
+        .m-err{background:#ffebee;color:#b71c1c;display:block;border:1px solid #ef9a9a;animation:sh .4s}
+        .m-ok{background:#e8f5e9;color:#1b5e20;display:block;border:1px solid #a5d6a7}
+
+        @keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
     </style>
 </head>
 <body>
     <div id="s"><b>Planner</b><i></i></div>
-    
     <div class="app">
         <label>CPF</label>
         <div class="row" id="r">
@@ -86,7 +50,7 @@
               nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
               $c=q("#cpf"),$b=q("#btn"),$m=q("#msg"),$r=q("#r");
 
-        setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"}, 1600);
+        setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"},1600);
 
         const vld=c=>{
             if(!c||/^(\d)\1+$/.test(c))return 0;
@@ -96,71 +60,41 @@
             })
         };
 
-        const setStatus=(txt, cls, rowCls, btnReady=false)=>{
-            if(!txt) { $m.style.display="none"; $r.className="row"; return; }
-            $m.innerHTML=txt;
-            $m.className="status-msg "+cls;
-            $r.className="row "+rowCls;
-            if(btnReady){ $b.disabled=0; $b.classList.add("ready"); } 
-            else { $b.disabled=1; $b.classList.remove("ready"); }
+        const set=(txt,cls,row,ok=0)=>{
+            if(!txt)return($m.style.display="none",$r.className="row");
+            $m.innerHTML=txt;$m.className="status-msg "+cls;$r.className="row "+row;
+            $b.disabled=!ok;$b.classList.toggle("ready",ok);
         };
 
         let tm;
         $c.oninput=()=>{
             $c.value=$c.value.replace(/\D/g,"");
             if(tm)clearTimeout(tm);
-            
-            const len = $c.value.length;
-
-            if(len === 0){
-                setStatus(null);
-                return;
-            }
-
-            if(len < 11){
-                setStatus("✍️ Digitando...", "m-typing", "load");
-                return;
-            }
+            const v=$c.value;
+            if(!v.length)return set();
+            if(v.length<11)return set("✍️ Digitando...","m-typing","load");
 
             $c.blur();
-            const val = nm($c.value);
+            if(!vld(nm(v)))return set("❌ CPF inválido","m-err","err");
 
-            if(!vld(val)){
-                setStatus("❌ CPF inválido", "m-err", "err");
-                return;
-            }
-
-            setStatus("⏳ Verificando...", "m-typing", "load");
-
+            set("⏳ Verificando...","m-typing","load");
             tm=setTimeout(async()=>{
                 try{
                     const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
-                        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:val})
+                        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:nm(v)})
                     });
+                    const d=await r.json(),
+                          reg=(d.codigo||[]).find(x=>nm(String(x.CPF2||""))===nm(v));
                     
-                    const d=await r.json();
-                    const list=d.codigo||[];
-                    const reg=list.find(x=>nm(String(x.CPF2||""))===val);
-
-                    if(!reg || !String(reg.ID||"").includes("#")){
-                        throw "CPF não localizado ou sem acesso";
-                    }
-
+                    if(!reg||!String(reg.ID||"").includes("#"))throw "CPF não localizado ou sem acesso";
+                    
                     sessionStorage.setItem("preData",JSON.stringify(d));
-                    setStatus("✅ CPF encontrado", "m-ok", "ok", true);
-                    
-                }catch(m){
-                    setStatus("❌ "+m, "m-err", "err");
-                }
-            }, 400);
+                    set("✅ CPF encontrado","m-ok","ok",1);
+                }catch(e){set("❌ "+e,"m-err","err")}
+            },400);
         };
 
-        $b.onclick=()=>{
-            if(!$b.disabled){
-                sessionStorage.setItem("cpf",nm($c.value));
-                location.href="mapa/index.html";
-            }
-        };
+        $b.onclick=()=>!$b.disabled&&(sessionStorage.setItem("cpf",nm($c.value)),location.href="mapa/index.html");
     </script>
 </body>
 </html>
