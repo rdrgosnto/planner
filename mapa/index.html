@@ -120,12 +120,12 @@ const ld=async()=>{
 
 q("#btn").onclick=async()=>{
     if(lock||!sel)return !sel&&alert("Selecione uma poltrona");
-    const old=us[0]||null;if(!confirm(old?"Trocar poltrona?":"Confirmar poltrona?"))return;
+    const old=us[0]||null;if(!confirm(old?"Confirma troca de poltrona?":"Confirma seleção da poltrona?"))return;
     lock=!0;q("#btn").disabled=!0;const n=sel.dataset.s;
     try{
         const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
-        if(r.ok){alert("Sucesso!");location.reload()}else alert("Poltrona ocupada");
+        if(r.ok){alert("Poltrona selecionada com sucesso");location.reload()}else alert("Ocupada");
     }catch(e){alert("Erro ao salvar")}finally{lock=!1;q("#btn").disabled=!1}
 };
 ld();
