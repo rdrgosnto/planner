@@ -42,24 +42,24 @@
         }
         button.ready { background: #38BA54; color: #fff; border-color: #38BA54; cursor: pointer; }
 
-        /* Mensagens de Status (Cores Refinadas) */
+        /* Mensagens de Status (Ajustadas para peso normal) */
         .status-msg { 
             font-size: 13px; 
             margin-top: 10px; 
             display: none; 
             padding: 8px 10px; 
             border-radius: 4px; 
-            font-weight: bold;
+            font-weight: normal; /* Removido o negrito aqui */
             line-height: 1.4;
         }
 
-        /* Amarelo: Fundo claro, Texto e Borda escuros */
-        .m-typing { background: #fff9c4; color: #856404; display: block; border: 1px solid #fbc02d; }
+        /* Amarelo: Digitando / Verificando */
+        .m-typing { background: #fff9c4; color: #745600; display: block; border: 1px solid #fbc02d; }
         
-        /* Vermelho: Fundo claro, Texto e Borda escuros */
+        /* Vermelho: Erro */
         .m-err { background: #ffebee; color: #b71c1c; display: block; border: 1px solid #ef9a9a; animation: shake 0.4s; }
         
-        /* Verde: Fundo claro, Texto e Borda escuros */
+        /* Verde: Sucesso */
         .m-ok { background: #e8f5e9; color: #1b5e20; display: block; border: 1px solid #a5d6a7; }
 
         @keyframes shake {
