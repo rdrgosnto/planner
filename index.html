@@ -8,28 +8,26 @@
         * { box-sizing: border-box; }
         body { margin: 0; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #fff; }
         
-        /* Tela de Carregamento Inicial (Splash) */
+        /* Splash Screen */
         #s { position: fixed; inset: 0; z-index: 9; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #38BA54; color: #fff; }
         #s b { font-size: 36px; margin-bottom: 10px; }
         #s i { width: 120px; height: 2px; background: rgba(255,255,255,.3); position: relative; overflow: hidden; }
         #s i:after { content: ""; display: block; width: 40px; height: 100%; background: #fff; animation: l .9s infinite; position: absolute; }
         @keyframes l { from { left: -40px; } to { left: 120px; } }
 
-        /* Container Principal */
+        /* Container */
         .app { width: 90%; max-width: 320px; visibility: hidden; }
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block; }
 
-        /* Linha de Input e Botão */
-        .row { display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #ccc; padding: 4px 0; transition: border-color 0.3s ease; }
-        
-        /* Estados da Linha */
-        .row.load { border-color: #ffd600; } /* Amarelo */
-        .row.err { border-color: #e53935; }  /* Vermelho */
-        .row.ok { border-color: #38BA54; }   /* Verde */
+        /* Linha de Input */
+        .row { display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #ccc; padding: 4px 0; transition: border-color 0.3s; }
+        .row.load { border-color: #ffd600; } 
+        .row.err { border-color: #e53935; }  
+        .row.ok { border-color: #38BA54; }   
 
         input { flex: 1; border: 0; padding: 12px 2px; font-size: 18px; outline: 0; background: 0; width: 100%; }
 
-        /* Botão "Entrar" - Ajustado para ser justo ao texto */
+        /* Botão Ajustado (Justo ao texto) */
         button { 
             padding: 5px 12px; 
             border: 1px solid #aaa; 
@@ -40,26 +38,23 @@
             font-weight: bold; 
             cursor: not-allowed; 
             white-space: nowrap;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
-
         button.ready { background: #38BA54; color: #fff; border-color: #38BA54; cursor: pointer; }
 
-        /* Caixas de Mensagem (Erro e Carregamento) */
-        .errmsg { 
+        /* Mensagens de Status */
+        .status-msg { 
             font-size: 13px; 
-            margin-top: 14px; 
+            margin-top: 10px; 
             display: none; 
-            padding: 10px; 
+            padding: 8px 10px; 
             border-radius: 4px; 
-            line-height: 1.4; 
+            font-weight: 500;
+            line-height: 1.4;
         }
-        
-        /* Mensagem Amarela (Carregando) */
-        .msg-load { background: #fff9c4; color: #856404; border: 1px solid #ffecb3; display: block; }
-        
-        /* Mensagem Vermelha (Erro) */
-        .msg-err { background: #ffebee; color: #e53935; border: 1px solid #ffcdd2; display: block; animation: shake 0.4s; }
+        .m-typing { background: #fff9c4; color: #856404; display: block; border: 1px solid #fff59d; }
+        .m-err { background: #ffebee; color: #e53935; display: block; border: 1px solid #ffcdd2; animation: shake 0.4s; }
+        .m-ok { background: #e8f5e9; color: #2e7d32; display: block; border: 1px solid #c8e6c9; }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -77,18 +72,18 @@
             <input id="cpf" placeholder="CPF (somente números)" inputmode="numeric" maxlength="11">
             <button id="btn" disabled>ENTRAR</button>
         </div>
-        <div class="errmsg" id="e"></div>
+        <div id="msg" class="status-msg"></div>
     </div>
 
     <script>
         const q=s=>document.querySelector(s),
               nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
-              $c=q("#cpf"),$b=q("#btn"),$e=q("#e"),$r=q("#r");
+              $c=q("#cpf"),$b=q("#btn"),$m=q("#msg"),$r=q("#r");
 
-        // Remove splash inicial
+        // Splash screen timeout
         setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"}, 1600);
 
-        // Validação Matemática de CPF
+        // Validação CPF
         const vld=c=>{
             if(!c||/^(\d)\1+$/.test(c))return 0;
             return [9,10].every(t=>{
@@ -97,43 +92,49 @@
             })
         };
 
-        // Reset de interface
-        const reset=()=>{ 
-            $b.disabled=1;
-            $b.classList.remove("ready");
-            $r.className="row";
-            $e.style.display="none";
-            $e.className="errmsg";
+        // Função para atualizar interface
+        const setStatus=(txt, cls, rowCls, btnReady=false)=>{
+            if(!txt) { $m.style.display="none"; $r.className="row"; return; }
+            $m.innerHTML=txt;
+            $m.className="status-msg "+cls;
+            $r.className="row "+rowCls;
+            if(btnReady){ $b.disabled=0; $b.classList.add("ready"); } 
+            else { $b.disabled=1; $b.classList.remove("ready"); }
         };
 
         let tm;
         $c.oninput=()=>{
+            // Limpa caracteres não numéricos
             $c.value=$c.value.replace(/\D/g,"");
             if(tm)clearTimeout(tm);
-            reset();
+            
+            const len = $c.value.length;
 
-            if($c.value.length < 11) return;
-
-            // "Agressividade": Perda de foco imediata
-            $c.blur(); 
-            const val = nm($c.value);
-
-            // Validação local rápida
-            if(!vld(val)){
-                $e.innerHTML="❌ CPF inválido";
-                $e.className="errmsg msg-err";
-                $r.classList.add("err");
+            if(len === 0){
+                setStatus(null);
                 return;
             }
 
-            // Início da validação via API
+            if(len < 11){
+                setStatus("✍️ digitando...", "m-typing", "load");
+                return;
+            }
+
+            // Agressividade: Perda de foco ao atingir 11 dígitos
+            $c.blur();
+            const val = nm($c.value);
+
+            // Validação local
+            if(!vld(val)){
+                setStatus("❌ CPF inválido", "m-err", "err");
+                return;
+            }
+
+            // Início da busca
+            setStatus("⏳ carregando...", "m-typing", "load");
+
             tm=setTimeout(async()=>{
                 try{
-                    // Estado Carregando (Amarelo)
-                    $r.className="row load";
-                    $e.innerHTML="⏳ Verificando dados...";
-                    $e.className="errmsg msg-load";
-
                     const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
                         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:val})
                     });
@@ -142,26 +143,21 @@
                     const list=d.codigo||[];
                     const reg=list.find(x=>nm(String(x.CPF2||""))===val);
 
-                    if(!reg) throw "CPF não localizado";
-                    if(!String(reg.ID||"").includes("#")) throw "CPF não autorizado";
+                    // Unificação: Não localizado ou sem '#' no ID (sem acesso)
+                    if(!reg || !String(reg.ID||"").includes("#")){
+                        throw "CPF não localizado ou sem acesso";
+                    }
 
-                    // Sucesso (Verde)
+                    // Sucesso
                     sessionStorage.setItem("preData",JSON.stringify(d));
-                    $e.style.display="none";
-                    $b.disabled=0;
-                    $b.classList.add("ready");
-                    $r.className="row ok";
+                    setStatus("✅ CPF encontrado", "m-ok", "ok", true);
                     
                 }catch(m){
-                    // Erro (Vermelho Claro)
-                    $e.innerHTML="<b>Atenção:</b><br>"+m;
-                    $e.className="errmsg msg-err";
-                    $r.className="row err";
+                    setStatus("❌ "+m, "m-err", "err");
                 }
             }, 400);
         };
 
-        // Ação do Botão
         $b.onclick=()=>{
             if(!$b.disabled){
                 sessionStorage.setItem("cpf",nm($c.value));
