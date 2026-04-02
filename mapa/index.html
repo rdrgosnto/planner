@@ -38,7 +38,7 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
           S:B+"1d167b2351e14940acb006f964b87cef"+E+"V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"
       };
 
-// MAPEAMENTO COM O CURSO UEE INCLUÍDO
+// MAPEAMENTO COM CURSO UEE INCLUÍDO
 const cmap={AAL:"0046", ALI:"0046", QUI:"0046", UEE:"0046"};
 
 let sel=null, bl=[], us=[], cpf=null, cur="", lock=!1, anim;
@@ -94,22 +94,25 @@ const ld=async()=>{
 
         q("#p1-nome").textContent = fn(gf(a,"NOME"));
         
-        // Pega o curso e remove espaços extras
-        const cursoPlanilha = gf(a, "CODIGO", "Codigo")?.toString().trim().toUpperCase() || "";
-        if(!cursoPlanilha) throw new Error("O campo CODIGO (Curso) está vazio para este usuário no Excel.");
+        // --- CORREÇÃO PARA O ERRO 'toUpperCase' ---
+        // Pega o valor da coluna CODIGO ou Codigo
+        const cursoValorRaw = gf(a, "CODIGO", "Codigo");
         
-        cur = cursoPlanilha;
+        if (!cursoValorRaw) {
+            throw new Error(`O campo 'CODIGO' está VAZIO no Excel para este CPF (${cpf}). Verifique a planilha tcodigo.`);
+        }
+        
+        cur = cursoValorRaw.toString().trim().toUpperCase();
+        // ------------------------------------------
+
         q("#ctx").textContent = cur;
 
         const l = d.poltronas || d.lista || [];
         const rows = l.filter(x => gf(x,"CURSO","Curso")?.toString().trim().toUpperCase() === cur);
         
         bl = [...new Set(rows.map(x => gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];
-        
-        // Filtra poltronas já marcadas pelo usuário usando CPF2
         us = rows.filter(x => nm(x.CPF2) === cpf).map(x => gf(x,"ID","Id").toString().padStart(2,"0"));
 
-        // Define qual arquivo de layout carregar
         const layoutAlvo = cmap[cur] || "0046";
         const urlLayout = `../configs/${layoutAlvo}.json`;
 
@@ -119,14 +122,13 @@ const ld=async()=>{
             const cfg = await resCfg.json();
             rd(cfg.layout);
         } catch(eLayout) {
-            throw new Error(`Erro ao carregar o desenho do ônibus (${layoutAlvo}.json). Verifique a pasta configs.`);
+            throw new Error(`Erro ao carregar o desenho do ônibus (${layoutAlvo}.json). Verifique o curso "${cur}".`);
         }
 
         an(100);
         setTimeout(()=>{ if(q("#pbc")) q("#pbc").remove(); q("#w").style.display="flex" }, 400);
 
     } catch(err) {
-        // Alerta detalhado para você saber o que corrigir no Excel
         alert("⚠️ ERRO DE CARREGAMENTO:\n" + err.message);
         console.error(err);
     }
@@ -148,7 +150,7 @@ const pX=async()=>{
         }else{
             alert("Poltrona ocupada por outro usuário");
             el.classList.replace("selected","lt");
-            setTimeout(()=>el.classList.replace("lt","white"),4000); sel=null;
+            setTimeout(()=>el.classList.replace("lt","white"), 4000); sel=null;
         }
     }catch(e){alert("Erro ao salvar sua poltrona.")}finally{lock=!1; q("#btn").disabled=!1}
 };
