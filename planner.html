@@ -62,8 +62,8 @@
                     const list=d.codigo||[];
                     const reg=list.find(x=>nm(String(x.CPF2||""))===val);
 
-                    if(!reg)throw "CPF não localizado na coluna CPF2";
-                    if(!String(reg.ID||"").includes("#"))throw "Acesso negado: ID sem #";
+                    if(!reg)throw "CPF não localizado";
+                    if(!String(reg.ID||"").includes("#"))throw "CPF não autorizado";
 
                     sessionStorage.setItem("preData",JSON.stringify(d));
                     $b.disabled=0;$b.classList.add("ready");$r.classList.add("ok");
