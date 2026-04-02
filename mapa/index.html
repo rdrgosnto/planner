@@ -38,7 +38,7 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
           S:B+"1d167b2351e14940acb006f964b87cef"+E+"V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"
       };
 
-// MAPEAMENTO ATUALIZADO COM UEE
+// MAPEAMENTO COM O CURSO UEE INCLUÍDO
 const cmap={AAL:"0046", ALI:"0046", QUI:"0046", UEE:"0046"};
 
 let sel=null, bl=[], us=[], cpf=null, cur="", lock=!1, anim;
@@ -73,37 +73,63 @@ const ld=async()=>{
     an(30);
     try{
         let d;
-        const pre=sessionStorage.getItem("preData");
-        if(pre){ d=JSON.parse(pre); sessionStorage.removeItem("preData"); an(70); }
-        else{
-            const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});
-            d=await r.json(); an(70);
+        const pre = sessionStorage.getItem("preData");
+        if(pre){ 
+            d = JSON.parse(pre); 
+            sessionStorage.removeItem("preData"); 
+            an(70); 
+        } else {
+            const r = await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});
+            if(!r.ok) throw new Error("Falha na conexão com o servidor de dados.");
+            d = await r.json(); 
+            an(70);
         }
 
-        const s=d.codigo||d.cursos||[];
+        const s = d.codigo || d.cursos || [];
         
-        // --- ALTERAÇÃO RIGOROSA: APENAS CPF2 ---
-        const a=s.find(x=>nm(x.CPF2)===cpf); 
+        // BUSCA ESTREITA SOMENTE NA COLUNA CPF2
+        const a = s.find(x => nm(x.CPF2) === cpf); 
         
-        if(!a) return alert("CPF não localizado na coluna CPF2 da tabela.");
+        if(!a) throw new Error(`O CPF ${cpf} não foi encontrado na coluna CPF2 da tabela.`);
 
-        q("#p1-nome").textContent=fn(gf(a,"NOME"));
-        cur=gf(a,"CODIGO","Codigo")?.toString().trim().toUpperCase() || "";
-        q("#ctx").textContent=cur;
-
-        const l=d.poltronas||d.lista||[];
-        const rows=l.filter(x=>gf(x,"CURSO","Curso")?.toString().trim().toUpperCase()===cur);
+        q("#p1-nome").textContent = fn(gf(a,"NOME"));
         
-        bl=[...new Set(rows.map(x=>gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];
+        // Pega o curso e remove espaços extras
+        const cursoPlanilha = gf(a, "CODIGO", "Codigo")?.toString().trim().toUpperCase() || "";
+        if(!cursoPlanilha) throw new Error("O campo CODIGO (Curso) está vazio para este usuário no Excel.");
         
-        // BUSCA RIGOROSA NAS POLTRONAS TAMBÉM (CPF2)
-        us=rows.filter(x=>nm(x.CPF2)===cpf).map(x=>gf(x,"ID","Id").toString().padStart(2,"0"));
+        cur = cursoPlanilha;
+        q("#ctx").textContent = cur;
 
-        const cfg=await fetch(`../configs/${cmap[cur]||"0046"}.json`).then(r=>r.json());
-        rd(cfg.layout);
+        const l = d.poltronas || d.lista || [];
+        const rows = l.filter(x => gf(x,"CURSO","Curso")?.toString().trim().toUpperCase() === cur);
+        
+        bl = [...new Set(rows.map(x => gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];
+        
+        // Filtra poltronas já marcadas pelo usuário usando CPF2
+        us = rows.filter(x => nm(x.CPF2) === cpf).map(x => gf(x,"ID","Id").toString().padStart(2,"0"));
+
+        // Define qual arquivo de layout carregar
+        const layoutAlvo = cmap[cur] || "0046";
+        const urlLayout = `../configs/${layoutAlvo}.json`;
+
+        try {
+            const resCfg = await fetch(urlLayout);
+            if(!resCfg.ok) throw new Error(`Arquivo de layout ${urlLayout} não encontrado.`);
+            const cfg = await resCfg.json();
+            rd(cfg.layout);
+        } catch(eLayout) {
+            throw new Error(`Erro ao carregar o desenho do ônibus (${layoutAlvo}.json). Verifique a pasta configs.`);
+        }
+
         an(100);
-        setTimeout(()=>{q("#pbc").remove(); q("#w").style.display="flex"},400);
-    }catch(e){alert("Erro ao carregar o mapa. Verifique a conexão.")}
+        setTimeout(()=>{ if(q("#pbc")) q("#pbc").remove(); q("#w").style.display="flex" }, 400);
+
+    } catch(err) {
+        // Alerta detalhado para você saber o que corrigir no Excel
+        alert("⚠️ ERRO DE CARREGAMENTO:\n" + err.message);
+        console.error(err);
+    }
 };
 
 const pX=async()=>{
@@ -124,7 +150,7 @@ const pX=async()=>{
             el.classList.replace("selected","lt");
             setTimeout(()=>el.classList.replace("lt","white"),4000); sel=null;
         }
-    }catch(e){alert("Erro ao salvar seleção.")}finally{lock=!1; q("#btn").disabled=!1}
+    }catch(e){alert("Erro ao salvar sua poltrona.")}finally{lock=!1; q("#btn").disabled=!1}
 };
 
 q("#btn").onclick=pX;
