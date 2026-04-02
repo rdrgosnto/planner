@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Planner - Login</title>
+    <style>
+        *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
+        #s{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#38BA54;color:#fff}
+        #s b{font-size:36px;margin-bottom:10px}#s i{width:120px;height:2px;background:rgba(255,255,255,.3);position:relative;overflow:hidden}
+        #s i:after{content:"";display:block;width:40px;height:100%;background:#fff;animation:l .9s infinite;position:absolute}
+        @keyframes l{from{left:-40px}to{left:120px}}.app{width:90%;max-width:300px;visibility:hidden}
+        label{font-size:16px;color:#333;margin:0 0 6px 2px;display:block}.row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc;padding:4px 0}
+        .row.err{border-color:#e53935}.row.ok{border-color:#38BA54}input{flex:1;border:0;padding:12px 2px;font-size:18px;outline:0;background:0}
+        button{width:70px;padding:6px 0;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:12px;font-weight:bold;cursor:not-allowed}
+        button.ready{background:#38BA54;color:#fff;border-color:#38BA54;cursor:pointer}.errmsg{font-size:13px;color:#e53935;margin-top:14px;display:none;background:#ffebee;padding:8px;border-radius:4px;line-height:1.4}
+    </style>
+</head>
+<body>
+    <div id="s"><b>Planner</b><i></i></div>
+    <div class="app">
+        <label>CPF</label>
+        <div class="row" id="r">
+            <input id="cpf" placeholder="CPF (somente números)" inputmode="numeric" maxlength="11">
+            <button id="btn" disabled>ENTRAR</button>
+        </div>
+        <div class="errmsg" id="e"></div>
+    </div>
+    <script>
+        const q=s=>document.querySelector(s),
+              nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
+              $c=q("#cpf"),$b=q("#btn"),$e=q("#e"),$r=q("#r");
+
+        setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"},1600);
+
+        const vld=c=>{
+            if(!c||/^(\d)\1+$/.test(c))return 0;
+            return [9,10].every(t=>{
+                let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);
+                return ((s*10)%11)%10==c[t]
+            })
+        };
+
+        const reset=()=>{ $b.disabled=1;$b.className="";$r.className="row";$e.style.display="none" };
+
+        let tm;
+        $c.oninput=()=>{
+            $c.value=$c.value.replace(/\D/g,"");
+            if(tm)clearTimeout(tm);
+            reset();
+            if($c.value.length<11)return;
+            $c.blur();
+            const val=nm($c.value);
+            if(!vld(val)){$e.innerHTML="❌ CPF inválido";$e.style.display="block";$r.classList.add("err");return}
+
+            tm=setTimeout(async()=>{
+                try{
+                    const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
+                        method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:val})
+                    });
+                    const d=await r.json();
+                    const list=d.codigo||[];
+                    const reg=list.find(x=>nm(String(x.CPF2||""))===val);
+
+                    if(!reg)throw "CPF não localizado na coluna CPF2";
+                    if(!String(reg.ID||"").includes("#"))throw "Acesso negado: ID sem #";
+
+                    sessionStorage.setItem("preData",JSON.stringify(d));
+                    $b.disabled=0;$b.classList.add("ready");$r.classList.add("ok");
+                }catch(m){$e.innerHTML="<b>Erro:</b><br>"+m;$e.style.display="block";$r.classList.add("err")}
+            },400);
+        };
+
+        $b.onclick=()=>{if(!$b.disabled){sessionStorage.setItem("cpf",nm($c.value));location.href="mapa/index.html"}};
+    </script>
+</body>
+</html>
