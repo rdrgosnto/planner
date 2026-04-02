@@ -23,18 +23,35 @@
     <div id="w">
         <div class="map-outer">
             <div class="info-p"><span>Passageiro 1</span><div id="p1-n"></div></div>
-            <div class="bc"><div id="cbx"><div id="ctx"></div></div><button id="btn">CONFIRMAR</button></div>
+            <div class="bc">
+                <div id="cbx"><div id="ctx"></div></div>
+                <button id="btn">CONFIRMAR</button>
+            </div>
         </div>
     </div>
     <div id="pbc"><div id="pb"></div></div>
+
 <script>
-const q=s=>document.querySelector(s),nm=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"",
-gf=(o,n)=>{if(!o)return"";let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());return k?o[k].toString().trim():""},
-fn=s=>{if(!s)return"Passageiro";let p=s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w[0].toUpperCase()+w.slice(1));return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ')};
+const q=s=>document.querySelector(s),
+nm=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"",
+gf=(o,n)=>{
+    if(!o)return"";
+    let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
+    return k?o[k].toString().trim():"";
+},
+fn=s=>{
+    if(!s)return"Passageiro";
+    let p=s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w[0].toUpperCase()+w.slice(1));
+    return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ');
+};
 
 const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",
-E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
-U={G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",P:B+"478aac5453024f5cb3d3b26495d9b7e0"+E+"H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",S:B+"1d167b2351e14940acb006f964b87cef"+E+"V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"},
+      E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
+      U={
+          G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+          P:B+"478aac5453024f5cb3d3b26495d9b7e0"+E+"H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
+          S:B+"1d167b2351e14940acb006f964b87cef"+E+"V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"
+      },
 cmap={AAL:"0046",ALI:"0046",QUI:"0046",UEE:"0046"};
 
 let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an;
@@ -42,14 +59,25 @@ let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an;
 const bar=t=>{let b=q("#pb");clearInterval(an);let w=parseInt(b.style.width)||0;an=setInterval(()=>{w>=t?clearInterval(an):(w++,b.style.width=w+"%")},5)};
 
 const rd=l=>{
-    q(".g")?.remove();const g=document.createElement("div");g.className="g";
-    l?.forEach(r=>r.forEach(v=>{
-        const e=document.createElement("div");e.className=v===null?"e":"s";
-        if(v!==null){
-            const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}
-            if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e);
-        }g.appendChild(e)
-    }));q(".bc").appendChild(g)
+    q(".g")?.remove();
+    const g=document.createElement("div");g.className="g";
+    if(!l)return;
+    l.forEach(row=>{
+        row.forEach(v=>{
+            const e=document.createElement("div");
+            if(v===null) e.className="e";
+            else {
+                e.className="s";
+                const id=v.toString().padStart(2,"0");
+                if(v!=="white"){ e.textContent=id; e.dataset.s=id }
+                if(us.includes(id)) e.classList.add("mine");
+                else if(bl.includes(id)||v==="white") e.classList.add("white");
+                else e.onclick=()=>sl(e);
+            }
+            g.appendChild(e);
+        });
+    });
+    q(".bc").appendChild(g);
 };
 
 const sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")};
@@ -62,9 +90,12 @@ const ld=async()=>{
         if(pre){d=JSON.parse(pre);sessionStorage.removeItem("preData");bar(70)}
         else{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});d=await r.json();bar(70)}
         
-        const a=(d.codigo||[]).find(x=>nm(x.CPF2)===cpf);if(!a)throw "CPF não encontrado";
+        const codes=d.codigo||[];
+        const a=codes.find(x=>nm(x.CPF2)===cpf);if(!a)throw "CPF não encontrado";
+        
         q("#p1-n").textContent=fn(gf(a,"NOME"));
-        cur=gf(a,"CODIGO").toUpperCase()||"UEE";q("#ctx").textContent=cur;
+        cur=(gf(a,"CODIGO")||"UEE").toUpperCase();
+        q("#ctx").textContent=cur;
 
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
@@ -72,19 +103,29 @@ const ld=async()=>{
         us=rows.filter(x=>nm(x.CPF2)===cpf).map(x=>gf(x,"ID").padStart(2,"0"));
 
         const ly=cmap[cur]||"0046";
-        const cfg=await fetch(`../configs/${ly}.json`).then(r=>r.json()).catch(async()=>await fetch(`configs/${ly}.json`).then(r=>r.json()));
-        rd(cfg.layout);bar(100);setTimeout(()=>{q("#pbc").remove();q("#w").style.display="flex"},400);
-    }catch(e){alert("Erro: "+e)}
+        // Busca do JSON com fallback de caminho
+        let cfg;
+        try {
+            cfg = await fetch(`../configs/${ly}.json`).then(r=>r.json());
+        } catch(e) {
+            cfg = await fetch(`configs/${ly}.json`).then(r=>r.json());
+        }
+        
+        if(cfg && cfg.layout) rd(cfg.layout);
+        
+        bar(100);
+        setTimeout(()=>{q("#pbc").remove();q("#w").style.display="flex"},400);
+    }catch(e){console.error(e);alert("Erro: "+e)}
 };
 
 q("#btn").onclick=async()=>{
     if(lock||!sel)return !sel&&alert("Selecione uma poltrona");
-    const old=us[0]||null;if(!confirm(old?"Confirma troca de poltrona?":"Confirma seleção da poltrona?"))return;
+    const old=us[0]||null;if(!confirm(old?"Trocar poltrona?":"Confirmar poltrona?"))return;
     lock=!0;q("#btn").disabled=!0;const n=sel.dataset.s;
     try{
         const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
-        if(r.ok){alert(Poltrona selecionada");location.reload()}else alert("Poltrona ocupada");
+        if(r.ok){alert("Sucesso!");location.reload()}else alert("Poltrona ocupada");
     }catch(e){alert("Erro ao salvar")}finally{lock=!1;q("#btn").disabled=!1}
 };
 ld();
