@@ -8,7 +8,7 @@
         * { box-sizing: border-box; }
         body { margin: 0; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #fff; }
         
-        /* Splash Screen */
+        /* Tela de Carregamento Inicial (Splash) */
         #s { position: fixed; inset: 0; z-index: 9; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #38BA54; color: #fff; }
         #s b { font-size: 36px; margin-bottom: 10px; }
         #s i { width: 120px; height: 2px; background: rgba(255,255,255,.3); position: relative; overflow: hidden; }
@@ -20,55 +20,57 @@
         label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block; }
 
         /* Linha de Input e Botão */
-        .row { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #ccc; padding: 4px 0; transition: border-color 0.3s; }
-        .row.err { border-color: #e53935; }
-        .row.ok { border-color: #38BA54; }
+        .row { display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #ccc; padding: 4px 0; transition: border-color 0.3s ease; }
+        
+        /* Estados da Linha */
+        .row.load { border-color: #ffd600; } /* Amarelo */
+        .row.err { border-color: #e53935; }  /* Vermelho */
+        .row.ok { border-color: #38BA54; }   /* Verde */
 
         input { flex: 1; border: 0; padding: 12px 2px; font-size: 18px; outline: 0; background: 0; width: 100%; }
 
-        /* Botão Ajustado: Sem espremer o texto */
+        /* Botão "Entrar" - Ajustado para ser justo ao texto */
         button { 
-            min-width: 90px; 
-            padding: 10px 14px; 
+            padding: 5px 12px; 
             border: 1px solid #aaa; 
-            border-radius: 20px; 
+            border-radius: 15px; 
             background: 0; 
             color: #aaa; 
             font-size: 12px; 
             font-weight: bold; 
             cursor: not-allowed; 
-            transition: all 0.2s;
             white-space: nowrap;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            transition: all 0.2s ease;
         }
 
         button.ready { background: #38BA54; color: #fff; border-color: #38BA54; cursor: pointer; }
 
-        /* Caixa de Erro */
+        /* Caixas de Mensagem (Erro e Carregamento) */
         .errmsg { 
             font-size: 13px; 
-            color: #e53935; 
             margin-top: 14px; 
             display: none; 
-            background: #ffebee; 
             padding: 10px; 
             border-radius: 4px; 
             line-height: 1.4; 
-            border: 1px solid #ffcdd2;
-            animation: shake 0.4s; /* Efeito agressivo de tremor */
         }
+        
+        /* Mensagem Amarela (Carregando) */
+        .msg-load { background: #fff9c4; color: #856404; border: 1px solid #ffecb3; display: block; }
+        
+        /* Mensagem Vermelha (Erro) */
+        .msg-err { background: #ffebee; color: #e53935; border: 1px solid #ffcdd2; display: block; animation: shake 0.4s; }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
         }
     </style>
 </head>
 <body>
     <div id="s"><b>Planner</b><i></i></div>
+    
     <div class="app">
         <label>CPF</label>
         <div class="row" id="r">
@@ -83,8 +85,8 @@
               nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
               $c=q("#cpf"),$b=q("#btn"),$e=q("#e"),$r=q("#r");
 
-        // Simulação de carregamento
-        setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"},1600);
+        // Remove splash inicial
+        setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"}, 1600);
 
         // Validação Matemática de CPF
         const vld=c=>{
@@ -95,44 +97,42 @@
             })
         };
 
+        // Reset de interface
         const reset=()=>{ 
             $b.disabled=1;
             $b.classList.remove("ready");
             $r.className="row";
             $e.style.display="none";
+            $e.className="errmsg";
         };
 
         let tm;
         $c.oninput=()=>{
-            // Limpa o que não é número
             $c.value=$c.value.replace(/\D/g,"");
-            
             if(tm)clearTimeout(tm);
             reset();
 
-            // Só age se tiver 11 dígitos
-            if($c.value.length<11)return;
+            if($c.value.length < 11) return;
 
-            // "Agressividade": Tira o foco do campo na hora (fecha teclado mobile / trava input PC)
+            // "Agressividade": Perda de foco imediata
             $c.blur(); 
-            
-            const val=nm($c.value);
+            const val = nm($c.value);
 
-            // Validação local
+            // Validação local rápida
             if(!vld(val)){
-                $e.innerHTML="❌ CPF inválido. Verifique os números digitados.";
-                $e.style.display="block";
+                $e.innerHTML="❌ CPF inválido";
+                $e.className="errmsg msg-err";
                 $r.classList.add("err");
                 return;
             }
 
-            // Validação na API
+            // Início da validação via API
             tm=setTimeout(async()=>{
                 try{
-                    $e.innerHTML="⏳ carregando...";
-                    $e.style.display="block";
-                    $e.style.color="#666";
-                    $e.style.background="#f5f5f5";
+                    // Estado Carregando (Amarelo)
+                    $r.className="row load";
+                    $e.innerHTML="⏳ Verificando dados...";
+                    $e.className="errmsg msg-load";
 
                     const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
                         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:val})
@@ -142,26 +142,26 @@
                     const list=d.codigo||[];
                     const reg=list.find(x=>nm(String(x.CPF2||""))===val);
 
-                    if(!reg) throw "CPF não localizado.";
-                    if(!String(reg.ID||"").includes("#")) throw "CPF não autorizado.";
+                    if(!reg) throw "CPF não localizado";
+                    if(!String(reg.ID||"").includes("#")) throw "CPF não autorizado";
 
-                    // Sucesso
+                    // Sucesso (Verde)
                     sessionStorage.setItem("preData",JSON.stringify(d));
                     $e.style.display="none";
                     $b.disabled=0;
                     $b.classList.add("ready");
-                    $r.classList.add("ok");
+                    $r.className="row ok";
                     
                 }catch(m){
-                    $e.innerHTML="<b>Erro de Acesso:</b><br>"+m;
-                    $e.style.display="block";
-                    $e.style.color="#e53935";
-                    $e.style.background="#ffebee";
-                    $r.classList.add("err");
+                    // Erro (Vermelho Claro)
+                    $e.innerHTML="<b>Atenção:</b><br>"+m;
+                    $e.className="errmsg msg-err";
+                    $r.className="row err";
                 }
-            },400);
+            }, 400);
         };
 
+        // Ação do Botão
         $b.onclick=()=>{
             if(!$b.disabled){
                 sessionStorage.setItem("cpf",nm($c.value));
