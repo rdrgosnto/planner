@@ -27,8 +27,15 @@
 <script>
 const q=s=>document.querySelector(s),
       nm=c=>c?.toString().replace(/\D/g,"").padStart(11,"0")||"",
-      gf=(o,...n)=>{for(let x of n){let k=Object.keys(o||{}).find(z=>z.toLowerCase()===x.toLowerCase());if(k)return o[k]}return null},
-      fn=s=>{if(!s)return"";let p=s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w[0].toUpperCase()+w.slice(1));return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ')};
+      gf=(o,...n)=>{
+          if(!o) return null;
+          for(let x of n){
+              let k=Object.keys(o).find(z=>z.toLowerCase()===x.toLowerCase());
+              if(k && o[k] !== undefined && o[k] !== null) return o[k];
+          }
+          return null;
+      },
+      fn=s=>{if(!s)return"";let p=s.toString().toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w[0].toUpperCase()+w.slice(1));return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ')};
 
 const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",
       E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
@@ -38,7 +45,7 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
           S:B+"1d167b2351e14940acb006f964b87cef"+E+"V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"
       };
 
-// MAPEAMENTO COM CURSO UEE INCLUÍDO
+// MAPEAMENTO DOS CURSOS
 const cmap={AAL:"0046", ALI:"0046", QUI:"0046", UEE:"0046"};
 
 let sel=null, bl=[], us=[], cpf=null, cur="", lock=!1, anim;
@@ -48,6 +55,7 @@ const an=t=>{let b=q("#pb");clearInterval(anim);let w=parseInt(b.style.width)||0
 const rd=l=>{
     const c=q(".bc"), o=q(".g"); o?.remove();
     const g=document.createElement("div"); g.className="g";
+    if(!l) return;
     l.forEach(r=>r.forEach(v=>{
         const e=document.createElement("div");
         if(v===null)e.className="e";
@@ -80,57 +88,54 @@ const ld=async()=>{
             an(70); 
         } else {
             const r = await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});
-            if(!r.ok) throw new Error("Falha na conexão com o servidor de dados.");
             d = await r.json(); 
             an(70);
         }
 
         const s = d.codigo || d.cursos || [];
         
-        // BUSCA ESTREITA SOMENTE NA COLUNA CPF2
+        // Busca estrita por CPF2
         const a = s.find(x => nm(x.CPF2) === cpf); 
         
-        if(!a) throw new Error(`O CPF ${cpf} não foi encontrado na coluna CPF2 da tabela.`);
-
-        q("#p1-nome").textContent = fn(gf(a,"NOME"));
-        
-        // --- CORREÇÃO PARA O ERRO 'toUpperCase' ---
-        // Pega o valor da coluna CODIGO ou Codigo
-        const cursoValorRaw = gf(a, "CODIGO", "Codigo");
-        
-        if (!cursoValorRaw) {
-            throw new Error(`O campo 'CODIGO' está VAZIO no Excel para este CPF (${cpf}). Verifique a planilha tcodigo.`);
+        if(!a) {
+            alert("CPF não localizado na coluna CPF2. Verifique sua planilha.");
+            return;
         }
+
+        q("#p1-nome").textContent = fn(gf(a,"NOME") || "Passageiro");
         
-        cur = cursoValorRaw.toString().trim().toUpperCase();
-        // ------------------------------------------
+        // --- PROTEÇÃO CONTRA CAMPO VAZIO (PREVINE ERRO TOUPPERCASE) ---
+        let rawCur = gf(a, "CODIGO", "Codigo");
+        
+        if(!rawCur) {
+            console.warn("Aviso: Campo CODIGO vazio para este CPF. Usando UEE por padrão.");
+            cur = "UEE";
+        } else {
+            cur = rawCur.toString().trim().toUpperCase();
+        }
+        // -------------------------------------------------------------
 
         q("#ctx").textContent = cur;
 
         const l = d.poltronas || d.lista || [];
-        const rows = l.filter(x => gf(x,"CURSO","Curso")?.toString().trim().toUpperCase() === cur);
+        const rows = l.filter(x => {
+            let cRow = gf(x, "CURSO", "Curso");
+            return cRow ? cRow.toString().trim().toUpperCase() === cur : false;
+        });
         
         bl = [...new Set(rows.map(x => gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean))];
-        us = rows.filter(x => nm(x.CPF2) === cpf).map(x => gf(x,"ID","Id").toString().padStart(2,"0"));
+        us = rows.filter(x => nm(x.CPF2) === cpf).map(x => gf(x,"ID","Id")?.toString().padStart(2,"0")).filter(Boolean);
 
         const layoutAlvo = cmap[cur] || "0046";
-        const urlLayout = `../configs/${layoutAlvo}.json`;
-
-        try {
-            const resCfg = await fetch(urlLayout);
-            if(!resCfg.ok) throw new Error(`Arquivo de layout ${urlLayout} não encontrado.`);
-            const cfg = await resCfg.json();
-            rd(cfg.layout);
-        } catch(eLayout) {
-            throw new Error(`Erro ao carregar o desenho do ônibus (${layoutAlvo}.json). Verifique o curso "${cur}".`);
-        }
+        const cfg = await fetch(`../configs/${layoutAlvo}.json`).then(r => r.json());
+        rd(cfg.layout);
 
         an(100);
         setTimeout(()=>{ if(q("#pbc")) q("#pbc").remove(); q("#w").style.display="flex" }, 400);
 
     } catch(err) {
-        alert("⚠️ ERRO DE CARREGAMENTO:\n" + err.message);
         console.error(err);
+        alert("Erro ao carregar o mapa. Tente novamente.");
     }
 };
 
@@ -152,7 +157,7 @@ const pX=async()=>{
             el.classList.replace("selected","lt");
             setTimeout(()=>el.classList.replace("lt","white"), 4000); sel=null;
         }
-    }catch(e){alert("Erro ao salvar sua poltrona.")}finally{lock=!1; q("#btn").disabled=!1}
+    }catch(e){alert("Erro ao salvar poltrona.")}finally{lock=!1; q("#btn").disabled=!1}
 };
 
 q("#btn").onclick=pX;
