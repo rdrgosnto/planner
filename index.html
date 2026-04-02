@@ -5,15 +5,66 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Planner - Login</title>
     <style>
-        *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
-        #s{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#38BA54;color:#fff}
-        #s b{font-size:36px;margin-bottom:10px}#s i{width:120px;height:2px;background:rgba(255,255,255,.3);position:relative;overflow:hidden}
-        #s i:after{content:"";display:block;width:40px;height:100%;background:#fff;animation:l .9s infinite;position:absolute}
-        @keyframes l{from{left:-40px}to{left:120px}}.app{width:90%;max-width:300px;visibility:hidden}
-        label{font-size:16px;color:#333;margin:0 0 6px 2px;display:block}.row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #ccc;padding:4px 0}
-        .row.err{border-color:#e53935}.row.ok{border-color:#38BA54}input{flex:1;border:0;padding:12px 2px;font-size:18px;outline:0;background:0}
-        button{width:70px;padding:6px 0;border:1px solid #aaa;border-radius:20px;background:0;color:#aaa;font-size:12px;font-weight:bold;cursor:not-allowed}
-        button.ready{background:#38BA54;color:#fff;border-color:#38BA54;cursor:pointer}.errmsg{font-size:13px;color:#e53935;margin-top:14px;display:none;background:#ffebee;padding:8px;border-radius:4px;line-height:1.4}
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #fff; }
+        
+        /* Splash Screen */
+        #s { position: fixed; inset: 0; z-index: 9; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #38BA54; color: #fff; }
+        #s b { font-size: 36px; margin-bottom: 10px; }
+        #s i { width: 120px; height: 2px; background: rgba(255,255,255,.3); position: relative; overflow: hidden; }
+        #s i:after { content: ""; display: block; width: 40px; height: 100%; background: #fff; animation: l .9s infinite; position: absolute; }
+        @keyframes l { from { left: -40px; } to { left: 120px; } }
+
+        /* Container Principal */
+        .app { width: 90%; max-width: 320px; visibility: hidden; }
+        label { font-size: 16px; color: #333; margin: 0 0 6px 2px; display: block; }
+
+        /* Linha de Input e Botão */
+        .row { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #ccc; padding: 4px 0; transition: border-color 0.3s; }
+        .row.err { border-color: #e53935; }
+        .row.ok { border-color: #38BA54; }
+
+        input { flex: 1; border: 0; padding: 12px 2px; font-size: 18px; outline: 0; background: 0; width: 100%; }
+
+        /* Botão Ajustado: Sem espremer o texto */
+        button { 
+            min-width: 90px; 
+            padding: 10px 14px; 
+            border: 1px solid #aaa; 
+            border-radius: 20px; 
+            background: 0; 
+            color: #aaa; 
+            font-size: 12px; 
+            font-weight: bold; 
+            cursor: not-allowed; 
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button.ready { background: #38BA54; color: #fff; border-color: #38BA54; cursor: pointer; }
+
+        /* Caixa de Erro */
+        .errmsg { 
+            font-size: 13px; 
+            color: #e53935; 
+            margin-top: 14px; 
+            display: none; 
+            background: #ffebee; 
+            padding: 10px; 
+            border-radius: 4px; 
+            line-height: 1.4; 
+            border: 1px solid #ffcdd2;
+            animation: shake 0.4s; /* Efeito agressivo de tremor */
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
     </style>
 </head>
 <body>
@@ -26,13 +77,16 @@
         </div>
         <div class="errmsg" id="e"></div>
     </div>
+
     <script>
         const q=s=>document.querySelector(s),
               nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
               $c=q("#cpf"),$b=q("#btn"),$e=q("#e"),$r=q("#r");
 
+        // Simulação de carregamento
         setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"},1600);
 
+        // Validação Matemática de CPF
         const vld=c=>{
             if(!c||/^(\d)\1+$/.test(c))return 0;
             return [9,10].every(t=>{
@@ -41,37 +95,79 @@
             })
         };
 
-        const reset=()=>{ $b.disabled=1;$b.className="";$r.className="row";$e.style.display="none" };
+        const reset=()=>{ 
+            $b.disabled=1;
+            $b.classList.remove("ready");
+            $r.className="row";
+            $e.style.display="none";
+        };
 
         let tm;
         $c.oninput=()=>{
+            // Limpa o que não é número
             $c.value=$c.value.replace(/\D/g,"");
+            
             if(tm)clearTimeout(tm);
             reset();
-            if($c.value.length<11)return;
-            $c.blur();
-            const val=nm($c.value);
-            if(!vld(val)){$e.innerHTML="❌ CPF inválido";$e.style.display="block";$r.classList.add("err");return}
 
+            // Só age se tiver 11 dígitos
+            if($c.value.length<11)return;
+
+            // "Agressividade": Tira o foco do campo na hora (fecha teclado mobile / trava input PC)
+            $c.blur(); 
+            
+            const val=nm($c.value);
+
+            // Validação local
+            if(!vld(val)){
+                $e.innerHTML="❌ CPF inválido. Verifique os números digitados.";
+                $e.style.display="block";
+                $r.classList.add("err");
+                return;
+            }
+
+            // Validação na API
             tm=setTimeout(async()=>{
                 try{
+                    $e.innerHTML="⏳ carregando...";
+                    $e.style.display="block";
+                    $e.style.color="#666";
+                    $e.style.background="#f5f5f5";
+
                     const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
                         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:val})
                     });
+                    
                     const d=await r.json();
                     const list=d.codigo||[];
                     const reg=list.find(x=>nm(String(x.CPF2||""))===val);
 
-                    if(!reg)throw "CPF não localizado";
-                    if(!String(reg.ID||"").includes("#"))throw "CPF não autorizado";
+                    if(!reg) throw "CPF não localizado.";
+                    if(!String(reg.ID||"").includes("#")) throw "CPF não autorizado.";
 
+                    // Sucesso
                     sessionStorage.setItem("preData",JSON.stringify(d));
-                    $b.disabled=0;$b.classList.add("ready");$r.classList.add("ok");
-                }catch(m){$e.innerHTML="<b>Erro:</b><br>"+m;$e.style.display="block";$r.classList.add("err")}
+                    $e.style.display="none";
+                    $b.disabled=0;
+                    $b.classList.add("ready");
+                    $r.classList.add("ok");
+                    
+                }catch(m){
+                    $e.innerHTML="<b>Erro de Acesso:</b><br>"+m;
+                    $e.style.display="block";
+                    $e.style.color="#e53935";
+                    $e.style.background="#ffebee";
+                    $r.classList.add("err");
+                }
             },400);
         };
 
-        $b.onclick=()=>{if(!$b.disabled){sessionStorage.setItem("cpf",nm($c.value));location.href="mapa/index.html"}};
+        $b.onclick=()=>{
+            if(!$b.disabled){
+                sessionStorage.setItem("cpf",nm($c.value));
+                location.href="mapa/index.html";
+            }
+        };
     </script>
 </body>
 </html>
