@@ -12,6 +12,6 @@
     [ 29, 30, null, 32, 31 ],
     [ 33, 34, null, 36, 35 ],
     [ 37, 38, null, 40, 39 ],
-    [ 41, 42, null, "white", "white", "white" ]
+    [ 41, 42, "white", "white", "white" ]
   ]
 }
