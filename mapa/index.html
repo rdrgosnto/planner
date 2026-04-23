@@ -15,11 +15,29 @@
         .e{pointer-events:none}#btn{width:112px;height:54px;background:#38BA54;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
         #btn:disabled{opacity:.6;cursor:not-allowed}#cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#38BA54;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
         #ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}#pbc{position:fixed;bottom:0;width:100%;height:8px;background:#0001;z-index:2000}#pb{width:0;height:100%;background:#38BA54;transition:width .1s}
+        
+        /* Estilos da Tela de Feedback */
+        #fb {position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px;transition: opacity 0.3s}
+        #fb.s-ok {background:#38BA54;display:flex}
+        #fb.s-err {background:#e74c3c;display:flex}
+        #fb h1 {font-size:36px;margin:0}
+        #fb p {font-size:20px;margin:10px 0 30px}
+        .fb-num {font-size:90px;font-weight:800;border:5px solid #fff;padding:10px 40px;border-radius:20px}
+        .fb-close {margin-top:40px;padding:12px 30px;background:#fff;color:#333;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+
         @media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}#w{margin-top:94px;position:relative}.info-p{position:absolute;left:40px;top:0;width:auto}#p1-n{font-size:24px}.bc{margin:0 auto}}
     </style>
 </head>
 <body>
     <div id="h"><b>Planner</b></div>
+    
+    <div id="fb">
+        <h1 id="fb-t"></h1>
+        <p id="fb-m"></p>
+        <div id="fb-n" class="fb-num"></div>
+        <button class="fb-close" onclick="closeFb()">FECHAR (4s)</button>
+    </div>
+
     <div id="w">
         <div class="map-outer">
             <div class="info-p"><span>Passageiro 1</span><div id="p1-n"></div></div>
@@ -54,7 +72,29 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
       },
 cmap={AAL:"0046",ALI:"0046",QUI:"0046",UEE:"0042"};
 
-let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an;
+let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an,fbTimer;
+
+// Função para mostrar a tela de feedback
+const showFb = (type, title, msg, seat = "") => {
+    const el = q("#fb");
+    q("#fb-t").textContent = title;
+    q("#fb-m").textContent = msg;
+    const nEl = q("#fb-n");
+    if(seat) { nEl.textContent = seat; nEl.style.display = "block"; } 
+    else { nEl.style.display = "none"; }
+    
+    el.className = type === 'ok' ? 's-ok' : 's-err';
+    
+    // Fecha sozinho após 4 segundos
+    clearTimeout(fbTimer);
+    fbTimer = setTimeout(() => closeFb(), 4000);
+};
+
+// Função para fechar o feedback e atualizar o mapa
+const closeFb = () => {
+    q("#fb").className = "";
+    refreshData(false);
+};
 
 const bar=t=>{
     let b=q("#pb");
@@ -88,14 +128,11 @@ const rd=l=>{
 
 const sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")};
 
-// Nova função para atualizar dados sem recarregar a página
 const refreshData = async (isInitial = false) => {
     if(isInitial) bar(30);
     try {
         let d;
-        // Se for inicial, tenta pegar do sessionStorage, senão busca do servidor
         let pre = isInitial ? sessionStorage.getItem("preData") : null;
-        
         if(pre){
             d=JSON.parse(pre);
             sessionStorage.removeItem("preData");
@@ -117,10 +154,9 @@ const refreshData = async (isInitial = false) => {
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
         
-        // Atualiza estados globais
         bl=[...new Set(rows.map(x=>gf(x,"ID").padStart(2,"0")).filter(b=>b!=="00"))];
         us=rows.filter(x=>nm(x.CPF2)===cpf).map(x=>gf(x,"ID").padStart(2,"0"));
-        sel=null; // Limpa seleção após atualizar
+        sel=null;
 
         const ly=cmap[cur]||"0046";
         let cfg;
@@ -137,8 +173,7 @@ const refreshData = async (isInitial = false) => {
             setTimeout(()=>{ q("#pbc")?.remove(); q("#w").style.display="flex" }, 400);
         }
     } catch(e) {
-        console.error(e);
-        alert("Erro ao carregar dados: " + e);
+        showFb("err", "Erro", "Erro ao carregar dados: " + e);
     }
 };
 
@@ -150,7 +185,7 @@ const ld=async()=>{
 };
 
 q("#btn").onclick=async()=>{
-    if(lock||!sel) return !sel&&alert("Selecione uma poltrona");
+    if(lock||!sel) return !sel && showFb("err", "Atenção", "Selecione uma poltrona primeiro");
     const old=us[0]||null;
     if(!confirm(old?"Confirma troca de poltrona?":"Confirma seleção da poltrona?")) return;
     
@@ -163,15 +198,12 @@ q("#btn").onclick=async()=>{
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
         
         if(r.ok){
-            alert("Poltrona selecionada com sucesso");
-            // Em vez de location.reload(), chamamos o refreshData
-            await refreshData(false);
+            showFb("ok", "Poltrona Confirmada!", "Sua escolha foi salva.", n);
         } else {
-            alert("Esta poltrona já foi ocupada. Por favor, escolha outra.");
-            await refreshData(false);
+            showFb("err", "Poltrona Ocupada", "Infelizmente alguém acabou de escolher esta poltrona.");
         }
     } catch(e) {
-        alert("Erro ao salvar");
+        showFb("err", "Erro de Conexão", "Não foi possível salvar sua escolha.");
     } finally {
         lock=!1;
         q("#btn").disabled=!1;
