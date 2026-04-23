@@ -83,7 +83,7 @@ const showFb = (type, title, msg, seat = "") => {
     if(seat) { nEl.textContent = seat; nEl.style.display = "block"; } 
     else { nEl.style.display = "none"; }
     el.className = type === 'ok' ? 's-ok' : 's-err';
-    let count = 4;
+    let count = 5;
     tEl.textContent = `fechando em ${count}s...`;
     const timer = setInterval(() => {
         count--;
