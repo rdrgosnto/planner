@@ -16,14 +16,14 @@
         #btn:disabled{opacity:.6;cursor:not-allowed}#cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#38BA54;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
         #ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}#pbc{position:fixed;bottom:0;width:100%;height:8px;background:#0001;z-index:2000}#pb{width:0;height:100%;background:#38BA54;transition:width .1s}
         
-        /* Estilos da Tela de Feedback */
-        #fb {position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px;transition: opacity 0.3s}
+        /* Tela de Feedback Atualizada */
+        #fb {position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}
         #fb.s-ok {background:#38BA54;display:flex}
         #fb.s-err {background:#e74c3c;display:flex}
-        #fb h1 {font-size:36px;margin:0}
-        #fb p {font-size:20px;margin:10px 0 30px}
-        .fb-num {font-size:90px;font-weight:800;border:5px solid #fff;padding:10px 40px;border-radius:20px}
-        .fb-close {margin-top:40px;padding:12px 30px;background:#fff;color:#333;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+        #fb h1 {font-size:38px;margin:0;font-weight:800}
+        #fb p {font-size:22px;margin:15px 0 30px;opacity:0.9}
+        .fb-num {font-size:120px;font-weight:900;margin-bottom:20px} /* Removido contorno */
+        #fb-timer {position:absolute;bottom:40px;width:100%;font-size:20px;font-weight:600;letter-spacing:1px}
 
         @media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}#w{margin-top:94px;position:relative}.info-p{position:absolute;left:40px;top:0;width:auto}#p1-n{font-size:24px}.bc{margin:0 auto}}
     </style>
@@ -35,7 +35,7 @@
         <h1 id="fb-t"></h1>
         <p id="fb-m"></p>
         <div id="fb-n" class="fb-num"></div>
-        <button class="fb-close" onclick="closeFb()">FECHAR (4s)</button>
+        <div id="fb-timer"></div>
     </div>
 
     <div id="w">
@@ -70,27 +70,36 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
           P:B+"478aac5453024f5cb3d3b26495d9b7e0"+E+"H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
           S:B+"1d167b2351e14940acb006f964b87cef"+E+"V8asrBbmlcMNS9h0ubUJ8Sd8wT02Knni3VOhhU0IjFg"
       },
-cmap={AAL:"0046",ALI:"0046",QUI:"0046",UEE:"0042"};
+cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an,fbTimer;
+let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an;
 
-// Função para mostrar a tela de feedback
 const showFb = (type, title, msg, seat = "") => {
     const el = q("#fb");
+    const tEl = q("#fb-timer");
     q("#fb-t").textContent = title;
     q("#fb-m").textContent = msg;
     const nEl = q("#fb-n");
+    
     if(seat) { nEl.textContent = seat; nEl.style.display = "block"; } 
     else { nEl.style.display = "none"; }
     
     el.className = type === 'ok' ? 's-ok' : 's-err';
     
-    // Fecha sozinho após 4 segundos
-    clearTimeout(fbTimer);
-    fbTimer = setTimeout(() => closeFb(), 4000);
+    let count = 4;
+    tEl.textContent = `fechando em ${count}s...`;
+    
+    const timer = setInterval(() => {
+        count--;
+        if(count <= 0) {
+            clearInterval(timer);
+            closeFb();
+        } else {
+            tEl.textContent = `Retornando em ${count}s...`;
+        }
+    }, 1000);
 };
 
-// Função para fechar o feedback e atualizar o mapa
 const closeFb = () => {
     q("#fb").className = "";
     refreshData(false);
@@ -198,12 +207,12 @@ q("#btn").onclick=async()=>{
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
         
         if(r.ok){
-            showFb("ok", "Poltrona Confirmada!", "Sua escolha foi salva.", n);
+            showFb("ok", "Poltrona Confirmada!", "Sua escolha foi salva com sucesso.", n);
         } else {
-            showFb("err", "Poltrona Ocupada", "Infelizmente alguém acabou de escolher esta poltrona.");
+            showFb("err", "Poltrona Ocupada", "Este lugar acabou de ser reservado por outro aluno.");
         }
     } catch(e) {
-        showFb("err", "Erro de Conexão", "Não foi possível salvar sua escolha.");
+        showFb("err", "Erro Técnico", "Não foi possível conectar ao servidor.");
     } finally {
         lock=!1;
         q("#btn").disabled=!1;
