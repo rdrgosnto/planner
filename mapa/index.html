@@ -133,7 +133,7 @@ const showFb = (type, title, msg, seat = "") => {
     if(seat) { nEl.textContent = seat; nEl.style.display = "block"; } 
     else { nEl.style.display = "none"; }
     el.className = type === 'ok' ? 's-ok' : 's-err';
-    let count = 5;
+    let count = 4;
     tEl.textContent = `fechando em ${count}s...`;
     const timer = setInterval(() => {
         count--;
@@ -240,7 +240,7 @@ q("#btn").onclick=async()=>{
         const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
         if(r.ok){
-            showFb("ok", "Poltrona Confirmada!", "Sua escolha foi salva com sucesso.", n);
+            showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
         } else {
             showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
         }
