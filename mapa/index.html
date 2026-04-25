@@ -242,7 +242,7 @@ q("#btn").onclick=async()=>{
         if(r.ok){
             showFb("ok", "Poltrona Confirmada!", "Sua escolha foi salva com sucesso.", n);
         } else {
-            showFb("err", "Poltrona Ocupada", "Este lugar acabou de ser reservado por outro aluno.");
+            showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
         }
     } catch(e) {
         showFb("err", "Erro Técnico", "Não foi possível conectar ao servidor.");
