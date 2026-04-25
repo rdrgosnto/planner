@@ -5,39 +5,88 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Planner - Mapa</title>
     <style>
-        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{font-family:Arial,sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none}
-        #h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
-        #h b{font-size:28px;color:#38BA54;width:248px}#w{display:none;margin-top:70px;flex-direction:column;align-items:center}.map-outer{display:flex;flex-direction:column;align-items:center}
-        .info-p{width:248px;margin-bottom:10px;color:#38BA54}#p1-n{font-size:20px;font-weight:700;line-height:1.2}.bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #38BA54;border-radius:16px;position:relative;background:#fff}
-        .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}.s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
-        .s{background:#38BA54;border:3px solid #38BA54;color:#fff;font-weight:700;cursor:pointer}.s.selected,.s.mine,.s.lt{background:#123B1A;border-color:#123B1A}.s.mine,.s.lt{pointer-events:none}
-        .s.white{background:#fff!important;border:3px solid #38BA54!important;color:transparent!important;pointer-events:none}.s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #38BA54}
-        .e{pointer-events:none}#btn{width:112px;height:54px;background:#38BA54;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
-        #btn:disabled{opacity:.6;cursor:not-allowed}#cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#38BA54;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
-        #ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}#pbc{position:fixed;bottom:0;width:100%;height:8px;background:#0001;z-index:2000}#pb{width:0;height:100%;background:#38BA54;transition:width .1s}
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:Arial,sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none}
         
-        /* Tela de Feedback */
+        /* Header */
+        #h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+        #h b{font-size:28px;color:#38BA54;width:248px}
+        
+        /* Layout Geral */
+        #w{display:none;margin-top:70px;flex-direction:column;align-items:center}
+        .map-outer{display:flex;flex-direction:column;align-items:center}
+        .info-p{width:248px;margin-bottom:10px;color:#38BA54}
+        #p1-n{font-size:20px;font-weight:700;line-height:1.2}
+        
+        /* Container do Mapa */
+        .bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #38BA54;border-radius:16px;position:relative;background:#fff}
+        .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
+        
+        /* Poltronas */
+        .s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
+        .s{background:#38BA54;border:3px solid #38BA54;color:#fff;font-weight:700;cursor:pointer}
+        .s.selected,.s.mine,.s.lt{background:#123B1A;border-color:#123B1A}
+        .s.mine,.s.lt{pointer-events:none}
+        .s.white{background:#fff!important;border:3px solid #38BA54!important;color:transparent!important;pointer-events:none}
+        .s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #38BA54}
+        .e{pointer-events:none}
+        
+        /* Botões e Indicadores */
+        #btn{width:112px;height:54px;background:#38BA54;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
+        #btn:disabled{opacity:.6;cursor:not-allowed}
+        #cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#38BA54;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+        #ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
+        #pbc{position:fixed;bottom:0;width:100%;height:8px;background:#0001;z-index:2000}
+        #pb{width:0;height:100%;background:#38BA54;transition:width .1s}
+        
+        /* TELA DE FEEDBACK (FONTES SUAVIZADAS) */
         #fb {position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}
         #fb.s-ok {background:#38BA54;display:flex}
         #fb.s-err {background:#e74c3c;display:flex}
-        #fb h1 {font-size:38px;margin:0;font-weight:800}
-        #fb p {font-size:22px;margin:15px 0 30px;opacity:0.9}
-        .fb-num {font-size:120px;font-weight:900;margin-bottom:20px}
         
-        /* Alteração aqui: removido negrito e tamanho reduzido */
-        #fb-timer {position:absolute;bottom:40px;width:100%;font-size:16px;font-weight:normal;letter-spacing:1px}
+        #fb h1 {
+            font-size:34px; 
+            margin:0; 
+            font-weight:600; /* Menos grossa (era 800) */
+            letter-spacing: -0.5px;
+        }
+        
+        #fb p {
+            font-size:20px; 
+            margin:15px 0 30px; 
+            opacity:0.9; 
+            font-weight: 400;
+        }
+        
+        .fb-num {
+            font-size:110px; 
+            font-weight:700; /* Menos grossa (era 900) */
+            margin-bottom:20px;
+        }
+        
+        #fb-timer {
+            position:absolute;
+            bottom:40px;
+            width:100%;
+            font-size:16px;
+            font-weight:normal;
+            letter-spacing:1px;
+            opacity: 0.8;
+        }
 
         @media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}#w{margin-top:94px;position:relative}.info-p{position:absolute;left:40px;top:0;width:auto}#p1-n{font-size:24px}.bc{margin:0 auto}}
     </style>
 </head>
 <body>
     <div id="h"><b>Planner</b></div>
+    
     <div id="fb">
         <h1 id="fb-t"></h1>
         <p id="fb-m"></p>
         <div id="fb-n" class="fb-num"></div>
         <div id="fb-timer"></div>
     </div>
+
     <div id="w">
         <div class="map-outer">
             <div class="info-p"><span>Passageiro 1</span><div id="p1-n"></div></div>
@@ -47,9 +96,10 @@
             </div>
         </div>
     </div>
+    
     <div id="pbc"><div id="pb"></div></div>
+
 <script>
-// ... (seu script original)
 const q=s=>document.querySelector(s),
 nm=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"",
 gf=(o,n)=>{
