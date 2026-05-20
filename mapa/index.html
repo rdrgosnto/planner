@@ -78,7 +78,7 @@
     </style>
 </head>
 <body>
-    <div id="h"><b>Planner</b></div>
+    <div id="s"><b>Planner</b><i></i></div>
     
     <div id="fb">
         <h1 id="fb-t"></h1>
@@ -117,7 +117,6 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
       E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
       U={
           G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-          // URL ATUALIZADA COM O LINK DO SEU NOVO FLUXO DUPLICADO
           P:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE",
           S:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE"
       },
@@ -208,7 +207,11 @@ const refreshData = async (isInitial = false) => {
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
         
-        bl=[...new Set(rows.filter(x=>gf(x,"CPF2")!=="" && gf(x,"CPF2")!=="0" && gf(x,"CPF2")!==" ").map(x=>gf(x,"ID").padStart(2,"0")))];
+        // CORREÇÃO CIRÚRGICA: Ignora nulos, vazios ou resíduos. Só bloqueia se o CPF tiver 11 números reais.
+        bl = [...new Set(rows.filter(x => {
+            let cpfLimpo = gf(x, "CPF2").replace(/\D/g, "");
+            return cpfLimpo.length === 11;
+        }).map(x => gf(x, "ID").padStart(2, "0")))];
         
         us=rows.filter(x=>nm(x.CPF2)===cpf).map(x=>gf(x,"ID").padStart(2,"0"));
         sel=null;
