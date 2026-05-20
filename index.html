@@ -47,7 +47,7 @@
 
     <script>
         const q=s=>document.querySelector(s),
-              nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
+              nm=v=>v?v.toString().replace(/\D/g,"").padStart(11,"0"):"",
               $c=q("#cpf"),$b=q("#btn"),$m=q("#msg"),$r=q("#r");
 
         setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"},1600);
@@ -60,11 +60,11 @@
             })
         };
 
-        // Função essencial: Localiza a coluna no Excel independentemente de maiúsculas/minúsculas
+        // Lê o valor convertendo obrigatoriamente para string e limpando espaços
         const gf=(o,n)=>{
             if(!o)return"";
             let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
-            return k?o[k].toString().trim():"";
+            return k && o[k] !== null && o[k] !== undefined ? o[k].toString().trim() : "";
         };
 
         const set=(txt,cls,row,ok=0)=>{
@@ -87,17 +87,18 @@
             set("⏳ Verificando...","m-typing","load");
             tm=setTimeout(async()=>{
                 try{
-                    // Executa a requisição unificada usando a sua URL principal de leitura
                     const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
                         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:nm(v)})
                     });
                     const d=await r.json();
                     
-                    // Tratamento seguro: busca o CPF dentro do bloco "codigo" retornado pelo fluxo
-                    const list = d.codigo || d;
-                    const reg = Array.isArray(list) ? list.find(x => nm(gf(x, "CPF2")) === nm(v)) : null;
+                    // Busca tolerante: aceita d.codigo, d.value ou o objeto puro
+                    const list = d.codigo || d.value || (Array.isArray(d) ? d : []);
                     
-                    // Validação dinâmica da coluna ID procurando o caractere '#'
+                    // Tratamento crítico: nm(gf(x, "CPF2")) garante que o valor vindo do Excel 
+                    // seja convertido para texto e ganhe os zeros à esquerda antes da comparação
+                    const reg = list.find(x => nm(gf(x, "CPF2")) === nm(v));
+                    
                     if(!reg || !gf(reg, "ID").includes("#")) throw "CPF não localizado ou sem acesso";
                     
                     sessionStorage.setItem("preData",JSON.stringify(d));
