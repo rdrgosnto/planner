@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Planner - Solicitação de Ingresso</title>
+    <title>Planner - Login</title>
     <style>
         *{box-sizing:border-box}
         body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
@@ -47,7 +47,7 @@
 
     <script>
         const q=s=>document.querySelector(s),
-              nm=v=>v?v.toString().replace(/\D/g,"").padStart(11,"0"):"",
+              nm=v=>v.replace(/\D/g,"").padStart(11,"0"),
               $c=q("#cpf"),$b=q("#btn"),$m=q("#msg"),$r=q("#r");
 
         setTimeout(()=>{q("#s").remove();q(".app").style.visibility="visible"},1600);
@@ -58,13 +58,6 @@
                 let s=0;for(let i=0;i<t;i++)s+=c[i]*(t+1-i);
                 return ((s*10)%11)%10==c[t]
             })
-        };
-
-        // Função para ler as chaves de forma tolerante a letras maiúsculas/minúsculas
-        const gf=(o,n)=>{
-            if(!o)return"";
-            let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
-            return k && o[k] !== null && o[k] !== undefined ? o[k].toString().trim() : "";
         };
 
         const set=(txt,cls,row,ok=0)=>{
@@ -87,20 +80,15 @@
             set("⏳ Verificando...","m-typing","load");
             tm=setTimeout(async()=>{
                 try{
-                    // Chamada para a sua nova URL de login rápida e instantânea
-                    const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9c659d6018a540bead33c222049faf98/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=x8Gx_AYqYLHksq-davmbLe942kE6F8g_fMMOpu8qm8E",{
+                    const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
                         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:nm(v)})
                     });
-                    const list = await r.json();
+                    const d=await r.json(),
+                          reg=(d.codigo||[]).find(x=>nm(String(x.CPF2||""))===nm(v));
                     
-                    // Encontra o usuário na lista pura gerada pelo fluxo dedicado
-                    const reg = Array.isArray(list) ? list.find(x => nm(gf(x, "CPF2")) === nm(v)) : null;
+                    if(!reg||!String(reg.ID||"").includes("#"))throw "CPF não localizado ou sem acesso";
                     
-                    // Validação da trava rígida contendo o caractere '#'
-                    if(!reg || !gf(reg, "ID").includes("#")) throw "CPF não localizado ou sem acesso";
-                    
-                    // Salva os dados na sessão estruturando como o mapa espera ler
-                    sessionStorage.setItem("preData", JSON.stringify({ codigo: list }));
+                    sessionStorage.setItem("preData",JSON.stringify(d));
                     set("✅ CPF encontrado","m-ok","ok",1);
                 }catch(e){set("❌ "+e,"m-err","err")}
             },400);
