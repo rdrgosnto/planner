@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Planner - Login</title>
+    <title>Planner - Solicitação de Ingresso</title>
     <style>
         *{box-sizing:border-box}
         body{margin:0;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#fff}
@@ -60,6 +60,13 @@
             })
         };
 
+        // Função essencial: Localiza a coluna no Excel independentemente de maiúsculas/minúsculas
+        const gf=(o,n)=>{
+            if(!o)return"";
+            let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
+            return k?o[k].toString().trim():"";
+        };
+
         const set=(txt,cls,row,ok=0)=>{
             if(!txt)return($m.style.display="none",$r.className="row");
             $m.innerHTML=txt;$m.className="status-msg "+cls;$r.className="row "+row;
@@ -80,15 +87,18 @@
             set("⏳ Verificando...","m-typing","load");
             tm=setTimeout(async()=>{
                 try{
-                    // URL ATUALIZADA EXECUTANDO O SEU FLUXO DE LEITURA COMPARTILHADO
+                    // Executa a requisição unificada usando a sua URL principal de leitura
                     const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
                         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:nm(v)})
                     });
-                    const d=await r.json(),
-                          reg=(d.codigo||[]).find(x=>nm(String(x.CPF2||""))===nm(v));
+                    const d=await r.json();
                     
-                    // Validação rígida de segurança contendo o caractere '#'
-                    if(!reg||!String(reg.ID||"").includes("#"))throw "CPF não localizado ou sem acesso";
+                    // Tratamento seguro: busca o CPF dentro do bloco "codigo" retornado pelo fluxo
+                    const list = d.codigo || d;
+                    const reg = Array.isArray(list) ? list.find(x => nm(gf(x, "CPF2")) === nm(v)) : null;
+                    
+                    // Validação dinâmica da coluna ID procurando o caractere '#'
+                    if(!reg || !gf(reg, "ID").includes("#")) throw "CPF não localizado ou sem acesso";
                     
                     sessionStorage.setItem("preData",JSON.stringify(d));
                     set("✅ CPF encontrado","m-ok","ok",1);
