@@ -78,7 +78,8 @@
     </style>
 </head>
 <body>
-    <div id="s"><b>Planner</b><i></i></div>
+    <!-- Barra Superior (Header) Restaurada -->
+    <div id="h"><b>Planner</b></div>
     
     <div id="fb">
         <h1 id="fb-t"></h1>
@@ -207,13 +208,12 @@ const refreshData = async (isInitial = false) => {
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
         
-        // CORREÇÃO DOS DOIS DIGITOS COM PADSTART: Trata e formata a lista de ocupados (bl)
+        // Tratamento com PadStart (Garante 01, 02... alinhado com o Excel e o layout do JSON)
         bl = [...new Set(rows.filter(x => {
             let cpfLimpo = gf(x, "CPF2").replace(/\D/g, "");
             return cpfLimpo.length === 11;
         }).map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0")))];
         
-        // CORREÇÃO DOS DOIS DIGITOS COM PADSTART: Trata e formata a lista da sua poltrona (us)
         us = rows.filter(x => nm(gf(x, "CPF2")) === cpf)
                  .map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0"));
         
