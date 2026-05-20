@@ -60,7 +60,7 @@
             })
         };
 
-        // Lê o valor convertendo obrigatoriamente para string e limpando espaços
+        // Função para ler as chaves de forma tolerante a letras maiúsculas/minúsculas
         const gf=(o,n)=>{
             if(!o)return"";
             let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
@@ -87,21 +87,20 @@
             set("⏳ Verificando...","m-typing","load");
             tm=setTimeout(async()=>{
                 try{
-                    const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
+                    // Chamada para a sua nova URL de login rápida e instantânea
+                    const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/9c659d6018a540bead33c222049faf98/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=x8Gx_AYqYLHksq-davmbLe942kE6F8g_fMMOpu8qm8E",{
                         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:nm(v)})
                     });
-                    const d=await r.json();
+                    const list = await r.json();
                     
-                    // Busca tolerante: aceita d.codigo, d.value ou o objeto puro
-                    const list = d.codigo || d.value || (Array.isArray(d) ? d : []);
+                    // Encontra o usuário na lista pura gerada pelo fluxo dedicado
+                    const reg = Array.isArray(list) ? list.find(x => nm(gf(x, "CPF2")) === nm(v)) : null;
                     
-                    // Tratamento crítico: nm(gf(x, "CPF2")) garante que o valor vindo do Excel 
-                    // seja convertido para texto e ganhe os zeros à esquerda antes da comparação
-                    const reg = list.find(x => nm(gf(x, "CPF2")) === nm(v));
-                    
+                    // Validação da trava rígida contendo o caractere '#'
                     if(!reg || !gf(reg, "ID").includes("#")) throw "CPF não localizado ou sem acesso";
                     
-                    sessionStorage.setItem("preData",JSON.stringify(d));
+                    // Salva os dados na sessão estruturando como o mapa espera ler
+                    sessionStorage.setItem("preData", JSON.stringify({ codigo: list }));
                     set("✅ CPF encontrado","m-ok","ok",1);
                 }catch(e){set("❌ "+e,"m-err","err")}
             },400);
