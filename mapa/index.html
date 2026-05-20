@@ -117,8 +117,9 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
       E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
       U={
           G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
-          P:B+"478aac5453024f5cb3d3b26495d9b7e0"+E+"H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0",
-          S:B+"478aac5453024f5cb3d3b26495d9b7e0"+E+"H6EQYc3xSSZazBjzf0vB_9u5QtwLNj_hnuoBM9CWgz0"
+          // URL ATUALIZADA COM O LINK DO SEU NOVO FLUXO DUPLICADO
+          P:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE",
+          S:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE"
       },
 cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
@@ -207,7 +208,6 @@ const refreshData = async (isInitial = false) => {
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
         
-        // Mantém a limpeza rígida de strings vazias ou com espaços no carregamento
         bl=[...new Set(rows.filter(x=>gf(x,"CPF2")!=="" && gf(x,"CPF2")!=="0" && gf(x,"CPF2")!==" ").map(x=>gf(x,"ID").padStart(2,"0")))];
         
         us=rows.filter(x=>nm(x.CPF2)===cpf).map(x=>gf(x,"ID").padStart(2,"0"));
@@ -247,7 +247,6 @@ q("#btn").onclick=async()=>{
             showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
         } else {
             showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
-            // AJUSTE CRÍTICO: Limpa a seleção local e recarrega os dados reais imediatamente em caso de erro
             sel=null;
             refreshData(false);
         }
