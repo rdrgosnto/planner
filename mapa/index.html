@@ -47,7 +47,7 @@
         #fb h1 {
             font-size:34px; 
             margin:0; 
-            font-weight:600; /* Menos grossa (era 800) */
+            font-weight:600;
             letter-spacing: -0.5px;
         }
         
@@ -60,7 +60,7 @@
         
         .fb-num {
             font-size:110px; 
-            font-weight:700; /* Menos grossa (era 900) */
+            font-weight:700;
             margin-bottom:20px;
         }
         
@@ -105,7 +105,7 @@ nm=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"",
 gf=(o,n)=>{
     if(!o)return"";
     let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
-    return k?o[k].toString().trim():"";
+    return k?o[k].toString().replace(/\s+/g, ' ').trim():"";
 },
 fn=s=>{
     if(!s)return"Passageiro";
@@ -203,9 +203,13 @@ const refreshData = async (isInitial = false) => {
         q("#p1-n").textContent=fn(gf(a,"NOME"));
         cur=(gf(a,"CODIGO")||"UEE").toUpperCase();
         q("#ctx").textContent=cur;
+        
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
-        bl=[...new Set(rows.map(x=>gf(x,"ID").padStart(2,"0")).filter(b=>b!=="00"))];
+        
+        // CORREÇÃO CRUCIAL: Bloqueia a poltrona apenas se o CPF2 não estiver em branco e não for "0"
+        bl=[...new Set(rows.filter(x=>gf(x,"CPF2")!=="" && gf(x,"CPF2")!=="0").map(x=>gf(x,"ID").padStart(2,"0")))];
+        
         us=rows.filter(x=>nm(x.CPF2)===cpf).map(x=>gf(x,"ID").padStart(2,"0"));
         sel=null;
         const ly=cmap[cur]||"0046";
