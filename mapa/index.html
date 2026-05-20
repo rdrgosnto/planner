@@ -207,7 +207,7 @@ const refreshData = async (isInitial = false) => {
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
         
-        // FILTRO ATUALIZADO: Ignora strings vazias, espaços em branco (" ") e o caractere "0"
+        // Mantém a limpeza rígida de strings vazias ou com espaços no carregamento
         bl=[...new Set(rows.filter(x=>gf(x,"CPF2")!=="" && gf(x,"CPF2")!=="0" && gf(x,"CPF2")!==" ").map(x=>gf(x,"ID").padStart(2,"0")))];
         
         us=rows.filter(x=>nm(x.CPF2)===cpf).map(x=>gf(x,"ID").padStart(2,"0"));
@@ -247,9 +247,14 @@ q("#btn").onclick=async()=>{
             showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
         } else {
             showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
+            // AJUSTE CRÍTICO: Limpa a seleção local e recarrega os dados reais imediatamente em caso de erro
+            sel=null;
+            refreshData(false);
         }
     } catch(e) {
         showFb("err", "Erro Técnico", "Não foi possível conectar ao servidor.");
+        sel=null;
+        refreshData(false);
     } finally {
         lock=!1;
         q("#btn").disabled=!1;
