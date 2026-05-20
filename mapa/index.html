@@ -198,7 +198,7 @@ const refreshData = async (isInitial = false) => {
             if(isInitial) bar(70);
         }
         const codes=d.codigo||[];
-        const a=codes.find(x=>nm(x.CPF2)===cpf);
+        const a=codes.find(x=>nm(gf(x,"CPF2"))===cpf);
         if(!a) throw "CPF não encontrado";
         q("#p1-n").textContent=fn(gf(a,"NOME"));
         cur=(gf(a,"CODIGO")||"UEE").toUpperCase();
@@ -207,13 +207,16 @@ const refreshData = async (isInitial = false) => {
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
         
-        // CORREÇÃO CIRÚRGICA: Ignora nulos, vazios ou resíduos. Só bloqueia se o CPF tiver 11 números reais.
+        // CORREÇÃO DOS DOIS DIGITOS COM PADSTART: Trata e formata a lista de ocupados (bl)
         bl = [...new Set(rows.filter(x => {
             let cpfLimpo = gf(x, "CPF2").replace(/\D/g, "");
             return cpfLimpo.length === 11;
-        }).map(x => gf(x, "ID").padStart(2, "0")))];
+        }).map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0")))];
         
-        us=rows.filter(x=>nm(x.CPF2)===cpf).map(x=>gf(x,"ID").padStart(2,"0"));
+        // CORREÇÃO DOS DOIS DIGITOS COM PADSTART: Trata e formata a lista da sua poltrona (us)
+        us = rows.filter(x => nm(gf(x, "CPF2")) === cpf)
+                 .map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0"));
+        
         sel=null;
         const ly=cmap[cur]||"0046";
         let cfg;
