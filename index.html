@@ -80,12 +80,14 @@
             set("⏳ Verificando...","m-typing","load");
             tm=setTimeout(async()=>{
                 try{
+                    // URL ATUALIZADA EXECUTANDO O SEU FLUXO DE LEITURA COMPARTILHADO
                     const r=await fetch("https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/239ef024d32946f99a66585bed86d236/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",{
                         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf:nm(v)})
                     });
                     const d=await r.json(),
                           reg=(d.codigo||[]).find(x=>nm(String(x.CPF2||""))===nm(v));
                     
+                    // Validação rígida de segurança contendo o caractere '#'
                     if(!reg||!String(reg.ID||"").includes("#"))throw "CPF não localizado ou sem acesso";
                     
                     sessionStorage.setItem("preData",JSON.stringify(d));
