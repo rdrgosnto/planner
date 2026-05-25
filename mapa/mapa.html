@@ -1,1 +1,316 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Planner - Mapa</title><style>*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{font-family:Arial,sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none}#h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}#h b{font-size:28px;color:#38BA54;width:248px}#w{display:none;margin-top:70px;flex-direction:column;align-items:center}.map-outer{display:flex;flex-direction:column;align-items:center}.info-p{width:248px;margin-bottom:10px;color:#38BA54}#p1-n{font-size:20px;font-weight:700;line-height:1.2}.bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #38BA54;border-radius:16px;position:relative;background:#fff}.g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}.s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}.s{background:#38BA54;border:3px solid #38BA54;color:#fff;font-weight:700;cursor:pointer}.s.selected,.s.mine,.s.lt{background:#123B1A;border-color:#123B1A}.s.mine,.s.lt{pointer-events:none}.s.white{background:#fff!important;border:3px solid #38BA54!important;color:transparent!important;pointer-events:none}.s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #38BA54}.e{pointer-events:none}#btn{width:112px;height:54px;background:#38BA54;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}#btn:disabled{opacity:.6;cursor:not-allowed}#cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#38BA54;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}#ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}#pbc{position:fixed;bottom:0;width:100%;height:8px;background:#0001;z-index:2000}#pb{width:0;height:100%;background:#38BA54;transition:width .1s}#fb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}#fb.s-ok{background:#38BA54;display:flex}#fb.s-err{background:#e74c3c;display:flex}#fb h1{font-size:34px;margin:0;font-weight:600;letter-spacing:-0.5px}#fb p{font-size:20px;margin:15px 0 30px;opacity:0.9;font-weight:400}.fb-num{font-size:110px;font-weight:700;margin-bottom:20px}#fb-timer{position:absolute;bottom:40px;width:100%;font-size:16px;font-weight:normal;letter-spacing:1px;opacity:0.8}@media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}#w{margin-top:94px;position:relative}.info-p{position:absolute;left:40px;top:0;width:auto}#p1-n{font-size:24px}.bc{margin:0 auto}}</style></head><body><div id="h"><b>Planner</b></div><div id="fb"><h1 id="fb-t"></h1><p id="fb-m"></p><div id="fb-n" class="fb-num"></div><div id="fb-timer"></div></div><div id="w"><div class="map-outer"><div class="info-p"><span>Passageiro 1</span><div id="p1-n"></div></div><div class="bc"><div id="cbx"><div id="ctx"></div></div><button id="btn">CONFIRMAR</button></div></div></div><div id="pbc"><div id="pb"></div></div><script>const q=s=>document.querySelector(s),nm=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"",gf=(o,n)=>{if(!o)return"";let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());return k?o[k].toString().replace(/\s+/g,' ').trim():""},fn=s=>{if(!s)return"Passageiro";let p=s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w[0].toUpperCase()+w.slice(1));return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ')};const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",U={G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",P:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE",S:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE"},cmap={AAL:"0046",ALI:"0046",QUI:"0046"};let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an;const showFb=(type,title,msg,seat="")=>{const el=q("#fb"),tEl=q("#fb-timer");q("#fb-t").textContent=title;q("#fb-m").textContent=msg;const nEl=q("#fb-n");if(seat){nEl.textContent=seat;nEl.style.display="block"}else{nEl.style.display="none"}el.className=type==='ok'?'s-ok':'s-err';let count=4;tEl.textContent=`fechando em ${count}s...`;const timer=setInterval(()=>{count--;if(count<=0){clearInterval(timer);closeFb()}else{tEl.textContent=`fechando em ${count}s...`}},1000)},closeFb=()=>{q("#fb").className="";refreshData(!1)},bar=t=>{let b=q("#pb");if(!b)return;clearInterval(an);let w=parseInt(b.style.width)||0;an=setInterval(()=>{w>=t?clearInterval(an):(w++,b.style.width=w+"%")},5)},rd=l=>{q(".g")?.remove();const g=document.createElement("div");g.className="g";if(!l)return;l.forEach(row=>{row.forEach(v=>{const e=document.createElement("div");if(v===null)e.className="e";else{e.className="s";const id=v.toString().padStart(2,"0");if(v!=="white"){e.textContent=id;e.dataset.s=id}if(us.includes(id))e.classList.add("mine");else if(bl.includes(id)||v==="white")e.classList.add("white");else e.onclick=()=>sl(e)}g.appendChild(e)})});q(".bc").appendChild(g)},sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")},refreshData=async(isInitial=!1)=>{if(isInitial)bar(30);try{let d,pre=isInitial?sessionStorage.getItem("preData"):null;if(pre){d=JSON.parse(pre);sessionStorage.removeItem("preData");if(isInitial)bar(70)}else{const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});d=await r.json();if(isInitial)bar(70)}const codes=d.codigo||[],a=codes.find(x=>nm(gf(x,"CPF2"))===cpf);if(!a)throw "CPF não encontrado";q("#p1-n").textContent=fn(gf(a,"NOME"));cur=(gf(a,"CODIGO")||"UEE").toUpperCase();q("#ctx").textContent=cur;const l=d.poltronas||[],rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);bl=[...new Set(rows.filter(x=>{let cL=gf(x,"CPF2").replace(/\D/g,"");return cL.length===11}).map(x=>gf(x,"ID").toString().replace(/\s+/g,'').padStart(2,"0")))];us=rows.filter(x=>nm(gf(x,"CPF2"))===cpf).map(x=>gf(x,"ID").toString().replace(/\s+/g,'').padStart(2,"0"));sel=null;const ly=cmap[cur]||"0046";let cfg;try{cfg=await fetch(`../configs/${ly}.json`).then(r=>r.json())}catch(e){cfg=await fetch(`configs/${ly}.json`).then(r=>r.json())}if(cfg&&cfg.layout)rd(cfg.layout);if(isInitial){bar(100);setTimeout(()=>{q("#pbc")?.remove();q("#w").style.display="flex"},400)}}catch(e){showFb("err","Erro","Erro ao carregar dados: "+e)}};const ld=async()=>{const sC=sessionStorage.getItem("cpf");if(!sC)return location.href="../index.html";cpf=nm(sC);await refreshData(!0)};q("#btn").onclick=async()=>{if(lock||!sel)return !sel&&showFb("err","Atenção","Selecione uma poltrona primeiro");const old=us[0]||null;if(!confirm(old?"Confirma troca de poltrona?":"Confirma seleção da poltrona?"))return;lock=!0;q("#btn").disabled=!0;const n=sel.dataset.s;try{const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){showFb("ok","Poltrona Confirmada!","Poltrona selecionada com sucesso.",n)}else{showFb("err","Poltrona Ocupada","Poltrona selecionada por outro usuário.");sel=null;refreshData(!1)}}catch(e){showFb("err","Erro Técnico","Não foi possível conectar ao servidor.");sel=null;refreshData(!1)}finally{lock=!1;q("#btn").disabled=!1}};ld();</script></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Planner - Mapa</title>
+    <style>
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:Arial,sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none}
+        
+        /* Header */
+        #h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+        #h b{font-size:28px;color:#38BA54;width:248px}
+        
+        /* Layout Geral */
+        #w{display:none;margin-top:70px;flex-direction:column;align-items:center}
+        .map-outer{display:flex;flex-direction:column;align-items:center}
+        .info-p{width:248px;margin-bottom:10px;color:#38BA54}
+        #p1-n{font-size:20px;font-weight:700;line-height:1.2}
+        
+        /* Container do Mapa */
+        .bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #38BA54;border-radius:16px;position:relative;background:#fff}
+        .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
+        
+        /* Poltronas */
+        .s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
+        .s{background:#38BA54;border:3px solid #38BA54;color:#fff;font-weight:700;cursor:pointer}
+        .s.selected,.s.mine,.s.lt{background:#123B1A;border-color:#123B1A}
+        .s.mine,.s.lt{pointer-events:none}
+        .s.white{background:#fff!important;border:3px solid #38BA54!important;color:transparent!important;pointer-events:none}
+        .s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #38BA54}
+        .e{pointer-events:none}
+        
+        /* Botões e Indicadores */
+        #btn{width:112px;height:54px;background:#38BA54;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}
+        #btn:disabled{opacity:.6;cursor:not-allowed}
+        #cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#38BA54;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+        #ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}
+        #pbc{position:fixed;bottom:0;width:100%;height:8px;background:#0001;z-index:2000}
+        #pb{width:0;height:100%;background:#38BA54;transition:width .1s}
+        
+        /* TELA DE FEEDBACK */
+        #fb {position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}
+        #fb.s-ok {background:#38BA54;display:flex}
+        #fb.s-err {background:#e74c3c;display:flex}
+        
+        #fb h1 {
+            font-size:34px; 
+            margin:0; 
+            font-weight:600;
+            letter-spacing: -0.5px;
+        }
+        
+        #fb p {
+            font-size:20px; 
+            margin:15px 0 30px; 
+            opacity:0.9; 
+            font-weight: 400;
+        }
+        
+        .fb-num {
+            font-size:110px; 
+            font-weight:700;
+            margin-bottom:20px;
+        }
+        
+        #fb-timer {
+            position:absolute;
+            bottom:40px;
+            width:100%;
+            font-size:16px;
+            font-weight:normal;
+            letter-spacing:1px;
+            opacity: 0.8;
+        }
+
+        @media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}#w{margin-top:94px;position:relative}.info-p{position:absolute;left:40px;top:0;width:auto}#p1-n{font-size:24px}.bc{margin:0 auto}}
+    </style>
+</head>
+<body>
+    <div id="h"><b>Planner</b></div>
+    
+    <div id="fb">
+        <h1 id="fb-t"></h1>
+        <p id="fb-m"></p>
+        <div id="fb-n" class="fb-num"></div>
+        <div id="fb-timer"></div>
+    </div>
+
+    <div id="w">
+        <div class="map-outer">
+            <div class="info-p"><span>Passageiro 1</span><div id="p1-n"></div></div>
+            <div class="bc">
+                <div id="cbx"><div id="ctx"></div></div>
+                <button id="btn">CONFIRMAR</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="pbc"><div id="pb"></div></div>
+
+<script>
+const q=s=>document.querySelector(s),
+nm=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"",
+gf=(o,n)=>{
+    if(!o)return"";
+    let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
+    return k?o[k].toString().replace(/\s+/g, ' ').trim():"";
+},
+fn=s=>{
+    if(!s)return"Passageiro";
+    let p=s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w[0].toUpperCase()+w.slice(1));
+    return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ');
+};
+
+const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",
+      E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
+      U={
+          G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+          P:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE",
+          S:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE"
+      },
+cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
+
+let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an;
+
+const showFb = (type, title, msg, seat = "") => {
+    const el = q("#fb");
+    const tEl = q("#fb-timer");
+    q("#fb-t").textContent = title;
+    q("#fb-m").textContent = msg;
+    const nEl = q("#fb-n");
+    if(seat) { nEl.textContent = seat; nEl.style.display = "block"; } 
+    else { nEl.style.display = "none"; }
+    el.className = type === 'ok' ? 's-ok' : 's-err';
+    let count = 4;
+    tEl.textContent = `fechando em ${count}s...`;
+    const timer = setInterval(() => {
+        count--;
+        if(count <= 0) {
+            clearInterval(timer);
+            closeFb();
+        } else {
+            tEl.textContent = `fechando em ${count}s...`;
+        }
+    }, 1000);
+};
+
+const closeFb = () => {
+    q("#fb").className = "";
+    refreshData(false);
+};
+
+const bar=t=>{
+    let b=q("#pb");
+    if(!b) return;
+    clearInterval(an);
+    let w=parseInt(b.style.width)||0;
+    an=setInterval(()=>{w>=t?clearInterval(an):(w++,b.style.width=w+"%")},5)
+};
+
+const rd=l=>{
+    q(".g")?.remove();
+    const g=document.createElement("div");g.className="g";
+    if(!l)return;
+    l.forEach(row=>{
+        row.forEach(v=>{
+            const e=document.createElement("div");
+            if(v===null) e.className="e";
+            else {
+                e.className="s";
+                const id=v.toString().padStart(2,"0");
+                if(v!=="white"){ e.textContent=id; e.dataset.s=id }
+                if(us.includes(id)) e.classList.add("mine");
+                else if(bl.includes(id)||v==="white") e.classList.add("white");
+                else e.onclick=()=>sl(e);
+            }
+            g.appendChild(e);
+        });
+    });
+    q(".bc").appendChild(g);
+};
+
+const sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")};
+
+const refreshData = async (isInitial = false) => {
+    if(isInitial) bar(30);
+    try {
+        let d;
+        let pre = sessionStorage.getItem("preData");
+        
+        if(pre){
+            d=JSON.parse(pre);
+            if(isInitial) bar(70);
+        } else {
+            const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf: nm(cpf)})});
+            d=await r.json();
+            sessionStorage.setItem("preData", JSON.stringify(d));
+            if(isInitial) bar(70);
+        }
+        
+        const codes=d.codigo||[];
+        const a=codes.find(x=>nm(gf(x,"CPF2"))===nm(cpf));
+        
+        if(!a) throw "CPF não encontrado no banco de dados.";
+        
+        q("#p1-n").textContent=fn(gf(a,"NOME"));
+        cur=(gf(a,"CODIGO")||"UEE").toUpperCase();
+        q("#ctx").textContent=cur;
+        
+        const l=d.poltronas||[];
+        const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
+        
+        bl = [...new Set(rows.filter(x => {
+            let cpfLimpo = nm(gf(x, "CPF2"));
+            return cpfLimpo.length === 11;
+        }).map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0")))];
+        
+        us = rows.filter(x => nm(gf(x, "CPF2")) === nm(cpf))
+                 .map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0"));
+        
+        sel=null;
+        const ly=cmap[cur]||"0046";
+        let cfg = null;
+        
+        try { 
+            let res = await fetch(`../configs/${ly}.json`);
+            if(res.ok) { cfg = await res.json(); }
+            else {
+                res = await fetch(`configs/${ly}.json`);
+                if(res.ok) { cfg = await res.json(); }
+            }
+        } catch(e) { console.warn("Erro nas poltronas:", e); }
+        
+        if(cfg && cfg.layout) { 
+            rd(cfg.layout); 
+        } else {
+            const defaultLayout = [];
+            for (let i = 1; i <= 46; i += 5) {
+                const row = [];
+                for (let j = 0; j < 5; j++) {
+                    if (i + j <= 46) row.push(i + j);
+                }
+                defaultLayout.push(row);
+            }
+            rd(defaultLayout);
+        }
+
+        if(isInitial) {
+            bar(100);
+            setTimeout(()=>{ q("#pbc")?.remove(); q("#w").style.display="flex" }, 400);
+        }
+    } catch(e) {
+        showFb("err", "Erro", "Erro ao carregar dados: " + e);
+    }
+};
+
+const ld=async()=>{
+    const sC=sessionStorage.getItem("cpf");
+    if(!sC) return location.href="../index.html";
+    cpf=nm(sC);
+    await refreshData(true);
+};
+
+q("#btn").onclick=async()=>{
+    if(lock||!sel) return !sel && showFb("err", "Atenção", "Selecione uma poltrona primeiro");
+    const old=us[0]||null;
+    if(!confirm(old?"Confirma troca de poltrona?":"Confirma seleção da poltrona?")) return;
+    lock=!0;
+    q("#btn").disabled=!0;
+    const n=sel.dataset.s;
+    try {
+        const p=old?{cpf: nm(cpf),curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf: nm(cpf)},
+        r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+        if(r.ok){
+            // CORREÇÃO ESSENCIAL: Atualiza localmente a poltrona antiga e a nova no cache do preData 
+            let pre = sessionStorage.getItem("preData");
+            if(pre){
+                let cachedData = JSON.parse(pre);
+                if(cachedData.poltronas){
+                    // Remove o vinculo antigo deste CPF
+                    cachedData.poltronas = cachedData.poltronas.map(x => {
+                        if(nm(gf(x, "CPF2")) === nm(cpf)) {
+                            // Se for a antiga, desvincula limpando o CPF
+                            if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === old) {
+                                x.CPF2 = ""; 
+                            }
+                        }
+                        // Vincula o CPF na nova vaga selecionada
+                        if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === n && gf(x, "CURSO").toUpperCase() === cur.toUpperCase()) {
+                            x.CPF2 = nm(cpf);
+                        }
+                        return x;
+                    });
+                    sessionStorage.setItem("preData", JSON.stringify(cachedData));
+                }
+            }
+            showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
+        } else {
+            showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
+            sel=null;
+            refreshData(false);
+        }
+    } catch(e) {
+        showFb("err", "Erro Técnico", "Não foi possível conectar ao servidor.");
+        sel=null;
+        refreshData(false);
+    } finally { 
+        lock=!1;
+        q("#btn").disabled=!1;
+    }
+};
+ld();
+</script>
+</body>
+</html>
