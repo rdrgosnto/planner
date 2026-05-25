@@ -218,10 +218,33 @@ const refreshData = async (isInitial = false) => {
         
         sel=null;
         const ly=cmap[cur]||"0046";
-        let cfg;
-        try { cfg = await fetch(`../configs/${ly}.json`).then(r=>r.json()); } 
-        catch(e) { cfg = await fetch(`configs/${ly}.json`).then(r=>r.json()); }
-        if(cfg && cfg.layout) rd(cfg.layout);
+        let cfg = null;
+        
+        // Proteção extra ao carregar os arquivos JSON externos de layout das poltronas
+        try { 
+            let res = await fetch(`../configs/${ly}.json`);
+            if(res.ok) { cfg = await res.json(); }
+            else {
+                res = await fetch(`configs/${ly}.json`);
+                if(res.ok) { cfg = await res.json(); }
+            }
+        } catch(e) { console.warn("Falha ao buscar JSON de configuração externo:", e); }
+        
+        // Se o arquivo JSON externo falhar/não existir, cria um mapa padrão estático (Segurança)
+        if(cfg && cfg.layout) { 
+            rd(cfg.layout); 
+        } else {
+            const defaultLayout = [];
+            for (let i = 1; i <= 46; i += 5) {
+                const row = [];
+                for (let j = 0; j < 5; j++) {
+                    if (i + j <= 46) row.push(i + j);
+                }
+                defaultLayout.push(row);
+            }
+            rd(defaultLayout);
+        }
+
         if(isInitial) {
             bar(100);
             setTimeout(()=>{ q("#pbc")?.remove(); q("#w").style.display="flex" }, 400);
@@ -259,7 +282,7 @@ q("#btn").onclick=async()=>{
         showFb("err", "Erro Técnico", "Não foi possível conectar ao servidor.");
         sel=null;
         refreshData(false);
-    } finally { // <-- CORRIGIDO AQUI (De 'finaly' para 'finally')
+    } finally { 
         lock=!1;
         q("#btn").disabled=!1;
     }
