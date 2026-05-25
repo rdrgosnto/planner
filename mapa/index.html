@@ -187,19 +187,22 @@ const refreshData = async (isInitial = false) => {
     if(isInitial) bar(30);
     try {
         let d;
-        let pre = isInitial ? sessionStorage.getItem("preData") : null;
+        let pre = sessionStorage.getItem("preData");
+        
         if(pre){
             d=JSON.parse(pre);
             if(isInitial) bar(70);
         } else {
             const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf: nm(cpf)})});
             d=await r.json();
+            sessionStorage.setItem("preData", JSON.stringify(d));
             if(isInitial) bar(70);
         }
-        const codes=d.codigo||[];
         
+        const codes=d.codigo||[];
         const a=codes.find(x=>nm(gf(x,"CPF2"))===nm(cpf));
-        if(!a) throw "CPF não encontrado";
+        
+        if(!a) throw "CPF não encontrado no banco de dados.";
         
         q("#p1-n").textContent=fn(gf(a,"NOME"));
         cur=(gf(a,"CODIGO")||"UEE").toUpperCase();
@@ -220,7 +223,6 @@ const refreshData = async (isInitial = false) => {
         const ly=cmap[cur]||"0046";
         let cfg = null;
         
-        // Proteção extra ao carregar os arquivos JSON externos de layout das poltronas
         try { 
             let res = await fetch(`../configs/${ly}.json`);
             if(res.ok) { cfg = await res.json(); }
@@ -228,9 +230,8 @@ const refreshData = async (isInitial = false) => {
                 res = await fetch(`configs/${ly}.json`);
                 if(res.ok) { cfg = await res.json(); }
             }
-        } catch(e) { console.warn("Falha ao buscar JSON de configuração externo:", e); }
+        } catch(e) { console.warn("Erro nas poltronas:", e); }
         
-        // Se o arquivo JSON externo falhar/não existir, cria um mapa padrão estático (Segurança)
         if(cfg && cfg.layout) { 
             rd(cfg.layout); 
         } else {
@@ -272,6 +273,28 @@ q("#btn").onclick=async()=>{
         const p=old?{cpf: nm(cpf),curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf: nm(cpf)},
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
         if(r.ok){
+            // CORREÇÃO ESSENCIAL: Atualiza localmente a poltrona antiga e a nova no cache do preData 
+            let pre = sessionStorage.getItem("preData");
+            if(pre){
+                let cachedData = JSON.parse(pre);
+                if(cachedData.poltronas){
+                    // Remove o vinculo antigo deste CPF
+                    cachedData.poltronas = cachedData.poltronas.map(x => {
+                        if(nm(gf(x, "CPF2")) === nm(cpf)) {
+                            // Se for a antiga, desvincula limpando o CPF
+                            if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === old) {
+                                x.CPF2 = ""; 
+                            }
+                        }
+                        // Vincula o CPF na nova vaga selecionada
+                        if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === n && gf(x, "CURSO").toUpperCase() === cur.toUpperCase()) {
+                            x.CPF2 = nm(cpf);
+                        }
+                        return x;
+                    });
+                    sessionStorage.setItem("preData", JSON.stringify(cachedData));
+                }
+            }
             showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
         } else {
             showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
