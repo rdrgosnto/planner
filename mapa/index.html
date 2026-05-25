@@ -78,7 +78,6 @@
     </style>
 </head>
 <body>
-    <!-- Barra Superior (Header) Restaurada -->
     <div id="h"><b>Planner</b></div>
     
     <div id="fb">
@@ -191,16 +190,20 @@ const refreshData = async (isInitial = false) => {
         let pre = isInitial ? sessionStorage.getItem("preData") : null;
         if(pre){
             d=JSON.parse(pre);
-            sessionStorage.removeItem("preData");
+            // Mantido os dados em cache no primeiro momento para evitar requisição extra imediata
             if(isInitial) bar(70);
         } else {
-            const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf})});
+            // Garante o envio do CPF estritamente higienizado para a API (11 dígitos numéricos)
+            const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf: nm(cpf)})});
             d=await r.json();
             if(isInitial) bar(70);
         }
         const codes=d.codigo||[];
-        const a=codes.find(x=>nm(gf(x,"CPF2"))===cpf);
+        
+        // CORREÇÃO: Ambos os lados da comparação agora usam o tratamento numérico rígido 'nm()'
+        const a=codes.find(x=>nm(gf(x,"CPF2"))===nm(cpf));
         if(!a) throw "CPF não encontrado";
+        
         q("#p1-n").textContent=fn(gf(a,"NOME"));
         cur=(gf(a,"CODIGO")||"UEE").toUpperCase();
         q("#ctx").textContent=cur;
@@ -208,13 +211,14 @@ const refreshData = async (isInitial = false) => {
         const l=d.poltronas||[];
         const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
         
-        // Tratamento com PadStart (Garante 01, 02... alinhado com o Excel e o layout do JSON)
+        // Tratamento com PadStart aplicado no filtro de CPFs ocupados
         bl = [...new Set(rows.filter(x => {
-            let cpfLimpo = gf(x, "CPF2").replace(/\D/g, "");
+            let cpfLimpo = nm(gf(x, "CPF2"));
             return cpfLimpo.length === 11;
         }).map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0")))];
         
-        us = rows.filter(x => nm(gf(x, "CPF2")) === cpf)
+        // CORREÇÃO: Comparação robusta para identificar a poltrona do usuário logado atual
+        us = rows.filter(x => nm(gf(x, "CPF2")) === nm(cpf))
                  .map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0"));
         
         sel=null;
@@ -247,7 +251,7 @@ q("#btn").onclick=async()=>{
     q("#btn").disabled=!0;
     const n=sel.dataset.s;
     try {
-        const p=old?{cpf,curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf},
+        const p=old?{cpf: nm(cpf),curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf: nm(cpf)},
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
         if(r.ok){
             showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
@@ -260,7 +264,7 @@ q("#btn").onclick=async()=>{
         showFb("err", "Erro Técnico", "Não foi possível conectar ao servidor.");
         sel=null;
         refreshData(false);
-    } finally {
+    } finaly {
         lock=!1;
         q("#btn").disabled=!1;
     }
