@@ -205,7 +205,7 @@ const refreshData = async (isInitial = false) => {
         if(!a) throw "CPF não encontrado no banco de dados.";
         
         q("#p1-n").textContent=fn(gf(a,"NOME"));
-        cur=(gf(a,"CODIGO")||"UEE").toUpperCase();
+        cur=(gf(a,"CODIGO")||"AAL").toUpperCase();
         q("#ctx").textContent=cur;
         
         const l=d.poltronas||[];
