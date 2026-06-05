@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Planner - Mapa Moderno</title>
+    <style>
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:Arial,sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#f9f9f9}
+        
+        #h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+        #h b{font-size:28px;color:#38BA54}
+        
+        #w{display:none;margin-top:90px;flex-direction:column;align-items:center;padding-bottom:100px}
+        
+        /* Container do Mapa com referência de Frente */
+        .bc{padding:40px 20px;border:2px solid #ddd;border-radius:20px;position:relative;background:#fff;box-shadow:0 4px 15px rgba(0,0,0,0.05)}
+        .bc::before{content:"FRENTE / MOTORISTA";position:absolute;top:-35px;left:50%;transform:translateX(-50%);font-weight:bold;color:#38BA54;font-size:12px;letter-spacing:1px}
+        
+        /* Grid 2 + 1 (Corredor) + 2 */
+        .g{display:grid;grid-template-columns:54px 54px 20px 54px 54px;gap:14px 10px;justify-content:center}
+        
+        /* Poltronas */
+        .s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
+        .s{background:#38BA54;border:3px solid #38BA54;color:#fff;font-weight:700;cursor:pointer}
+        .s.selected{background:#123B1A;border-color:#123B1A}
+        .s.mine,.s.lt{background:#ccc;border-color:#ccc;pointer-events:none}
+        .s.white{background:#fff!important;border:3px solid #ddd!important;color:transparent!important;pointer-events:none}
+        .s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:10px;border-radius:4px;background:#fff;border:2px solid currentColor}
+        .e{pointer-events:none}
+        .corredor{width:20px;display:flex;align-items:center;justify-content:center;color:#ddd;font-size:10px}
+        
+        #btn{width:100%;max-width:248px;height:54px;background:#38BA54;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;margin-top:30px}
+        
+        /* Feedback */
+        #fb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}
+        #fb.s-ok{background:#38BA54;display:flex}
+        #fb.s-err{background:#e74c3c;display:flex}
+    </style>
+</head>
+<body>
+    <div id="h"><b>Planner</b></div>
+    <div id="fb"><h1 id="fb-t"></h1><p id="fb-m"></p><div id="fb-n" style="font-size:80px;font-weight:bold"></div><div id="fb-timer"></div></div>
+
+    <div id="w">
+        <div class="bc">
+            <div class="g" id="grid-container"></div>
+            <button id="btn">CONFIRMAR ESCOLHA</button>
+        </div>
+    </div>
+
+<script>
+const q=s=>document.querySelector(s);
+let sel=null, us=[], bl=[];
+
+const rd = (numPoltronas) => {
+    const container = q("#grid-container");
+    container.innerHTML = "";
+    
+    // Gera o layout 2-1-2
+    for (let i = 1; i <= numPoltronas; i += 4) {
+        let row = [i, i+1, null, i+2, i+3];
+        row.forEach(v => {
+            if(v === null) {
+                const e = document.createElement("div");
+                e.className = "corredor"; e.textContent = "||";
+                container.appendChild(e);
+            } else if (v <= numPoltronas) {
+                const e = document.createElement("div");
+                e.className = "s";
+                e.textContent = v.toString().padStart(2, "0");
+                e.dataset.s = v.toString().padStart(2, "0");
+                e.onclick = function() {
+                    if(sel) sel.classList.remove("selected");
+                    sel = this;
+                    sel.classList.add("selected");
+                };
+                container.appendChild(e);
+            }
+        });
+    }
+};
+
+// Inicialização
+window.onload = () => {
+    rd(44); // Exemplo para 44 poltronas
+    q("#w").style.display = "flex";
+};
+</script>
+</body>
+</html>
