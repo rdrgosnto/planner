@@ -179,7 +179,7 @@ const rd=l=>{
                 else if(bl.includes(id)||v==="white") e.classList.add("white");
                 else {
                     e.onclick=()=>sl(e);
-                    // Restaura a seleção do usuário se a poltrona ainda estiver disponível
+                    // Preserva a seleção se a poltrona ainda não tiver sido ocupada
                     if(previouslySelectedSeat === id) {
                         e.classList.add("selected");
                         sel = e;
@@ -195,25 +195,39 @@ const rd=l=>{
 const sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")};
 
 const refreshData = async (isInitial = false) => {
-    if(lock) return; // Evita atualizar no meio de uma confirmação
+    if(lock) return;
     if(isInitial) bar(30);
     try {
-        // Busca sempre os dados atualizados do servidor sem usar cache do sessionStorage
-        const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf: nm(cpf)})});
-        const d=await r.json();
-        if(isInitial) bar(70);
+        let d;
+        let pre = sessionStorage.getItem("preData");
         
-        const codes=d.codigo||[];
-        const a=codes.find(x=>nm(gf(x,"CPF2"))===nm(cpf));
+        if(isInitial && pre){
+            d = JSON.parse(pre);
+            if(isInitial) bar(70);
+        } else {
+            const r = await fetch(U.G,{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({cpf: nm(cpf)})
+            });
+            d = await r.json();
+            if(d && d.codigo) {
+                sessionStorage.setItem("preData", JSON.stringify(d));
+            }
+            if(isInitial) bar(70);
+        }
+        
+        const codes = d.codigo || [];
+        const a = codes.find(x => nm(gf(x,"CPF2")) === nm(cpf));
         
         if(!a) throw "CPF não encontrado no banco de dados.";
         
-        q("#p1-n").textContent=fn(gf(a,"NOME"));
-        cur=(gf(a,"CODIGO")||"AAL").toUpperCase();
-        q("#ctx").textContent=cur;
+        q("#p1-n").textContent = fn(gf(a,"NOME"));
+        cur = (gf(a,"CODIGO") || "AAL").toUpperCase();
+        q("#ctx").textContent = cur;
         
-        const l=d.poltronas||[];
-        const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
+        const l = d.poltronas || [];
+        const rows = l.filter(x => gf(x,"CURSO").toUpperCase() === cur);
         
         bl = [...new Set(rows.filter(x => {
             let cpfLimpo = nm(gf(x, "CPF2"));
@@ -223,7 +237,7 @@ const refreshData = async (isInitial = false) => {
         us = rows.filter(x => nm(gf(x, "CPF2")) === nm(cpf))
                  .map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0"));
         
-        const ly=cmap[cur]||"0046";
+        const ly = cmap[cur] || "0046";
         let cfg = null;
         
         try { 
@@ -255,6 +269,7 @@ const refreshData = async (isInitial = false) => {
         }
     } catch(e) {
         if(isInitial) showFb("err", "Erro", "Erro ao carregar dados: " + e);
+        else console.warn("Falha no refresh em segundo plano:", e);
     }
 };
 
@@ -264,7 +279,7 @@ const ld=async()=>{
     cpf=nm(sC);
     await refreshData(true);
     
-    // Inicia o loop de atualização automática a cada 12 segundos (12000 ms)
+    // Atualização em segundo plano a cada 12 segundos
     if(autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {
         refreshData(false);
@@ -282,6 +297,24 @@ q("#btn").onclick=async()=>{
         const p=old?{cpf: nm(cpf),curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf: nm(cpf)},
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
         if(r.ok){
+            let pre = sessionStorage.getItem("preData");
+            if(pre){
+                let cachedData = JSON.parse(pre);
+                if(cachedData.poltronas){
+                    cachedData.poltronas = cachedData.poltronas.map(x => {
+                        if(nm(gf(x, "CPF2")) === nm(cpf)) {
+                            if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === old) {
+                                x.CPF2 = ""; 
+                            }
+                        }
+                        if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === n && gf(x, "CURSO").toUpperCase() === cur.toUpperCase()) {
+                            x.CPF2 = nm(cpf);
+                        }
+                        return x;
+                    });
+                    sessionStorage.setItem("preData", JSON.stringify(cachedData));
+                }
+            }
             showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
         } else {
             showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
