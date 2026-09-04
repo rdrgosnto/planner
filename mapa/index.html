@@ -102,6 +102,7 @@
 <script>
 const q=s=>document.querySelector(s),
 nm=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"",
+fmtId=v=>v!==null&&v!==undefined?v.toString().replace(/\D/g,"").padStart(2,"0"):"",
 gf=(o,n)=>{
     if(!o)return"";
     let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
@@ -122,7 +123,7 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
       },
 cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an,autoRefreshInterval=null;
+let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an,autoRefreshInterval=null,recentlyFreedSeat=null;
 
 const showFb = (type, title, msg, seat = "") => {
     const el = q("#fb");
@@ -164,7 +165,7 @@ const rd=l=>{
     const g=document.createElement("div");g.className="g";
     if(!l)return;
     
-    let previouslySelectedSeat = sel ? sel.dataset.s : null;
+    let currentSelectedId = sel ? sel.dataset.s : null;
     sel = null;
 
     l.forEach(row=>{
@@ -173,14 +174,16 @@ const rd=l=>{
             if(v===null) e.className="e";
             else {
                 e.className="s";
-                const id=v.toString().padStart(2,"0");
-                if(v!=="white"){ e.textContent=id; e.dataset.s=id }
-                if(us.includes(id)) e.classList.add("mine");
-                else if(bl.includes(id)||v==="white") e.classList.add("white");
-                else {
+                const id=fmtId(v);
+                if(v!=="white"){ e.textContent=id; e.dataset.s=id; }
+                
+                if(us.includes(id)) {
+                    e.classList.add("mine");
+                } else if((bl.includes(id) && id !== recentlyFreedSeat) || v==="white") {
+                    e.classList.add("white");
+                } else {
                     e.onclick=()=>sl(e);
-                    // Preserva a seleção se a poltrona ainda não tiver sido ocupada
-                    if(previouslySelectedSeat === id) {
+                    if(currentSelectedId === id) {
                         e.classList.add("selected");
                         sel = e;
                     }
@@ -205,10 +208,10 @@ const refreshData = async (isInitial = false) => {
             d = JSON.parse(pre);
             if(isInitial) bar(70);
         } else {
-            const r = await fetch(U.G,{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({cpf: nm(cpf)})
+            const r = await fetch(U.G, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({cpf: nm(cpf)})
             });
             d = await r.json();
             if(d && d.codigo) {
@@ -218,25 +221,31 @@ const refreshData = async (isInitial = false) => {
         }
         
         const codes = d.codigo || [];
-        const a = codes.find(x => nm(gf(x,"CPF2")) === nm(cpf));
+        const a = codes.find(x => nm(gf(x, "CPF2")) === nm(cpf));
         
         if(!a) throw "CPF não encontrado no banco de dados.";
         
-        q("#p1-n").textContent = fn(gf(a,"NOME"));
-        cur = (gf(a,"CODIGO") || "AAL").toUpperCase();
+        q("#p1-n").textContent = fn(gf(a, "NOME"));
+        cur = (gf(a, "CODIGO") || "AAL").toUpperCase();
         q("#ctx").textContent = cur;
         
         const l = d.poltronas || [];
-        const rows = l.filter(x => gf(x,"CURSO").toUpperCase() === cur);
+        const rows = l.filter(x => gf(x, "CURSO").toUpperCase() === cur);
         
+        // Trata os IDs para garantia de 2 dígitos e evita falso travamento na troca
         bl = [...new Set(rows.filter(x => {
             let cpfLimpo = nm(gf(x, "CPF2"));
             return cpfLimpo.length === 11;
-        }).map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0")))];
+        }).map(x => fmtId(gf(x, "ID"))))];
         
         us = rows.filter(x => nm(gf(x, "CPF2")) === nm(cpf))
-                 .map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0"));
+                 .map(x => fmtId(gf(x, "ID")));
         
+        // Remove a trava local se o servidor já processou e desvinculou do banco
+        if(recentlyFreedSeat && !bl.includes(recentlyFreedSeat)){
+            recentlyFreedSeat = null;
+        }
+
         const ly = cmap[cur] || "0046";
         let cfg = null;
         
@@ -265,11 +274,10 @@ const refreshData = async (isInitial = false) => {
 
         if(isInitial) {
             bar(100);
-            setTimeout(()=>{ q("#pbc")?.remove(); q("#w").style.display="flex" }, 400);
+            setTimeout(() => { q("#pbc")?.remove(); q("#w").style.display = "flex" }, 400);
         }
     } catch(e) {
         if(isInitial) showFb("err", "Erro", "Erro ao carregar dados: " + e);
-        else console.warn("Falha no refresh em segundo plano:", e);
     }
 };
 
@@ -279,7 +287,6 @@ const ld=async()=>{
     cpf=nm(sC);
     await refreshData(true);
     
-    // Atualização em segundo plano a cada 12 segundos
     if(autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {
         refreshData(false);
@@ -297,17 +304,18 @@ q("#btn").onclick=async()=>{
         const p=old?{cpf: nm(cpf),curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf: nm(cpf)},
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
         if(r.ok){
+            if(old) recentlyFreedSeat = fmtId(old); // Bloqueia temporariamente que a poltrona antiga fique cinza
+            
             let pre = sessionStorage.getItem("preData");
             if(pre){
                 let cachedData = JSON.parse(pre);
                 if(cachedData.poltronas){
                     cachedData.poltronas = cachedData.poltronas.map(x => {
-                        if(nm(gf(x, "CPF2")) === nm(cpf)) {
-                            if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === old) {
-                                x.CPF2 = ""; 
-                            }
+                        let idAtual = fmtId(gf(x, "ID"));
+                        if(nm(gf(x, "CPF2")) === nm(cpf) && idAtual === fmtId(old)) {
+                            x.CPF2 = ""; 
                         }
-                        if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === n && gf(x, "CURSO").toUpperCase() === cur.toUpperCase()) {
+                        if(idAtual === fmtId(n) && gf(x, "CURSO").toUpperCase() === cur.toUpperCase()) {
                             x.CPF2 = nm(cpf);
                         }
                         return x;
