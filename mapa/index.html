@@ -40,38 +40,38 @@
         #pb{width:0;height:100%;background:#38BA54;transition:width .1s}
         
         /* TELA DE FEEDBACK */
-        #fb {position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}
-        #fb.s-ok {background:#38BA54;display:flex}
-        #fb.s-err {background:#e74c3c;display:flex}
+        #fb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}
+        #fb.s-ok{background:#38BA54;display:flex}
+        #fb.s-err{background:#e74c3c;display:flex}
         
-        #fb h1 {
-            font-size:34px; 
-            margin:0; 
+        #fb h1{
+            font-size:34px;
+            margin:0;
             font-weight:600;
-            letter-spacing: -0.5px;
+            letter-spacing:-0.5px;
         }
         
-        #fb p {
-            font-size:20px; 
-            margin:15px 0 30px; 
-            opacity:0.9; 
-            font-weight: 400;
+        #fb p{
+            font-size:20px;
+            margin:15px 0 30px;
+            opacity:0.9;
+            font-weight:400;
         }
         
-        .fb-num {
-            font-size:110px; 
+        .fb-num{
+            font-size:110px;
             font-weight:700;
             margin-bottom:20px;
         }
         
-        #fb-timer {
+        #fb-timer{
             position:absolute;
             bottom:40px;
             width:100%;
             font-size:16px;
             font-weight:normal;
             letter-spacing:1px;
-            opacity: 0.8;
+            opacity:0.8;
         }
 
         @media(min-width:800px){
@@ -84,9 +84,12 @@
         }
     </style>
 </head>
+
 <body>
 
-    <div id="h"><b>Planner</b></div>
+    <div id="h">
+        <b>Planner</b>
+    </div>
     
     <div id="fb">
         <h1 id="fb-t"></h1>
@@ -97,18 +100,24 @@
 
     <div id="w">
         <div class="map-outer">
+
             <div class="info-p">
                 <span>Passageiro 1</span>
                 <div id="p1-n"></div>
             </div>
 
             <div class="bc">
+
                 <div id="cbx">
                     <div id="ctx"></div>
                 </div>
 
-                <button id="btn">CONFIRMAR</button>
+                <button id="btn">
+                    CONFIRMAR
+                </button>
+
             </div>
+
         </div>
     </div>
     
@@ -116,15 +125,22 @@
         <div id="pb"></div>
     </div>
 
+
 <script>
 
-const q=s=>document.querySelector(s),
+/* =========================================================
+   FUNÇÕES AUXILIARES
+   ========================================================= */
 
-nm=c=>c
+const q=s=>document.querySelector(s);
+
+const nm=c=>
+    c
     ?c.toString().replace(/\D/g,"").padStart(11,"0")
-    :"",
+    :"";
 
-gf=(o,n)=>{
+const gf=(o,n)=>{
+
     if(!o)return"";
 
     let k=Object.keys(o).find(
@@ -134,13 +150,15 @@ gf=(o,n)=>{
     return k
         ?o[k].toString().replace(/\s+/g,' ').trim()
         :"";
-},
+};
 
-fn=s=>{
+const fn=s=>{
+
     if(!s)return"Passageiro";
 
     let p=s.toLowerCase().split(' ').map(
-        w=>['da','das','de','do','dos','e'].includes(w)
+        w=>
+            ['da','das','de','do','dos','e'].includes(w)
             ?w
             :w[0].toUpperCase()+w.slice(1)
     );
@@ -148,8 +166,8 @@ fn=s=>{
     return(
         window.innerWidth<800&&p.length>2
     )
-        ?p[0]+" "+p[p.length-1]
-        :p.join(' ');
+    ?p[0]+" "+p[p.length-1]
+    :p.join(' ');
 };
 
 
@@ -158,22 +176,24 @@ fn=s=>{
    ========================================================= */
 
 const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",
-      
-      E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
-      
-      U={
-          G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
 
-          P:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE",
+E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
 
-          S:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE"
-      },
+U={
 
-      cmap={
-          AAL:"0046",
-          ALI:"0046",
-          QUI:"0046"
-      };
+    G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+
+    P:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE",
+
+    S:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE"
+
+},
+
+cmap={
+    AAL:"0046",
+    ALI:"0046",
+    QUI:"0046"
+};
 
 
 /* =========================================================
@@ -189,60 +209,65 @@ let sel=null,
     an;
 
 
+/* =========================================================
+   CONFIGURAÇÃO DO POLLING
+   ========================================================= */
+
 /*
- * Controle do polling
- *
- * 48 segundos entre consultas
- * máximo de 10 minutos
+ * Consulta a cada 48 segundos.
  */
+const POLL_INTERVAL=48000;
 
-const POLL_INTERVAL = 48000;
+/*
+ * Polling máximo por 10 minutos.
+ */
+const POLL_MAX_TIME=10*60*1000;
 
-const POLL_MAX_TIME = 10 * 60 * 1000;
+let pollStartTime=null;
 
-let pollStartTime = null;
-
-let pollAtivo = true;
+let pollTimer=null;
 
 
 /* =========================================================
    FEEDBACK
    ========================================================= */
 
-const showFb = (type, title, msg, seat = "") => {
+const showFb=(type,title,msg,seat="")=>{
 
-    const el = q("#fb");
-    const tEl = q("#fb-timer");
+    const el=q("#fb");
+    const tEl=q("#fb-timer");
 
-    q("#fb-t").textContent = title;
-    q("#fb-m").textContent = msg;
+    q("#fb-t").textContent=title;
+    q("#fb-m").textContent=msg;
 
-    const nEl = q("#fb-n");
+    const nEl=q("#fb-n");
 
     if(seat){
 
-        nEl.textContent = seat;
-        nEl.style.display = "block";
+        nEl.textContent=seat;
+        nEl.style.display="block";
 
     }else{
 
-        nEl.style.display = "none";
+        nEl.style.display="none";
 
     }
 
-    el.className = type === 'ok'
-        ? 's-ok'
-        : 's-err';
+    el.className=
+        type==='ok'
+        ?'s-ok'
+        :'s-err';
 
-    let count = 4;
+    let count=4;
 
-    tEl.textContent = `fechando em ${count}s...`;
+    tEl.textContent=
+        `fechando em ${count}s...`;
 
-    const timer = setInterval(() => {
+    const timer=setInterval(()=>{
 
         count--;
 
-        if(count <= 0){
+        if(count<=0){
 
             clearInterval(timer);
 
@@ -250,7 +275,8 @@ const showFb = (type, title, msg, seat = "") => {
 
         }else{
 
-            tEl.textContent = `fechando em ${count}s...`;
+            tEl.textContent=
+                `fechando em ${count}s...`;
 
         }
 
@@ -258,15 +284,12 @@ const showFb = (type, title, msg, seat = "") => {
 };
 
 
-const closeFb = () => {
+const closeFb=()=>{
 
-    q("#fb").className = "";
+    q("#fb").className="";
 
     /*
-     * Atualização imediata depois de fechar
-     * a tela de feedback.
-     *
-     * Esta chamada não depende do polling.
+     * Atualiza imediatamente depois do feedback.
      */
     refreshData(false);
 
@@ -290,10 +313,10 @@ const bar=t=>{
     an=setInterval(()=>{
 
         w>=t
-            ?clearInterval(an)
-            :(w++,b.style.width=w+"%");
+        ?clearInterval(an)
+        :(w++,b.style.width=w+"%");
 
-    },5)
+    },5);
 
 };
 
@@ -330,16 +353,18 @@ const rd=l=>{
                     .toString()
                     .padStart(2,"0");
 
+
                 if(v!=="white"){
 
                     e.textContent=id;
+
                     e.dataset.s=id;
 
                 }
 
+
                 /*
-                 * Primeiro verifica se é a poltrona
-                 * do próprio usuário.
+                 * Poltrona do próprio usuário.
                  */
 
                 if(us.includes(id)){
@@ -348,8 +373,9 @@ const rd=l=>{
 
                 }
 
+
                 /*
-                 * Depois verifica se está ocupada.
+                 * Poltrona ocupada por outro usuário.
                  */
 
                 else if(
@@ -361,8 +387,9 @@ const rd=l=>{
 
                 }
 
+
                 /*
-                 * Caso contrário está disponível.
+                 * Poltrona livre.
                  */
 
                 else{
@@ -385,7 +412,7 @@ const rd=l=>{
 
 
 /* =========================================================
-   SELEÇÃO DE POLTRONA
+   SELECIONAR POLTRONA
    ========================================================= */
 
 const sl=e=>{
@@ -395,7 +422,9 @@ const sl=e=>{
         e.classList.contains("white") ||
         e.classList.contains("mine")
     ){
+
         return;
+
     }
 
     if(sel){
@@ -404,7 +433,8 @@ const sl=e=>{
 
     }
 
-    sel=(sel===e)
+    sel=
+        sel===e
         ?null
         :e;
 
@@ -414,10 +444,10 @@ const sl=e=>{
 
 
 /* =========================================================
-   ATUALIZAÇÃO DOS DADOS
+   REFRESH DOS DADOS
    ========================================================= */
 
-const refreshData = async (isInitial = false) => {
+const refreshData=async(isInitial=false)=>{
 
     if(isInitial){
 
@@ -425,29 +455,31 @@ const refreshData = async (isInitial = false) => {
 
     }
 
+
     try{
 
         let d;
 
+
         /*
-         * Guarda a poltrona que o usuário está
-         * selecionando neste momento.
+         * Guarda a seleção atual.
          */
-        const previousSel = sel?.dataset?.s || null;
+        const previousSel=
+            sel?.dataset?.s || null;
 
 
         /* =================================================
-           CARREGAMENTO INICIAL
+           PRIMEIRO CARREGAMENTO
            ================================================= */
 
         if(isInitial){
 
             /*
-             * No primeiro carregamento podemos usar
-             * o preData para abrir o mapa rapidamente.
+             * Primeiro tenta usar o cache.
              */
+            const pre=
+                sessionStorage.getItem("preData");
 
-            const pre=sessionStorage.getItem("preData");
 
             if(pre){
 
@@ -461,13 +493,15 @@ const refreshData = async (isInitial = false) => {
                         method:"POST",
                         cache:"no-store",
                         headers:{
-                            "Content-Type":"application/json"
+                            "Content-Type":
+                                "application/json"
                         },
                         body:JSON.stringify({
                             cpf:nm(cpf)
                         })
                     }
                 );
+
 
                 if(!r.ok){
 
@@ -477,7 +511,9 @@ const refreshData = async (isInitial = false) => {
 
                 }
 
+
                 d=await r.json();
+
 
                 sessionStorage.setItem(
                     "preData",
@@ -486,24 +522,16 @@ const refreshData = async (isInitial = false) => {
 
             }
 
+
             bar(70);
 
 
-        /* =================================================
-           ATUALIZAÇÃO EM SEGUNDO PLANO
-           ================================================= */
-
         }else{
 
-            /*
-             * IMPORTANTE:
-             *
-             * Aqui NÃO usamos o preData.
-             *
-             * Sempre fazemos uma nova chamada ao
-             * Power Automate para descobrir se alguma
-             * poltrona mudou.
-             */
+
+            /* =============================================
+               ATUALIZAÇÃO EM SEGUNDO PLANO
+               ============================================= */
 
             const r=await fetch(
                 U.G,
@@ -511,7 +539,8 @@ const refreshData = async (isInitial = false) => {
                     method:"POST",
                     cache:"no-store",
                     headers:{
-                        "Content-Type":"application/json"
+                        "Content-Type":
+                            "application/json"
                     },
                     body:JSON.stringify({
                         cpf:nm(cpf)
@@ -519,13 +548,6 @@ const refreshData = async (isInitial = false) => {
                 }
             );
 
-
-            /*
-             * Se houver algum problema na consulta
-             * automática, simplesmente não altera o mapa.
-             *
-             * Não mostramos tela de erro.
-             */
 
             if(!r.ok){
 
@@ -542,7 +564,8 @@ const refreshData = async (isInitial = false) => {
 
 
             /*
-             * Atualiza o cache local.
+             * IMPORTANTE:
+             * substitui o cache pelos dados atuais.
              */
 
             sessionStorage.setItem(
@@ -558,6 +581,7 @@ const refreshData = async (isInitial = false) => {
            ================================================= */
 
         const codes=d.codigo||[];
+
 
         const a=codes.find(
             x=>nm(gf(x,"CPF2"))===nm(cpf)
@@ -582,7 +606,7 @@ const refreshData = async (isInitial = false) => {
 
 
         cur=(
-            gf(a,"CODIGO") ||
+            gf(a,"CODIGO")||
             "AAL"
         ).toUpperCase();
 
@@ -591,38 +615,61 @@ const refreshData = async (isInitial = false) => {
 
 
         /* =================================================
-           POLTRONAS
+           FILTRA POLTRONAS DO CURSO
            ================================================= */
 
         const l=d.poltronas||[];
 
 
         const rows=l.filter(
-            x=>gf(x,"CURSO").toUpperCase()===cur
+            x=>
+                gf(x,"CURSO")
+                .toUpperCase()===cur
         );
 
 
-        /*
-         * NOVA LISTA DE POLTRONAS BLOQUEADAS
-         */
+        /* =================================================
+           POLTRONAS BLOQUEADAS
+           ================================================= */
 
         const newBl=[
 
             ...new Set(
 
                 rows
+
                 .filter(x=>{
 
-                    const cpfLimpo=
-                        nm(gf(x,"CPF2"));
+                    /*
+                     * NÃO usamos nm() aqui.
+                     *
+                     * Primeiro pegamos o CPF original.
+                     */
+                    const cpfOriginal=
+                        gf(x,"CPF2");
 
+
+                    /*
+                     * Removemos caracteres.
+                     */
+                    const cpfLimpo=
+                        cpfOriginal
+                        .toString()
+                        .replace(/\D/g,"");
+
+
+                    /*
+                     * Só está ocupada se houver
+                     * realmente 11 dígitos.
+                     */
                     return cpfLimpo.length===11;
 
                 })
+
                 .map(x=>
                     gf(x,"ID")
                     .toString()
-                    .replace(/\s+/g,'')
+                    .replace(/\s+/g,"")
                     .padStart(2,"0")
                 )
 
@@ -631,27 +678,43 @@ const refreshData = async (isInitial = false) => {
         ];
 
 
-        /*
-         * NOVA LISTA DE POLTRONAS DO USUÁRIO
-         */
+        /* =================================================
+           POLTRONAS DO PRÓPRIO USUÁRIO
+           ================================================= */
+
+        const cpfUsuario=nm(cpf);
+
 
         const newUs=rows
 
-            .filter(
-                x=>nm(gf(x,"CPF2"))===nm(cpf)
-            )
+            .filter(x=>{
 
-            .map(
-                x=>
-                    gf(x,"ID")
+                const cpfOriginal=
+                    gf(x,"CPF2");
+
+                const cpfLimpo=
+                    cpfOriginal
                     .toString()
-                    .replace(/\s+/g,'')
-                    .padStart(2,"0")
+                    .replace(/\D/g,"");
+
+
+                return(
+                    cpfLimpo.length===11 &&
+                    nm(cpfLimpo)===cpfUsuario
+                );
+
+            })
+
+            .map(x=>
+                gf(x,"ID")
+                .toString()
+                .replace(/\s+/g,"")
+                .padStart(2,"0")
             );
 
 
         /* =================================================
-           VERIFICA SE ALGUMA POLTRONA MUDOU
+           COMPARA ESTADO ANTERIOR COM NOVO
            ================================================= */
 
         const oldState=[
@@ -679,28 +742,57 @@ const refreshData = async (isInitial = false) => {
 
 
         /*
-         * Atualiza as listas globais.
+         * Atualiza as variáveis.
          */
 
         bl=newBl;
+
         us=newUs;
 
 
         /* =================================================
-           REDESENHA SOMENTE SE NECESSÁRIO
+           SE NADA MUDOU, NÃO REDESENHA
            ================================================= */
 
-        if(isInitial || changed){
+        if(
+            !isInitial &&
+            !changed
+        ){
 
-            const ly=cmap[cur]||"0046";
+            return;
 
-            let cfg=null;
+        }
 
 
-            try{
+        /* =================================================
+           CARREGA CONFIGURAÇÃO DO MAPA
+           ================================================= */
 
-                let res=await fetch(
-                    `../configs/${ly}.json`,
+        const ly=
+            cmap[cur]||"0046";
+
+
+        let cfg=null;
+
+
+        try{
+
+            let res=await fetch(
+                `../configs/${ly}.json`,
+                {
+                    cache:"no-store"
+                }
+            );
+
+
+            if(res.ok){
+
+                cfg=await res.json();
+
+            }else{
+
+                res=await fetch(
+                    `configs/${ly}.json`,
                     {
                         cache:"no-store"
                     }
@@ -711,119 +803,111 @@ const refreshData = async (isInitial = false) => {
 
                     cfg=await res.json();
 
-                }else{
+                }
 
-                    res=await fetch(
-                        `configs/${ly}.json`,
-                        {
-                            cache:"no-store"
-                        }
-                    );
+            }
+
+        }catch(e){
+
+            console.warn(
+                "Erro nas poltronas:",
+                e
+            );
+
+        }
 
 
-                    if(res.ok){
+        /* =================================================
+           DESENHA O MAPA
+           ================================================= */
 
-                        cfg=await res.json();
+        if(
+            cfg &&
+            cfg.layout
+        ){
+
+            rd(cfg.layout);
+
+        }else{
+
+            const defaultLayout=[];
+
+
+            for(
+                let i=1;
+                i<=46;
+                i+=5
+            ){
+
+                const row=[];
+
+
+                for(
+                    let j=0;
+                    j<5;
+                    j++
+                ){
+
+                    if(i+j<=46){
+
+                        row.push(i+j);
 
                     }
 
                 }
 
-            }catch(e){
 
-                console.warn(
-                    "Erro nas poltronas:",
-                    e
-                );
+                defaultLayout.push(row);
 
             }
 
 
-            /* =============================================
-               LAYOUT
-               ============================================= */
+            rd(defaultLayout);
 
-            if(cfg && cfg.layout){
+        }
 
-                rd(cfg.layout);
+
+        /* =================================================
+           RECUPERA SELEÇÃO
+           ================================================= */
+
+        if(previousSel){
+
+            const newElement=[
+
+                ...document
+                .querySelectorAll(".s")
+
+            ].find(
+                x=>
+                    x.dataset.s===
+                    previousSel
+            );
+
+
+            /*
+             * Se ainda está livre,
+             * mantém selecionada.
+             */
+
+            if(
+                newElement &&
+                !newElement.classList.contains("white") &&
+                !newElement.classList.contains("mine")
+            ){
+
+                sel=newElement;
+
+                newElement.classList.add(
+                    "selected"
+                );
 
             }else{
 
-                const defaultLayout=[];
-
-                for(
-                    let i=1;
-                    i<=46;
-                    i+=5
-                ){
-
-                    const row=[];
-
-                    for(
-                        let j=0;
-                        j<5;
-                        j++
-                    ){
-
-                        if(i+j<=46){
-
-                            row.push(i+j);
-
-                        }
-
-                    }
-
-                    defaultLayout.push(row);
-
-                }
-
-                rd(defaultLayout);
-
-            }
-
-
-            /* =============================================
-               RECUPERA SELEÇÃO ANTERIOR
-               ============================================= */
-
-            if(previousSel){
-
-                const newElement=[
-
-                    ...document.querySelectorAll(".s")
-
-                ].find(
-                    x=>x.dataset.s===previousSel
-                );
-
-
                 /*
-                 * Se a poltrona continua disponível,
-                 * mantém a seleção.
+                 * Outra pessoa ocupou a poltrona.
                  */
-
-                if(
-                    newElement &&
-                    !newElement.classList.contains("white") &&
-                    !newElement.classList.contains("mine")
-                ){
-
-                    sel=newElement;
-
-                    newElement.classList.add(
-                        "selected"
-                    );
-
-                }else{
-
-                    /*
-                     * Outra pessoa ocupou justamente
-                     * a poltrona que estava selecionada.
-                     */
-
-                    sel=null;
-
-                }
+                sel=null;
 
             }
 
@@ -837,6 +921,7 @@ const refreshData = async (isInitial = false) => {
         if(isInitial){
 
             bar(100);
+
 
             setTimeout(()=>{
 
@@ -852,8 +937,7 @@ const refreshData = async (isInitial = false) => {
     }catch(e){
 
         /*
-         * Erro no carregamento inicial:
-         * mostra ao usuário.
+         * Erro somente aparece no carregamento inicial.
          */
 
         if(isInitial){
@@ -865,11 +949,6 @@ const refreshData = async (isInitial = false) => {
             );
 
         }else{
-
-            /*
-             * Erro durante polling:
-             * somente registra no console.
-             */
 
             console.warn(
                 "Erro na atualização automática:",
@@ -889,15 +968,20 @@ const refreshData = async (isInitial = false) => {
 
 const ld=async()=>{
 
-    const sC=sessionStorage.getItem("cpf");
+    const sC=
+        sessionStorage.getItem("cpf");
+
 
     if(!sC){
 
-        return location.href="../index.html";
+        return location.href=
+            "../index.html";
 
     }
 
+
     cpf=nm(sC);
+
 
     await refreshData(true);
 
@@ -925,14 +1009,15 @@ q("#btn").onclick=async()=>{
     }
 
 
-    const old=us[0]||null;
+    const old=
+        us[0]||null;
 
 
     if(
         !confirm(
             old
-                ?"Confirma troca de poltrona?"
-                :"Confirma seleção da poltrona?"
+            ?"Confirma troca de poltrona?"
+            :"Confirma seleção da poltrona?"
         )
     ){
 
@@ -946,12 +1031,15 @@ q("#btn").onclick=async()=>{
     q("#btn").disabled=!0;
 
 
-    const n=sel.dataset.s;
+    const n=
+        sel.dataset.s;
 
 
     try{
 
-        const p=old
+        const p=
+
+            old
 
             ?{
                 cpf:nm(cpf),
@@ -970,8 +1058,8 @@ q("#btn").onclick=async()=>{
         const r=await fetch(
 
             old
-                ?U.S
-                :U.P,
+            ?U.S
+            :U.P,
 
             {
                 method:"POST",
@@ -990,8 +1078,7 @@ q("#btn").onclick=async()=>{
         if(r.ok){
 
             /*
-             * Atualiza localmente a poltrona antiga
-             * e a nova no cache do preData.
+             * Atualiza o cache local.
              */
 
             let pre=
@@ -1006,15 +1093,16 @@ q("#btn").onclick=async()=>{
                     JSON.parse(pre);
 
 
-                if(cachedData.poltronas){
+                if(
+                    cachedData.poltronas
+                ){
 
                     cachedData.poltronas=
                         cachedData.poltronas.map(
                             x=>{
 
                                 /*
-                                 * Remove o vínculo antigo
-                                 * deste CPF.
+                                 * Remove vínculo antigo.
                                  */
 
                                 if(
@@ -1038,7 +1126,7 @@ q("#btn").onclick=async()=>{
 
 
                                 /*
-                                 * Vincula o CPF à nova poltrona.
+                                 * Ocupa a nova poltrona.
                                  */
 
                                 if(
@@ -1093,7 +1181,9 @@ q("#btn").onclick=async()=>{
                 "Poltrona selecionada por outro usuário."
             );
 
+
             sel=null;
+
 
             await refreshData(false);
 
@@ -1108,7 +1198,9 @@ q("#btn").onclick=async()=>{
             "Não foi possível conectar ao servidor."
         );
 
+
         sel=null;
+
 
         await refreshData(false);
 
@@ -1128,83 +1220,80 @@ q("#btn").onclick=async()=>{
    POLLING AUTOMÁTICO
    ========================================================= */
 
-const iniciarPolling=()=>{
+const executarAtualizacao=async()=>{
 
     /*
-     * Marca o início dos 10 minutos.
+     * Só consulta se:
+     *
+     * - a aba estiver visível;
+     * - a janela estiver com foco;
+     * - não estiver acontecendo uma troca.
      */
 
-    pollStartTime=Date.now();
+    if(
+        document.visibilityState==="visible" &&
+        document.hasFocus() &&
+        !lock
+    ){
 
-    pollAtivo=true;
+        await refreshData(false);
 
+    }
 
-    const verificar=async()=>{
-
-        /*
-         * Se já passaram 10 minutos,
-         * encerra definitivamente o polling.
-         */
-
-        if(
-            Date.now()-pollStartTime>=POLL_MAX_TIME
-        ){
-
-            pollAtivo=false;
-
-            console.log(
-                "Atualização automática encerrada após 10 minutos."
-            );
-
-            return;
-
-        }
+};
 
 
-        /*
-         * Só consulta quando:
-         *
-         * 1. polling está ativo;
-         * 2. a aba está visível;
-         * 3. a janela está com foco;
-         * 4. não está acontecendo uma seleção/troca.
-         */
+const agendarPolling=()=>{
 
-        if(
-            pollAtivo &&
-            document.visibilityState==="visible" &&
-            document.hasFocus() &&
-            !lock
-        ){
+    /*
+     * Verifica se os 10 minutos já terminaram.
+     */
 
-            await refreshData(false);
+    if(
+        Date.now()-pollStartTime>=
+        POLL_MAX_TIME
+    ){
 
-        }
+        console.log(
+            "Atualização automática encerrada após 10 minutos."
+        );
 
+        pollTimer=null;
 
-        /*
-         * Agenda a próxima verificação somente
-         * depois que a anterior terminou.
-         */
+        return;
 
-        if(pollAtivo){
-
-            setTimeout(
-                verificar,
-                POLL_INTERVAL
-            );
-
-        }
-
-    };
+    }
 
 
     /*
-     * Primeira consulta ocorre depois de 48 segundos.
+     * Agenda a próxima chamada.
      */
 
-    setTimeout(
-        verificar,
+    pollTimer=setTimeout(
+        async()=>{
+
+            /*
+             * Se ainda estiver dentro dos 10 minutos,
+             * faz a atualização.
+             */
+
+            if(
+                Date.now()-pollStartTime<
+                POLL_MAX_TIME
+            ){
+
+                await executarAtualizacao();
+
+            }
+
+
+            /*
+             * Agenda a próxima.
+             */
+
+            agendarPolling();
+
+        },
         POLL_INTERVAL
     );
 
@@ -1212,17 +1301,116 @@ const iniciarPolling=()=>{
 
 
 /* =========================================================
-   INICIA
+   ATUALIZAÇÃO AO VOLTAR PARA A ABA
+   ========================================================= */
+
+let ultimaAtualizacaoFoco=0;
+
+
+const atualizarAoVoltar=async()=>{
+
+    const agora=Date.now();
+
+
+    /*
+     * Evita duas chamadas simultâneas quando
+     * focus + visibilitychange acontecerem juntos.
+     */
+
+    if(
+        agora-ultimaAtualizacaoFoco<
+        2000
+    ){
+
+        return;
+
+    }
+
+
+    ultimaAtualizacaoFoco=agora;
+
+
+    /*
+     * Não faz chamada depois dos 10 minutos.
+     */
+
+    if(
+        !pollStartTime ||
+        Date.now()-pollStartTime>=
+        POLL_MAX_TIME
+    ){
+
+        return;
+
+    }
+
+
+    if(
+        document.visibilityState==="visible" &&
+        document.hasFocus() &&
+        !lock
+    ){
+
+        await refreshData(false);
+
+    }
+
+};
+
+
+/* =========================================================
+   EVENTOS DA ABA
+   ========================================================= */
+
+/*
+ * Usuário voltou para a aba.
+ */
+document.addEventListener(
+    "visibilitychange",
+    ()=>{
+
+        if(
+            document.visibilityState===
+            "visible"
+        ){
+
+            atualizarAoVoltar();
+
+        }
+
+    }
+);
+
+
+/*
+ * Usuário voltou para a janela.
+ */
+window.addEventListener(
+    "focus",
+    atualizarAoVoltar
+);
+
+
+/* =========================================================
+   INICIALIZAÇÃO
    ========================================================= */
 
 ld().then(()=>{
 
     /*
-     * Só começa a contagem dos 10 minutos
-     * depois que o mapa terminou de carregar.
+     * Começa a contagem dos 10 minutos
+     * somente depois que o mapa carregou.
      */
 
-    iniciarPolling();
+    pollStartTime=Date.now();
+
+
+    /*
+     * Primeira consulta automática
+     * acontecerá em 48 segundos.
+     */
+
+    agendarPolling();
 
 });
 
