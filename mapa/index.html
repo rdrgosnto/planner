@@ -123,7 +123,14 @@ const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerp
       },
 cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an,autoRefreshInterval=null,recentlyFreedSeat=null;
+let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an,autoRefreshInterval=null;
+
+// Objeto para autoridade local temporária durante a troca
+let pendingChanges = {
+    freed: null,    // ID da poltrona antiga liberada
+    selected: null, // ID da nova poltrona escolhida
+    until: 0        // Timestamp limite da proteção (45 segundos)
+};
 
 const showFb = (type, title, msg, seat = "") => {
     const el = q("#fb");
@@ -179,7 +186,7 @@ const rd=l=>{
                 
                 if(us.includes(id)) {
                     e.classList.add("mine");
-                } else if((bl.includes(id) && id !== recentlyFreedSeat) || v==="white") {
+                } else if(bl.includes(id) || v==="white") {
                     e.classList.add("white");
                 } else {
                     e.onclick=()=>sl(e);
@@ -232,19 +239,35 @@ const refreshData = async (isInitial = false) => {
         const l = d.poltronas || [];
         const rows = l.filter(x => gf(x, "CURSO").toUpperCase() === cur);
         
-        // Trata os IDs para garantia de 2 dígitos e evita falso travamento na troca
-        bl = [...new Set(rows.filter(x => {
+        // Mapeamento normal vindo da API
+        let apiBl = [...new Set(rows.filter(x => {
             let cpfLimpo = nm(gf(x, "CPF2"));
             return cpfLimpo.length === 11;
         }).map(x => fmtId(gf(x, "ID"))))];
         
-        us = rows.filter(x => nm(gf(x, "CPF2")) === nm(cpf))
-                 .map(x => fmtId(gf(x, "ID")));
-        
-        // Remove a trava local se o servidor já processou e desvinculou do banco
-        if(recentlyFreedSeat && !bl.includes(recentlyFreedSeat)){
-            recentlyFreedSeat = null;
+        let apiUs = rows.filter(x => nm(gf(x, "CPF2")) === nm(cpf))
+                        .map(x => fmtId(gf(x, "ID")));
+
+        // APLICAÇÃO DA AUTORIDADE LOCAL SE HOUVER TROCA RECENTE
+        const now = Date.now();
+        if(now < pendingChanges.until) {
+            // Se tivermos libertado a poltrona antiga, forçamos ela fora da lista de bloqueadas/minhas
+            if(pendingChanges.freed) {
+                apiBl = apiBl.filter(id => id !== pendingChanges.freed);
+                apiUs = apiUs.filter(id => id !== pendingChanges.freed);
+            }
+            // Se tivermos selecionado a nova poltrona, forçamos ela a ser 'minha'
+            if(pendingChanges.selected) {
+                if(!apiUs.includes(pendingChanges.selected)) apiUs.push(pendingChanges.selected);
+                apiBl = apiBl.filter(id => id !== pendingChanges.selected);
+            }
+        } else {
+            // Expira a proteção local após 45 segundos
+            pendingChanges = { freed: null, selected: null, until: 0 };
         }
+
+        bl = apiBl;
+        us = apiUs;
 
         const ly = cmap[cur] || "0046";
         let cfg = null;
@@ -304,8 +327,14 @@ q("#btn").onclick=async()=>{
         const p=old?{cpf: nm(cpf),curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf: nm(cpf)},
         r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
         if(r.ok){
-            if(old) recentlyFreedSeat = fmtId(old); // Bloqueia temporariamente que a poltrona antiga fique cinza
-            
+            // ATIVA A AUTORIDADE LOCAL POR 45 SEGUNDOS
+            pendingChanges = {
+                freed: old ? fmtId(old) : null,
+                selected: fmtId(n),
+                until: Date.now() + 45000 
+            };
+
+            // Atualiza localmente no sessionStorage
             let pre = sessionStorage.getItem("preData");
             if(pre){
                 let cachedData = JSON.parse(pre);
@@ -323,6 +352,7 @@ q("#btn").onclick=async()=>{
                     sessionStorage.setItem("preData", JSON.stringify(cachedData));
                 }
             }
+
             showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
         } else {
             showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
