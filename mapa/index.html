@@ -74,10 +74,18 @@
             opacity: 0.8;
         }
 
-        @media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}#w{margin-top:94px;position:relative}.info-p{position:absolute;left:40px;top:0;width:auto}#p1-n{font-size:24px}.bc{margin:0 auto}}
+        @media(min-width:800px){
+            #h{justify-content:flex-start}
+            #h b{padding-left:40px}
+            #w{margin-top:94px;position:relative}
+            .info-p{position:absolute;left:40px;top:0;width:auto}
+            #p1-n{font-size:24px}
+            .bc{margin:0 auto}
+        }
     </style>
 </head>
 <body>
+
     <div id="h"><b>Planner</b></div>
     
     <div id="fb">
@@ -89,228 +97,1136 @@
 
     <div id="w">
         <div class="map-outer">
-            <div class="info-p"><span>Passageiro 1</span><div id="p1-n"></div></div>
+            <div class="info-p">
+                <span>Passageiro 1</span>
+                <div id="p1-n"></div>
+            </div>
+
             <div class="bc">
-                <div id="cbx"><div id="ctx"></div></div>
+                <div id="cbx">
+                    <div id="ctx"></div>
+                </div>
+
                 <button id="btn">CONFIRMAR</button>
             </div>
         </div>
     </div>
     
-    <div id="pbc"><div id="pb"></div></div>
+    <div id="pbc">
+        <div id="pb"></div>
+    </div>
 
 <script>
+
 const q=s=>document.querySelector(s),
-nm=c=>c?c.toString().replace(/\D/g,"").padStart(11,"0"):"",
+
+nm=c=>c
+    ?c.toString().replace(/\D/g,"").padStart(11,"0")
+    :"",
+
 gf=(o,n)=>{
     if(!o)return"";
-    let k=Object.keys(o).find(key=>key.toLowerCase()===n.toLowerCase());
-    return k?o[k].toString().replace(/\s+/g, ' ').trim():"";
+
+    let k=Object.keys(o).find(
+        key=>key.toLowerCase()===n.toLowerCase()
+    );
+
+    return k
+        ?o[k].toString().replace(/\s+/g,' ').trim()
+        :"";
 },
+
 fn=s=>{
     if(!s)return"Passageiro";
-    let p=s.toLowerCase().split(' ').map(w=>['da','das','de','do','dos','e'].includes(w)?w:w[0].toUpperCase()+w.slice(1));
-    return(window.innerWidth<800&&p.length>2)?p[0]+" "+p[p.length-1]:p.join(' ');
+
+    let p=s.toLowerCase().split(' ').map(
+        w=>['da','das','de','do','dos','e'].includes(w)
+            ?w
+            :w[0].toUpperCase()+w.slice(1)
+    );
+
+    return(
+        window.innerWidth<800&&p.length>2
+    )
+        ?p[0]+" "+p[p.length-1]
+        :p.join(' ');
 };
+
+
+/* =========================================================
+   POWER AUTOMATE
+   ========================================================= */
 
 const B="https://default264c851fa4e743cf86bcd7b10dca85.78.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/",
+      
       E="/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=",
+      
       U={
           G:B+"239ef024d32946f99a66585bed86d236"+E+"ItjHZInk4ZgqUycsWShgWkI1PEphNs_bQhmpReiFwuA",
+
           P:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE",
+
           S:B+"7da54ebe0b8e4a55a05b4c57a7214787"+E+"xYMW6NwI-NmXiYtUQ38O0LF2ZUcDuKrv-j8QKVJaBBE"
       },
-cmap={AAL:"0046",ALI:"0046",QUI:"0046"};
 
-let sel=null,bl=[],us=[],cpf=null,cur="",lock=!1,an;
+      cmap={
+          AAL:"0046",
+          ALI:"0046",
+          QUI:"0046"
+      };
+
+
+/* =========================================================
+   VARIÁVEIS
+   ========================================================= */
+
+let sel=null,
+    bl=[],
+    us=[],
+    cpf=null,
+    cur="",
+    lock=!1,
+    an;
+
+
+/*
+ * Controle do polling
+ *
+ * 48 segundos entre consultas
+ * máximo de 10 minutos
+ */
+
+const POLL_INTERVAL = 48000;
+
+const POLL_MAX_TIME = 10 * 60 * 1000;
+
+let pollStartTime = null;
+
+let pollAtivo = true;
+
+
+/* =========================================================
+   FEEDBACK
+   ========================================================= */
 
 const showFb = (type, title, msg, seat = "") => {
+
     const el = q("#fb");
     const tEl = q("#fb-timer");
+
     q("#fb-t").textContent = title;
     q("#fb-m").textContent = msg;
+
     const nEl = q("#fb-n");
-    if(seat) { nEl.textContent = seat; nEl.style.display = "block"; } 
-    else { nEl.style.display = "none"; }
-    el.className = type === 'ok' ? 's-ok' : 's-err';
+
+    if(seat){
+
+        nEl.textContent = seat;
+        nEl.style.display = "block";
+
+    }else{
+
+        nEl.style.display = "none";
+
+    }
+
+    el.className = type === 'ok'
+        ? 's-ok'
+        : 's-err';
+
     let count = 4;
+
     tEl.textContent = `fechando em ${count}s...`;
+
     const timer = setInterval(() => {
+
         count--;
-        if(count <= 0) {
+
+        if(count <= 0){
+
             clearInterval(timer);
+
             closeFb();
-        } else {
+
+        }else{
+
             tEl.textContent = `fechando em ${count}s...`;
+
         }
-    }, 1000);
+
+    },1000);
 };
+
 
 const closeFb = () => {
+
     q("#fb").className = "";
+
+    /*
+     * Atualização imediata depois de fechar
+     * a tela de feedback.
+     *
+     * Esta chamada não depende do polling.
+     */
     refreshData(false);
+
 };
+
+
+/* =========================================================
+   BARRA DE PROGRESSO
+   ========================================================= */
 
 const bar=t=>{
+
     let b=q("#pb");
-    if(!b) return;
+
+    if(!b)return;
+
     clearInterval(an);
+
     let w=parseInt(b.style.width)||0;
-    an=setInterval(()=>{w>=t?clearInterval(an):(w++,b.style.width=w+"%")},5)
+
+    an=setInterval(()=>{
+
+        w>=t
+            ?clearInterval(an)
+            :(w++,b.style.width=w+"%");
+
+    },5)
+
 };
+
+
+/* =========================================================
+   DESENHA O MAPA
+   ========================================================= */
 
 const rd=l=>{
+
     q(".g")?.remove();
-    const g=document.createElement("div");g.className="g";
+
+    const g=document.createElement("div");
+
+    g.className="g";
+
     if(!l)return;
+
     l.forEach(row=>{
+
         row.forEach(v=>{
+
             const e=document.createElement("div");
-            if(v===null) e.className="e";
-            else {
+
+            if(v===null){
+
+                e.className="e";
+
+            }else{
+
                 e.className="s";
-                const id=v.toString().padStart(2,"0");
-                if(v!=="white"){ e.textContent=id; e.dataset.s=id }
-                if(us.includes(id)) e.classList.add("mine");
-                else if(bl.includes(id)||v==="white") e.classList.add("white");
-                else e.onclick=()=>sl(e);
+
+                const id=v
+                    .toString()
+                    .padStart(2,"0");
+
+                if(v!=="white"){
+
+                    e.textContent=id;
+                    e.dataset.s=id;
+
+                }
+
+                /*
+                 * Primeiro verifica se é a poltrona
+                 * do próprio usuário.
+                 */
+
+                if(us.includes(id)){
+
+                    e.classList.add("mine");
+
+                }
+
+                /*
+                 * Depois verifica se está ocupada.
+                 */
+
+                else if(
+                    bl.includes(id) ||
+                    v==="white"
+                ){
+
+                    e.classList.add("white");
+
+                }
+
+                /*
+                 * Caso contrário está disponível.
+                 */
+
+                else{
+
+                    e.onclick=()=>sl(e);
+
+                }
+
             }
+
             g.appendChild(e);
+
         });
+
     });
+
     q(".bc").appendChild(g);
+
 };
 
-const sl=e=>{if(lock||e.classList.contains("white")||e.classList.contains("mine"))return;if(sel)sel.classList.remove("selected");sel=(sel===e)?null:e;sel?.classList.add("selected")};
+
+/* =========================================================
+   SELEÇÃO DE POLTRONA
+   ========================================================= */
+
+const sl=e=>{
+
+    if(
+        lock ||
+        e.classList.contains("white") ||
+        e.classList.contains("mine")
+    ){
+        return;
+    }
+
+    if(sel){
+
+        sel.classList.remove("selected");
+
+    }
+
+    sel=(sel===e)
+        ?null
+        :e;
+
+    sel?.classList.add("selected");
+
+};
+
+
+/* =========================================================
+   ATUALIZAÇÃO DOS DADOS
+   ========================================================= */
 
 const refreshData = async (isInitial = false) => {
-    if(isInitial) bar(30);
-    try {
+
+    if(isInitial){
+
+        bar(30);
+
+    }
+
+    try{
+
         let d;
-        let pre = sessionStorage.getItem("preData");
-        
-        if(pre){
-            d=JSON.parse(pre);
-            if(isInitial) bar(70);
-        } else {
-            const r=await fetch(U.G,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cpf: nm(cpf)})});
-            d=await r.json();
-            sessionStorage.setItem("preData", JSON.stringify(d));
-            if(isInitial) bar(70);
-        }
-        
-        const codes=d.codigo||[];
-        const a=codes.find(x=>nm(gf(x,"CPF2"))===nm(cpf));
-        
-        if(!a) throw "CPF não encontrado no banco de dados.";
-        
-        q("#p1-n").textContent=fn(gf(a,"NOME"));
-        cur=(gf(a,"CODIGO")||"AAL").toUpperCase();
-        q("#ctx").textContent=cur;
-        
-        const l=d.poltronas||[];
-        const rows=l.filter(x=>gf(x,"CURSO").toUpperCase()===cur);
-        
-        bl = [...new Set(rows.filter(x => {
-            let cpfLimpo = nm(gf(x, "CPF2"));
-            return cpfLimpo.length === 11;
-        }).map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0")))];
-        
-        us = rows.filter(x => nm(gf(x, "CPF2")) === nm(cpf))
-                 .map(x => gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0"));
-        
-        sel=null;
-        const ly=cmap[cur]||"0046";
-        let cfg = null;
-        
-        try { 
-            let res = await fetch(`../configs/${ly}.json`);
-            if(res.ok) { cfg = await res.json(); }
-            else {
-                res = await fetch(`configs/${ly}.json`);
-                if(res.ok) { cfg = await res.json(); }
-            }
-        } catch(e) { console.warn("Erro nas poltronas:", e); }
-        
-        if(cfg && cfg.layout) { 
-            rd(cfg.layout); 
-        } else {
-            const defaultLayout = [];
-            for (let i = 1; i <= 46; i += 5) {
-                const row = [];
-                for (let j = 0; j < 5; j++) {
-                    if (i + j <= 46) row.push(i + j);
+
+        /*
+         * Guarda a poltrona que o usuário está
+         * selecionando neste momento.
+         */
+        const previousSel = sel?.dataset?.s || null;
+
+
+        /* =================================================
+           CARREGAMENTO INICIAL
+           ================================================= */
+
+        if(isInitial){
+
+            /*
+             * No primeiro carregamento podemos usar
+             * o preData para abrir o mapa rapidamente.
+             */
+
+            const pre=sessionStorage.getItem("preData");
+
+            if(pre){
+
+                d=JSON.parse(pre);
+
+            }else{
+
+                const r=await fetch(
+                    U.G,
+                    {
+                        method:"POST",
+                        cache:"no-store",
+                        headers:{
+                            "Content-Type":"application/json"
+                        },
+                        body:JSON.stringify({
+                            cpf:nm(cpf)
+                        })
+                    }
+                );
+
+                if(!r.ok){
+
+                    throw new Error(
+                        "Erro ao consultar dados."
+                    );
+
                 }
-                defaultLayout.push(row);
+
+                d=await r.json();
+
+                sessionStorage.setItem(
+                    "preData",
+                    JSON.stringify(d)
+                );
+
             }
-            rd(defaultLayout);
+
+            bar(70);
+
+
+        /* =================================================
+           ATUALIZAÇÃO EM SEGUNDO PLANO
+           ================================================= */
+
+        }else{
+
+            /*
+             * IMPORTANTE:
+             *
+             * Aqui NÃO usamos o preData.
+             *
+             * Sempre fazemos uma nova chamada ao
+             * Power Automate para descobrir se alguma
+             * poltrona mudou.
+             */
+
+            const r=await fetch(
+                U.G,
+                {
+                    method:"POST",
+                    cache:"no-store",
+                    headers:{
+                        "Content-Type":"application/json"
+                    },
+                    body:JSON.stringify({
+                        cpf:nm(cpf)
+                    })
+                }
+            );
+
+
+            /*
+             * Se houver algum problema na consulta
+             * automática, simplesmente não altera o mapa.
+             *
+             * Não mostramos tela de erro.
+             */
+
+            if(!r.ok){
+
+                console.warn(
+                    "Falha na atualização automática."
+                );
+
+                return;
+
+            }
+
+
+            d=await r.json();
+
+
+            /*
+             * Atualiza o cache local.
+             */
+
+            sessionStorage.setItem(
+                "preData",
+                JSON.stringify(d)
+            );
+
         }
 
-        if(isInitial) {
-            bar(100);
-            setTimeout(()=>{ q("#pbc")?.remove(); q("#w").style.display="flex" }, 400);
+
+        /* =================================================
+           DADOS DO USUÁRIO
+           ================================================= */
+
+        const codes=d.codigo||[];
+
+        const a=codes.find(
+            x=>nm(gf(x,"CPF2"))===nm(cpf)
+        );
+
+
+        if(!a){
+
+            if(isInitial){
+
+                throw "CPF não encontrado no banco de dados.";
+
+            }
+
+            return;
+
         }
-    } catch(e) {
-        showFb("err", "Erro", "Erro ao carregar dados: " + e);
+
+
+        q("#p1-n").textContent=
+            fn(gf(a,"NOME"));
+
+
+        cur=(
+            gf(a,"CODIGO") ||
+            "AAL"
+        ).toUpperCase();
+
+
+        q("#ctx").textContent=cur;
+
+
+        /* =================================================
+           POLTRONAS
+           ================================================= */
+
+        const l=d.poltronas||[];
+
+
+        const rows=l.filter(
+            x=>gf(x,"CURSO").toUpperCase()===cur
+        );
+
+
+        /*
+         * NOVA LISTA DE POLTRONAS BLOQUEADAS
+         */
+
+        const newBl=[
+
+            ...new Set(
+
+                rows
+                .filter(x=>{
+
+                    const cpfLimpo=
+                        nm(gf(x,"CPF2"));
+
+                    return cpfLimpo.length===11;
+
+                })
+                .map(x=>
+                    gf(x,"ID")
+                    .toString()
+                    .replace(/\s+/g,'')
+                    .padStart(2,"0")
+                )
+
+            )
+
+        ];
+
+
+        /*
+         * NOVA LISTA DE POLTRONAS DO USUÁRIO
+         */
+
+        const newUs=rows
+
+            .filter(
+                x=>nm(gf(x,"CPF2"))===nm(cpf)
+            )
+
+            .map(
+                x=>
+                    gf(x,"ID")
+                    .toString()
+                    .replace(/\s+/g,'')
+                    .padStart(2,"0")
+            );
+
+
+        /* =================================================
+           VERIFICA SE ALGUMA POLTRONA MUDOU
+           ================================================= */
+
+        const oldState=[
+
+            ...bl.map(x=>"B:"+x),
+            ...us.map(x=>"U:"+x)
+
+        ]
+        .sort()
+        .join("|");
+
+
+        const newState=[
+
+            ...newBl.map(x=>"B:"+x),
+            ...newUs.map(x=>"U:"+x)
+
+        ]
+        .sort()
+        .join("|");
+
+
+        const changed=
+            oldState!==newState;
+
+
+        /*
+         * Atualiza as listas globais.
+         */
+
+        bl=newBl;
+        us=newUs;
+
+
+        /* =================================================
+           REDESENHA SOMENTE SE NECESSÁRIO
+           ================================================= */
+
+        if(isInitial || changed){
+
+            const ly=cmap[cur]||"0046";
+
+            let cfg=null;
+
+
+            try{
+
+                let res=await fetch(
+                    `../configs/${ly}.json`,
+                    {
+                        cache:"no-store"
+                    }
+                );
+
+
+                if(res.ok){
+
+                    cfg=await res.json();
+
+                }else{
+
+                    res=await fetch(
+                        `configs/${ly}.json`,
+                        {
+                            cache:"no-store"
+                        }
+                    );
+
+
+                    if(res.ok){
+
+                        cfg=await res.json();
+
+                    }
+
+                }
+
+            }catch(e){
+
+                console.warn(
+                    "Erro nas poltronas:",
+                    e
+                );
+
+            }
+
+
+            /* =============================================
+               LAYOUT
+               ============================================= */
+
+            if(cfg && cfg.layout){
+
+                rd(cfg.layout);
+
+            }else{
+
+                const defaultLayout=[];
+
+                for(
+                    let i=1;
+                    i<=46;
+                    i+=5
+                ){
+
+                    const row=[];
+
+                    for(
+                        let j=0;
+                        j<5;
+                        j++
+                    ){
+
+                        if(i+j<=46){
+
+                            row.push(i+j);
+
+                        }
+
+                    }
+
+                    defaultLayout.push(row);
+
+                }
+
+                rd(defaultLayout);
+
+            }
+
+
+            /* =============================================
+               RECUPERA SELEÇÃO ANTERIOR
+               ============================================= */
+
+            if(previousSel){
+
+                const newElement=[
+
+                    ...document.querySelectorAll(".s")
+
+                ].find(
+                    x=>x.dataset.s===previousSel
+                );
+
+
+                /*
+                 * Se a poltrona continua disponível,
+                 * mantém a seleção.
+                 */
+
+                if(
+                    newElement &&
+                    !newElement.classList.contains("white") &&
+                    !newElement.classList.contains("mine")
+                ){
+
+                    sel=newElement;
+
+                    newElement.classList.add(
+                        "selected"
+                    );
+
+                }else{
+
+                    /*
+                     * Outra pessoa ocupou justamente
+                     * a poltrona que estava selecionada.
+                     */
+
+                    sel=null;
+
+                }
+
+            }
+
+        }
+
+
+        /* =================================================
+           FINAL DO CARREGAMENTO INICIAL
+           ================================================= */
+
+        if(isInitial){
+
+            bar(100);
+
+            setTimeout(()=>{
+
+                q("#pbc")?.remove();
+
+                q("#w").style.display="flex";
+
+            },400);
+
+        }
+
+
+    }catch(e){
+
+        /*
+         * Erro no carregamento inicial:
+         * mostra ao usuário.
+         */
+
+        if(isInitial){
+
+            showFb(
+                "err",
+                "Erro",
+                "Erro ao carregar dados: "+e
+            );
+
+        }else{
+
+            /*
+             * Erro durante polling:
+             * somente registra no console.
+             */
+
+            console.warn(
+                "Erro na atualização automática:",
+                e
+            );
+
+        }
+
     }
+
 };
+
+
+/* =========================================================
+   CARREGAMENTO INICIAL
+   ========================================================= */
 
 const ld=async()=>{
+
     const sC=sessionStorage.getItem("cpf");
-    if(!sC) return location.href="../index.html";
+
+    if(!sC){
+
+        return location.href="../index.html";
+
+    }
+
     cpf=nm(sC);
+
     await refreshData(true);
+
 };
 
+
+/* =========================================================
+   CONFIRMAR POLTRONA
+   ========================================================= */
+
 q("#btn").onclick=async()=>{
-    if(lock||!sel) return !sel && showFb("err", "Atenção", "Selecione uma poltrona primeiro");
-    const old=us[0]||null;
-    if(!confirm(old?"Confirma troca de poltrona?":"Confirma seleção da poltrona?")) return;
-    lock=!0;
-    q("#btn").disabled=!0;
-    const n=sel.dataset.s;
-    try {
-        const p=old?{cpf: nm(cpf),curso:cur,current:old,select:n}:{poltrona:n,CURSO:cur,cpf: nm(cpf)},
-        r=await fetch(old?U.S:U.P,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
-        if(r.ok){
-            // CORREÇÃO ESSENCIAL: Atualiza localmente a poltrona antiga e a nova no cache do preData 
-            let pre = sessionStorage.getItem("preData");
-            if(pre){
-                let cachedData = JSON.parse(pre);
-                if(cachedData.poltronas){
-                    // Remove o vinculo antigo deste CPF
-                    cachedData.poltronas = cachedData.poltronas.map(x => {
-                        if(nm(gf(x, "CPF2")) === nm(cpf)) {
-                            // Se for a antiga, desvincula limpando o CPF
-                            if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === old) {
-                                x.CPF2 = ""; 
-                            }
-                        }
-                        // Vincula o CPF na nova vaga selecionada
-                        if(gf(x, "ID").toString().replace(/\s+/g, '').padStart(2, "0") === n && gf(x, "CURSO").toUpperCase() === cur.toUpperCase()) {
-                            x.CPF2 = nm(cpf);
-                        }
-                        return x;
-                    });
-                    sessionStorage.setItem("preData", JSON.stringify(cachedData));
-                }
-            }
-            showFb("ok", "Poltrona Confirmada!", "Poltrona selecionada com sucesso.", n);
-        } else {
-            showFb("err", "Poltrona Ocupada", "Poltrona selecionada por outro usuário.");
-            sel=null;
-            refreshData(false);
-        }
-    } catch(e) {
-        showFb("err", "Erro Técnico", "Não foi possível conectar ao servidor.");
-        sel=null;
-        refreshData(false);
-    } finally { 
-        lock=!1;
-        q("#btn").disabled=!1;
+
+    if(
+        lock ||
+        !sel
+    ){
+
+        return !sel &&
+            showFb(
+                "err",
+                "Atenção",
+                "Selecione uma poltrona primeiro"
+            );
+
     }
+
+
+    const old=us[0]||null;
+
+
+    if(
+        !confirm(
+            old
+                ?"Confirma troca de poltrona?"
+                :"Confirma seleção da poltrona?"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    lock=!0;
+
+    q("#btn").disabled=!0;
+
+
+    const n=sel.dataset.s;
+
+
+    try{
+
+        const p=old
+
+            ?{
+                cpf:nm(cpf),
+                curso:cur,
+                current:old,
+                select:n
+            }
+
+            :{
+                poltrona:n,
+                CURSO:cur,
+                cpf:nm(cpf)
+            };
+
+
+        const r=await fetch(
+
+            old
+                ?U.S
+                :U.P,
+
+            {
+                method:"POST",
+
+                headers:{
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:JSON.stringify(p)
+            }
+
+        );
+
+
+        if(r.ok){
+
+            /*
+             * Atualiza localmente a poltrona antiga
+             * e a nova no cache do preData.
+             */
+
+            let pre=
+                sessionStorage.getItem(
+                    "preData"
+                );
+
+
+            if(pre){
+
+                let cachedData=
+                    JSON.parse(pre);
+
+
+                if(cachedData.poltronas){
+
+                    cachedData.poltronas=
+                        cachedData.poltronas.map(
+                            x=>{
+
+                                /*
+                                 * Remove o vínculo antigo
+                                 * deste CPF.
+                                 */
+
+                                if(
+                                    nm(gf(x,"CPF2"))===
+                                    nm(cpf)
+                                ){
+
+                                    if(
+                                        gf(x,"ID")
+                                        .toString()
+                                        .replace(/\s+/g,'')
+                                        .padStart(2,"0")===
+                                        old
+                                    ){
+
+                                        x.CPF2="";
+
+                                    }
+
+                                }
+
+
+                                /*
+                                 * Vincula o CPF à nova poltrona.
+                                 */
+
+                                if(
+                                    gf(x,"ID")
+                                    .toString()
+                                    .replace(/\s+/g,'')
+                                    .padStart(2,"0")===
+                                    n &&
+
+                                    gf(x,"CURSO")
+                                    .toUpperCase()===
+                                    cur.toUpperCase()
+                                ){
+
+                                    x.CPF2=
+                                        nm(cpf);
+
+                                }
+
+
+                                return x;
+
+                            }
+                        );
+
+
+                    sessionStorage.setItem(
+                        "preData",
+                        JSON.stringify(
+                            cachedData
+                        )
+                    );
+
+                }
+
+            }
+
+
+            showFb(
+                "ok",
+                "Poltrona Confirmada!",
+                "Poltrona selecionada com sucesso.",
+                n
+            );
+
+
+        }else{
+
+            showFb(
+                "err",
+                "Poltrona Ocupada",
+                "Poltrona selecionada por outro usuário."
+            );
+
+            sel=null;
+
+            await refreshData(false);
+
+        }
+
+
+    }catch(e){
+
+        showFb(
+            "err",
+            "Erro Técnico",
+            "Não foi possível conectar ao servidor."
+        );
+
+        sel=null;
+
+        await refreshData(false);
+
+
+    }finally{
+
+        lock=!1;
+
+        q("#btn").disabled=!1;
+
+    }
+
 };
-ld();
+
+
+/* =========================================================
+   POLLING AUTOMÁTICO
+   ========================================================= */
+
+const iniciarPolling=()=>{
+
+    /*
+     * Marca o início dos 10 minutos.
+     */
+
+    pollStartTime=Date.now();
+
+    pollAtivo=true;
+
+
+    const verificar=async()=>{
+
+        /*
+         * Se já passaram 10 minutos,
+         * encerra definitivamente o polling.
+         */
+
+        if(
+            Date.now()-pollStartTime>=POLL_MAX_TIME
+        ){
+
+            pollAtivo=false;
+
+            console.log(
+                "Atualização automática encerrada após 10 minutos."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Só consulta quando:
+         *
+         * 1. polling está ativo;
+         * 2. a aba está visível;
+         * 3. a janela está com foco;
+         * 4. não está acontecendo uma seleção/troca.
+         */
+
+        if(
+            pollAtivo &&
+            document.visibilityState==="visible" &&
+            document.hasFocus() &&
+            !lock
+        ){
+
+            await refreshData(false);
+
+        }
+
+
+        /*
+         * Agenda a próxima verificação somente
+         * depois que a anterior terminou.
+         */
+
+        if(pollAtivo){
+
+            setTimeout(
+                verificar,
+                POLL_INTERVAL
+            );
+
+        }
+
+    };
+
+
+    /*
+     * Primeira consulta ocorre depois de 48 segundos.
+     */
+
+    setTimeout(
+        verificar,
+        POLL_INTERVAL
+    );
+
+};
+
+
+/* =========================================================
+   INICIA
+   ========================================================= */
+
+ld().then(()=>{
+
+    /*
+     * Só começa a contagem dos 10 minutos
+     * depois que o mapa terminou de carregar.
+     */
+
+    iniciarPolling();
+
+});
+
 </script>
+
 </body>
 </html>
