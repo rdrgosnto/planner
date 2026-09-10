@@ -34,13 +34,12 @@
       justify-content: space-between;
       padding: 48px;
       z-index: 2;
-      transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
     }
     .brand-side h2 { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; }
     .brand-side p { color: rgba(255,255,255,0.85); margin-top: 12px; max-width: 420px; line-height: 1.6; font-size: 15px; }
     .brand-side .copyright { font-size: 12px; opacity: 0.6; }
 
-    /* Tela de Loading / Splash (Cobria tudo inicialmente) */
+    /* Tela de Loading / Splash Inicial */
     #s {
       position: fixed;
       inset: 0;
@@ -58,7 +57,7 @@
     #s i:after { content:""; display:block; width:45px; height:100%; background:#fff; animation:l .9s infinite ease-in-out; position:absolute }
     @keyframes l { from { left:-45px } to { left:140px } }
 
-    /* Painel Branco do Formulário */
+    /* Painel Branco do Formulário (Sempre entra da DIREITA para a esquerda) */
     .form-side {
       width: 100%;
       max-width: 480px;
@@ -70,7 +69,7 @@
       z-index: 1;
       transform: translateX(100%);
       transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
-      box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+      box-shadow: -10px 0 30px rgba(0,0,0,0.15);
     }
 
     /* Estado Ativo: Quando o splash encerra */
@@ -135,17 +134,15 @@
 
     @keyframes sh { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
 
-    /* Ajustes para Mobile */
+    /* Ajustes específicos para Celular */
     @media (max-width: 768px) {
-      .container { flex-direction: column; }
       .brand-side { display: none; }
       .form-side {
         max-width: 100%;
         height: 100vh;
-        transform: translateY(100%);
-      }
-      body.ready .form-side {
-        transform: translateY(0);
+        padding: 32px 24px;
+        /* Mantém a entrada deslizante vinda da direita */
+        transform: translateX(100%);
       }
     }
   </style>
@@ -187,7 +184,7 @@
     const nm = v => String(v || "").replace(/\D/g, "").padStart(11, "0");
     const $c = q("#cpf"), $b = q("#btn"), $m = q("#msg"), $r = q("#r");
 
-    // Inicia a animação de transição após 1.2s
+    // Inicia a transição deslizando da direita
     setTimeout(() => {
       document.body.classList.add("ready");
     }, 1200);
@@ -242,8 +239,6 @@
           if (!r.ok) throw "Erro de resposta da API (" + r.status + ")";
 
           const d = await r.json();
-          
-          // Busca o CPF no retorno garantindo comparação segura de tipos/strings
           const reg = (d.codigo || []).find(x => nm(String(x.CPF2 || x.cpf || "")) === nm(v));
 
           if (!reg || !String(reg.ID || reg.id || "").includes("#")) {
