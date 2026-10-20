@@ -4,8 +4,8 @@
   "layout": [
     [ null, null, null, null, null ],
     [ null, null, null, null, null ],
-    [ null, null, null, null, null ],
-    [ null, null, null, null, null ],
+    [ 9, 10, null, null, null ],
+    [ 13, 14, null, 16, 15 ],
     [ 17, 18, null, 20, 19 ],
     [ 21, 22, null, 24, 23 ],
     [ 25, 26, null, 28, 27 ],
