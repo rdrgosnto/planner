@@ -29,7 +29,7 @@
 
   <h2>Check-in Expresso</h2>
   <div class="scanner-box">
-    <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b;">Digite o número do ingresso (ex: 10, 42) e dê Enter:</p>
+    <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b;">Digite o número do ingresso (ex: 10, 3, 42) e dê Enter:</p>
     <input type="number" id="inputIngresso" placeholder="Nº do Ingresso" autofocus autocomplete="off">
   </div>
 
@@ -41,19 +41,51 @@
   </div>
 
 <script>
-let passageiros = [];
-
-// Carrega os dados apontando para a pasta 'dados/' correta
-async function carregarDados() {
-  try {
-    let res = await fetch('dados/dados.json');
-    if (!res.ok) throw new Error("Erro ao carregar arquivo");
-    passageiros = await res.json();
-    desenharMapa();
-  } catch (e) {
-    alert("Erro ao carregar o arquivo dados/dados.json. Verifique se o caminho está correto.");
-  }
-}
+// Dados embutidos diretamente na memória (sem erro de arquivo externo ou CORS)
+const passageiros = [
+  {"poltrona": 1, "nome": "Alicia Tomazela", "ingresso": "10"},
+  {"poltrona": 2, "nome": "Pietra Machado Bertholetti", "ingresso": "12"},
+  {"poltrona": 3, "nome": "Gustavo Moratta da Silva", "ingresso": "44"},
+  {"poltrona": 4, "nome": "Gustavo Garcia Araujo", "ingresso": "43"},
+  {"poltrona": 5, "nome": "Isabelle Nataly Pires da Silva", "ingresso": "45"},
+  {"poltrona": 6, "nome": "Rafaella dos Santos Azevedo", "ingresso": "27"},
+  {"poltrona": 7, "nome": "Livia Guimaraes de Oliveira", "ingresso": "51"},
+  {"poltrona": 8, "nome": "Ana Alice Angeloni Prates", "ingresso": "23"},
+  {"poltrona": 9, "nome": "Vitoria Luciana Marinelli Souza", "ingresso": "63"},
+  {"poltrona": 10, "nome": "Yasmim Vitoria Vieira Miranda", "ingresso": "64"},
+  {"poltrona": 11, "nome": "Maria Eduarda dos Santos Moura", "ingresso": "54"},
+  {"poltrona": 12, "nome": "Giovanna Souza Chaves", "ingresso": "15"},
+  {"poltrona": 13, "nome": "Julia Vitoria de Castro", "ingresso": "48"},
+  {"poltrona": 14, "nome": "Nivia Thais do Prado Santos", "ingresso": "59"},
+  {"poltrona": 15, "nome": "EDUARDO FRANCISCO BARBOSA ANDRE CHRISPIM", "ingresso": "40"},
+  {"poltrona": 16, "nome": "Leonardo Miguel de Souza Trindade", "ingresso": "50"},
+  {"poltrona": 17, "nome": "SOPHIA GABRIELLE ALVES DA SILVA", "ingresso": "62"},
+  {"poltrona": 18, "nome": "Mirela Zanoni Gimenez", "ingresso": "58"},
+  {"poltrona": 19, "nome": "Ana Julia da Silva", "ingresso": "37"},
+  {"poltrona": 20, "nome": "Edvaldo Junior Silva Araújo", "ingresso": "41"},
+  {"poltrona": 21, "nome": "Livia Messi Simis", "ingresso": "52"},
+  {"poltrona": 22, "nome": "Maria Eduarda Piedade Scardoelli", "ingresso": "55"},
+  {"poltrona": 23, "nome": "Vago", "ingresso": ""},
+  {"poltrona": 24, "nome": "Angelina Duarte Bido", "ingresso": "38"},
+  {"poltrona": 25, "nome": "Maria Emanuely Schimicoski Souza", "ingresso": "56"},
+  {"poltrona": 26, "nome": "Kauane Vitória Nunes da Silva", "ingresso": "49"},
+  {"poltrona": 27, "nome": "GUILHERME VENCESLAU DE MELO", "ingresso": "42"},
+  {"poltrona": 28, "nome": "Cauã Correia dos Santos", "ingresso": "39"},
+  {"poltrona": 29, "nome": "Maria Julia Miquelino", "ingresso": "57"},
+  {"poltrona": 30, "nome": "Jhenifer Lopes Rego", "ingresso": "47"},
+  {"poltrona": 31, "nome": "Maria Eduarda dos Santos", "ingresso": "53"},
+  {"poltrona": 32, "nome": "Isabelly Rebeca de Oliveira", "ingresso": "46"},
+  {"poltrona": 33, "nome": "Isabella Calegari da Silva", "ingresso": "20"},
+  {"poltrona": 34, "nome": "Laura Bergamin Cinel", "ingresso": "21"},
+  {"poltrona": 35, "nome": "Sofia Vieira de Oliveira", "ingresso": "13"},
+  {"poltrona": 36, "nome": "João Pedro Roncalho Messa", "ingresso": "11"},
+  {"poltrona": 37, "nome": "Antonia Gabriela Barbosa Francisco", "ingresso": "32"},
+  {"poltrona": 38, "nome": "Bianca Vitoria Alves dos Santos", "ingresso": "24"},
+  {"poltrona": 39, "nome": "Otavio Venancio Ferreira da Silva", "ingresso": "60"},
+  {"poltrona": 40, "nome": "Heloisa Beatriz Fincolo", "ingresso": "26"},
+  {"poltrona": 41, "nome": "Rodrigo dos Santos Silva", "ingresso": "8"},
+  {"poltrona": 42, "nome": "Sophia Emanuelly de Oliveira Pires", "ingresso": "28"}
+];
 
 // Layout fixo das 42 poltronas do seu ônibus
 const layoutMap = [
@@ -80,10 +112,10 @@ function desenharMapa() {
       if (seatNum === null) {
         div.className = 'seat empty';
       } else {
-        div.className = 'seat'; // Inicia verde por padrão
+        div.className = 'seat'; // Inicia verde
         div.id = `seat-${seatNum}`;
         
-        // Restaura check-ins salvos anteriormente no navegador do celular
+        // Mantém vermelho caso já tenha feito check-in antes (salvo no celular)
         const statusCheck = localStorage.getItem(`checkin_${seatNum}`);
         if (statusCheck === 'ok') {
           div.classList.add('checked');
@@ -106,28 +138,25 @@ input.addEventListener('keydown', function(e) {
     const numIngresso = input.value.trim();
     if (!numIngresso) return;
 
-    // Busca o aluno pelo número exato do ingresso (ex: "10")
+    // Busca o aluno pelo número do ingresso
     const aluno = passageiros.find(p => p.ingresso.toString() === numIngresso.toString());
 
     if (aluno) {
       const seatDiv = document.getElementById(`seat-${aluno.poltrona}`);
       if (seatDiv) {
-        seatDiv.classList.add('checked'); // Fica vermelho na hora
+        seatDiv.classList.add('checked'); // Pinta de vermelho instantaneamente
         localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
-        
-        // Feedback visual rápido
-        input.style.borderColor = '#2d9643';
-        setTimeout(() => { input.style.borderColor = '#cbd5e1'; }, 300);
       }
     } else {
       alert(`❌ Ingresso nº ${numIngresso} não encontrado!`);
     }
 
-    input.value = ''; // Limpa para o próximo ingresso
+    input.value = ''; // Limpa para o próximo
   }
 });
 
-carregarDados();
+// Desenha o mapa assim que a página abrir
+desenharMapa();
 </script>
 </body>
 </html>
