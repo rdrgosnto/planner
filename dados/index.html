@@ -13,22 +13,18 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none;align-items:center}
 
-/* Cabeçalho exato do código original */
+/* Cabeçalho onde o nome do aluno vai aparecer no lugar de "Planner" */
 #h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
-#h b{font-size:28px;font-weight:800;color:#2d9643;width:248px;letter-spacing:-.5px}
+#h b{font-size:20px;font-weight:800;color:#2d9643;width:90%;max-width:320px;letter-spacing:-.5px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-/* Caixa da câmera com espaçamento adequado entre o botão e o leitor */
+/* Caixa da câmera */
 .scanner-container { margin-top: 68px; width: 90%; max-width: 260px; background: #fff; padding: 4px; border-radius: 10px; text-align: center; z-index: 100; margin-bottom: 12px; }
 .btn-cam { background: #1e40af; color: #fff; border: none; padding: 10px 14px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 12px; }
 #reader { width: 100% !important; border: none !important; border-radius: 8px; overflow: hidden; display: none; background: #000; }
 #reader video { width: 100% !important; border-radius: 8px; object-fit: cover; }
 
-#w{display:flex;flex-direction:column;align-items:center;margin-top:2px}
+#w{display:flex;flex-direction:column;align-items:center;margin-top:10px}
 .map-outer{display:flex;flex-direction:column;align-items:flex-start}
-
-/* Nome do aluno alinhado estritamente à borda esquerda do mapa (.bc) */
-.info-p{width:280px;margin-bottom:6px;color:#0f172a;font-weight:700;text-align:left;padding-left:0px;}
-#p1-n{font-size:18px;font-weight:700;line-height:1.2;color:#0f172a;margin-top:2px}
 
 .bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #2d9643;border-radius:16px;position:relative;background:#fff;margin-left:0;}
 .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
@@ -40,14 +36,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direc
 .s.mine::after{border-color:#1d4ed8}
 .e{pointer-events:none}
 
-/* Botão Limpar no lugar do Confirmar */
+/* Botão Limpar */
 #btn{width:112px;height:54px;background:#ef4444;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;box-shadow:0 4px 10px rgba(239,68,68,0.3)}
 #btn:active{transform:scale(0.95)}
 </style>
 </head>
 <body>
 
-<div id="h"><b>Planner</b></div>
+<!-- O nome do aluno agora aparece diretamente aqui no topo -->
+<div id="h"><b id="p1-n">Planner</b></div>
 
 <div class="scanner-container">
   <button class="btn-cam" id="btnCam" onclick="toggleCamera()">📸 Ligar Câmera</button>
@@ -56,9 +53,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direc
 
 <div id="w">
   <div class="map-outer">
-    <div class="info-p">
-      <div id="p1-n">Aguardando leitura...</div>
-    </div>
     <div class="bc">
       <div id="wid-div"></div>
       <button id="btn" onclick="limparCheckins()">LIMPAR</button>
@@ -174,10 +168,11 @@ function processarIngresso(textoLido) {
       seatEl.innerHTML = `<span>${seatId}</span><small style="margin-left:2px;font-size:12px">✓</small>`;
       localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
 
+      // Substitui o texto "Planner" no cabeçalho pelo nome do aluno
       document.getElementById('p1-n').textContent = aluno.nome;
     }
   } else {
-    document.getElementById('p1-n').textContent = "⚠️ Não encontrado: " + textoLido;
+    document.getElementById('p1-n').textContent = "⚠️ Não encontrado";
   }
 }
 
@@ -186,7 +181,7 @@ function limparCheckins() {
     passageiros.forEach(p => {
       localStorage.removeItem(`checkin_${p.poltrona}`);
     });
-    document.getElementById('p1-n').textContent = "Aguardando leitura...";
+    document.getElementById('p1-n').textContent = "Planner";
     desenharMapa();
   }
 }
