@@ -3,45 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Check-in Rápido - Ônibus</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>Check-in Expresso - Ônibus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Biblioteca para leitura de QR Code/Código de Barras via Câmera -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
-  body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; padding-top: 20px; }
-  h2 { color: #0f172a; margin-bottom: 5px; }
-  .scanner-box { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; width: 90%; max-width: 400px; text-align: center; }
-  .scanner-box input { width: 100%; padding: 12px; font-size: 18px; border: 2px solid #cbd5e1; border-radius: 8px; text-align: center; outline: none; }
-  .scanner-box input:focus { border-color: #2d9643; }
-  
-  .bus-grid { display: grid; grid-template-columns: repeat(5, 55px); gap: 10px; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-  .seat { width: 55px; height: 55px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; font-size: 14px; background: #2d9643; color: #fff; border: 2px solid #237534; cursor: pointer; transition: all 0.2s; }
-  .seat.checked { background: #ef4444 !important; border-color: #dc2626 !important; color: #fff !important; } /* Vermelho para check-in realizado */
-  .seat.empty { background: #cbd5e1; border-color: #94a3b8; pointer-events: none; color: transparent; }
-  .seat span { font-size: 10px; font-weight: 500; }
-  
-  .legend { display: flex; gap: 15px; margin-top: 20px; font-size: 14px; font-weight: 600; }
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .box-l { width: 20px; height: 20px; border-radius: 4px; }
-  .l-green { background: #2d9643; }
-  .l-red { background: #ef4444; }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#f8fafc;-webkit-user-select:none;user-select:none;align-items:center}
+#h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+#h b{font-size:28px;font-weight:800;color:#2d9643;width:248px;letter-spacing:-.5px}
+
+/* Caixa de controle do leitor e câmera */
+.scanner-container { margin-top: 70px; width: 90%; max-width: 320px; background: #fff; padding: 12px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); text-align: center; z-index: 100; margin-bottom: 10px; }
+.scanner-container input { width: 100%; padding: 10px; font-size: 16px; border: 2px solid #cbd5e1; border-radius: 8px; text-align: center; outline: none; margin-bottom: 8px; }
+.scanner-container input:focus { border-color: #2d9643; }
+#reader { width: 100%; border-radius: 8px; overflow: hidden; display: none; margin-bottom: 8px; }
+.btn-cam { background: #1e40af; color: #fff; border: none; padding: 8px 12px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; }
+
+#w{display:flex;flex-direction:column;align-items:center;margin-top:10px}.map-outer{display:flex;flex-direction:column;align-items:center}.info-p{width:248px;margin-bottom:10px;color:#2d9643;font-weight:700}.info-p span{color:#2d9643;font-size:14px;font-weight:700}#p1-n{font-size:20px;font-weight:700;line-height:1.2;color:#0f172a}.bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #2d9643;border-radius:16px;position:relative;background:#fff}.g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}.s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}.s{background:#2d9643;border:3px solid #2d9643;color:#fff;font-weight:700;cursor:pointer;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}.s.selected{background:#f59e0b!important;border:3px solid #d97706!important;color:#fff!important;transform:scale(1.12);box-shadow:0 0 14px rgba(245,158,11,.6);z-index:10}.s.mine{background:#1e40af!important;border:3px solid #1d4ed8!important;color:#fff!important;pointer-events:none;box-shadow:0 4px 12px rgba(30,64,175,.35);font-size:14px;gap:2px}.s.lt{background:#123B1A;border-color:#123B1A;pointer-events:none}.s.white{background:#fff!important;border:3px solid #cbd5e1!important;color:transparent!important;pointer-events:none}.s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #2d9643;transition:border-color .15s ease}.s.selected::after{border-color:#d97706}.s.mine::after{border-color:#1d4ed8}.s.lt::after{border-color:#123B1A}.s.white::after{border-color:#cbd5e1}.e{pointer-events:none}#btn{width:112px;height:54px;background:#2d9643;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}#btn:disabled{opacity:.6;cursor:not-allowed}#cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#2d9643;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}#ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}#leg{position:absolute;bottom:0;left:calc(100% + 3px);width:40px;height:540px;background:#fff;border:none;box-shadow:none;color:#0f172a;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden}#ltx{transform:rotate(-90deg);font-size:18px;white-space:nowrap;display:flex;align-items:center;justify-content:space-around;gap:24px;color:#0f172a;width:540px;height:40px;text-transform:uppercase;letter-spacing:.5px}.l-item{display:flex;align-items:center;gap:10px;line-height:1}.mp{width:28px;height:28px;border-radius:6px;position:relative;display:inline-block;flex-shrink:0}.mp.l-ok{background:#2d9643;border:2px solid #2d9643}.mp.l-sel{background:#f59e0b;border:2px solid #d97706}.mp.l-mine{background:#1e40af;border:2px solid #1d4ed8}.mp::after{content:"";position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:16px;height:5px;border-radius:3px;background:#fff;border:1.5px solid #2d9643}.mp.l-sel::after{border-color:#d97706}.mp.l-mine::after{border-color:#1d4ed8}#fb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}#fb.s-ok{background:#1e40af;display:flex}#fb.s-err{background:#ef4444;display:flex}#fb h1{font-size:34px;margin:0;font-weight:700;letter-spacing:-.5px}#fb p{font-size:20px;margin:15px 0 30px;opacity:.9;font-weight:400}.fb-num{font-size:110px;font-weight:800;margin-bottom:20px}@media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}.bc{margin:0 auto}}
 </style>
 </head>
 <body>
 
-  <h2>Check-in Expresso</h2>
-  <div class="scanner-box">
-    <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b;">Digite o número do ingresso (ex: 10, 3, 42) e dê Enter:</p>
-    <input type="number" id="inputIngresso" placeholder="Nº do Ingresso" autofocus autocomplete="off">
-  </div>
+<div id="h"><b>Planner</b></div>
 
-  <div class="bus-grid" id="busGrid"></div>
+<div class="scanner-container">
+  <input type="number" id="txtIngresso" placeholder="Nº do Ingresso (ex: 10)" autocomplete="off">
+  <button class="btn-cam" id="btnCam" onclick="toggleCamera()">📸 Ligar Câmera</button>
+  <div id="reader"></div>
+</div>
 
-  <div class="legend">
-    <div class="legend-item"><div class="box-l l-green"></div> Pendente (Livre)</div>
-    <div class="legend-item"><div class="box-l l-red"></div> Check-in OK</div>
+<div id="fb"><h1 id="fb-t"></h1><p id="fb-m"></p><div id="fb-n" class="fb-num"></div></div>
+
+<div id="w">
+  <div class="map-outer">
+    <div class="info-p"><span>Último Check-in</span><div id="p1-n">Nenhum</div></div>
+    <div class="bc">
+      <div id="cbx"><div id="ctx">AAL</div></div>
+      <div id="leg">
+        <div id="ltx">
+          <div class="l-item"><i class="mp l-ok"></i><span>LIVRE</span></div>
+          <div class="l-item"><i class="mp l-sel"></i><span>SELECIONADA</span></div>
+          <div class="l-item"><i class="mp l-mine"></i><span>CHECK-IN OK</span></div>
+        </div>
+      </div>
+      <button id="btn" style="display:none"></button>
+    </div>
   </div>
+</div>
 
 <script>
-// Dados embutidos diretamente na memória (sem erro de arquivo externo ou CORS)
+// Dados locais embutidos do ônibus AAL
 const passageiros = [
   {"poltrona": 1, "nome": "Alicia Tomazela", "ingresso": "10"},
   {"poltrona": 2, "nome": "Pietra Machado Bertholetti", "ingresso": "12"},
@@ -87,7 +101,6 @@ const passageiros = [
   {"poltrona": 42, "nome": "Sophia Emanuelly de Oliveira Pires", "ingresso": "28"}
 ];
 
-// Layout fixo das 42 poltronas do seu ônibus
 const layoutMap = [
   [ 1, 2, null, 4, 3 ],
   [ 5, 6, null, 8, 7 ],
@@ -103,59 +116,113 @@ const layoutMap = [
 ];
 
 function desenharMapa() {
-  const grid = document.getElementById('busGrid');
-  grid.innerHTML = '';
+  const bc = document.querySelector('.bc');
+  // Remove grade antiga se houver
+  document.querySelector('.g')?.remove();
+
+  const g = document.createElement('div');
+  g.className = 'g';
 
   layoutMap.forEach(row => {
-    row.forEach(seatNum => {
-      const div = document.createElement('div');
-      if (seatNum === null) {
-        div.className = 'seat empty';
+    row.forEach(v => {
+      const e = document.createElement('div');
+      if (v === null) {
+        e.className = 'e';
       } else {
-        div.className = 'seat'; // Inicia verde
-        div.id = `seat-${seatNum}`;
-        
-        // Mantém vermelho caso já tenha feito check-in antes (salvo no celular)
-        const statusCheck = localStorage.getItem(`checkin_${seatNum}`);
-        if (statusCheck === 'ok') {
-          div.classList.add('checked');
-        }
+        e.className = 's'; // Inicia verde (livre)
+        const idStr = v.toString().padStart(2, "0");
+        e.dataset.s = idStr;
+        e.textContent = idStr;
 
-        const pData = passageiros.find(p => p.poltrona === seatNum);
-        const nomeCurto = pData && pData.nome ? pData.nome.split(' ')[0] : '';
-        
-        div.innerHTML = `${seatNum}<span>${nomeCurto}</span>`;
+        // Verifica se já teve check-in salvo no celular
+        if (localStorage.getItem(`checkin_${v}`) === 'ok') {
+          e.classList.add('mine');
+          e.innerHTML = `<span>${idStr}</span><small style="margin-left:2px;font-size:12px">✓</small>`;
+        }
       }
-      grid.appendChild(div);
+      g.appendChild(e);
     });
   });
+  bc.appendChild(g);
 }
 
-// Lógica de leitura do input de ingresso
-const input = document.getElementById('inputIngresso');
-input.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    const numIngresso = input.value.trim();
-    if (!numIngresso) return;
+// Processar número do ingresso digitado ou lido pela câmera
+function processarIngresso(numIngresso) {
+  numIngresso = numIngresso.trim().replace(/\D/g, "");
+  if (!numIngresso) return;
 
-    // Busca o aluno pelo número do ingresso
-    const aluno = passageiros.find(p => p.ingresso.toString() === numIngresso.toString());
+  const aluno = passageiros.find(p => p.ingresso.toString() === numIngresso);
 
-    if (aluno) {
-      const seatDiv = document.getElementById(`seat-${aluno.poltrona}`);
-      if (seatDiv) {
-        seatDiv.classList.add('checked'); // Pinta de vermelho instantaneamente
-        localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
-      }
-    } else {
-      alert(`❌ Ingresso nº ${numIngresso} não encontrado!`);
+  if (aluno) {
+    const seatId = aluno.poltrona.toString().padStart(2, "0");
+    const seatEl = document.querySelector(`[data-s="${seatId}"]`);
+
+    if (seatEl) {
+      seatEl.classList.add('mine'); // Fica azul escuro igual a "Sua Poltrona" do seu layout original
+      seatEl.innerHTML = `<span>${seatId}</span><small style="margin-left:2px;font-size:12px">✓</small>`;
+      localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
+
+      // Atualiza o topo com o nome do aluno
+      document.getElementById('p1-n').textContent = aluno.nome;
+      
+      // Feedback visual rápido de sucesso
+      document.getElementById('txtIngresso').style.borderColor = '#1e40af';
+      setTimeout(() => { document.getElementById('txtIngresso').style.borderColor = '#cbd5e1'; }, 400);
     }
+  } else {
+    alert(`❌ Ingresso nº ${numIngresso} não encontrado!`);
+  }
+  document.getElementById('txtIngresso').value = '';
+}
 
-    input.value = ''; // Limpa para o próximo
+// Evento de tecla Enter no input de texto
+document.getElementById('txtIngresso').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    processarIngresso(this.value);
   }
 });
 
-// Desenha o mapa assim que a página abrir
+// Configuração da Câmera (Html5Qrcode)
+let html5QrCode = null;
+let cameraLigada = false;
+
+function toggleCamera() {
+  const readerDiv = document.getElementById('reader');
+  const btnCam = document.getElementById('btnCam');
+
+  if (!cameraLigada) {
+    readerDiv.style.display = 'block';
+    btnCam.textContent = '🛑 Desligar Câmera';
+    cameraLigada = true;
+
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+      { facingMode: "environment" }, // Usa a câmera traseira do celular
+      { fps: 10, qrbox: { width: 200, height: 200 } },
+      (decodedText) => {
+        // Sucesso na leitura do QR Code/Código
+        processarIngresso(decodedText);
+        // Opcional: para desligar após ler 1: toggleCamera();
+      },
+      (errorMessage) => {
+        // Erros de leitura quadro a quadro são normais, ignorar
+      }
+    ).catch(err => {
+      alert("Erro ao iniciar a câmera: " + err);
+      toggleCamera();
+    });
+  } else {
+    if (html5QrCode) {
+      html5QrCode.stop().then(() => {
+        readerDiv.style.display = 'none';
+        btnCam.textContent = '📸 Ligar Câmera';
+        cameraLigada = false;
+      }).catch(err => { console.log(err); });
+    }
+  }
+}
+
+// Inicializa o mapa ao carregar a página
 desenharMapa();
 </script>
 </body>
