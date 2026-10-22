@@ -22,7 +22,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direc
 #reader { width: 100%; border-radius: 8px; overflow: hidden; display: none; margin-bottom: 8px; }
 .btn-cam { background: #1e40af; color: #fff; border: none; padding: 8px 12px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; }
 
-#w{display:flex;flex-direction:column;align-items:center;margin-top:10px}.map-outer{display:flex;flex-direction:column;align-items:center}.info-p{width:248px;margin-bottom:10px;color:#2d9643;font-weight:700}.info-p span{color:#2d9643;font-size:14px;font-weight:700}#p1-n{font-size:20px;font-weight:700;line-height:1.2;color:#0f172a}.bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #2d9643;border-radius:16px;position:relative;background:#fff}.g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}.s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}.s{background:#2d9643;border:3px solid #2d9643;color:#fff;font-weight:700;cursor:pointer;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}.s.selected{background:#f59e0b!important;border:3px solid #d97706!important;color:#fff!important;transform:scale(1.12);box-shadow:0 0 14px rgba(245,158,11,.6);z-index:10}.s.mine{background:#1e40af!important;border:3px solid #1d4ed8!important;color:#fff!important;pointer-events:none;box-shadow:0 4px 12px rgba(30,64,175,.35);font-size:14px;gap:2px}.s.lt{background:#123B1A;border-color:#123B1A;pointer-events:none}.s.white{background:#fff!important;border:3px solid #cbd5e1!important;color:transparent!important;pointer-events:none}.s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #2d9643;transition:border-color .15s ease}.s.selected::after{border-color:#d97706}.s.mine::after{border-color:#1d4ed8}.s.lt::after{border-color:#123B1A}.s.white::after{border-color:#cbd5e1}.e{pointer-events:none}#btn{width:112px;height:54px;background:#2d9643;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px}#btn:disabled{opacity:.6;cursor:not-allowed}#cbx{position:absolute;top:60px;left:100%;width:40px;height:122px;background:#2d9643;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}#ctx{transform:rotate(-90deg);font-size:18px;white-space:nowrap}#leg{position:absolute;bottom:0;left:calc(100% + 3px);width:40px;height:540px;background:#fff;border:none;box-shadow:none;color:#0f172a;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden}#ltx{transform:rotate(-90deg);font-size:18px;white-space:nowrap;display:flex;align-items:center;justify-content:space-around;gap:24px;color:#0f172a;width:540px;height:40px;text-transform:uppercase;letter-spacing:.5px}.l-item{display:flex;align-items:center;gap:10px;line-height:1}.mp{width:28px;height:28px;border-radius:6px;position:relative;display:inline-block;flex-shrink:0}.mp.l-ok{background:#2d9643;border:2px solid #2d9643}.mp.l-sel{background:#f59e0b;border:2px solid #d97706}.mp.l-mine{background:#1e40af;border:2px solid #1d4ed8}.mp::after{content:"";position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:16px;height:5px;border-radius:3px;background:#fff;border:1.5px solid #2d9643}.mp.l-sel::after{border-color:#d97706}.mp.l-mine::after{border-color:#1d4ed8}#fb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}#fb.s-ok{background:#1e40af;display:flex}#fb.s-err{background:#ef4444;display:flex}#fb h1{font-size:34px;margin:0;font-weight:700;letter-spacing:-.5px}#fb p{font-size:20px;margin:15px 0 30px;opacity:.9;font-weight:400}.fb-num{font-size:110px;font-weight:800;margin-bottom:20px}@media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}.bc{margin:0 auto}}
+#w{display:flex;flex-direction:column;align-items:center;margin-top:10px}.map-outer{display:flex;flex-direction:column;align-items:center}.info-p{width:248px;margin-bottom:10px;color:#2d9643;font-weight:700}.info-p span{color:#2d9643;font-size:14px;font-weight:700}#p1-n{font-size:20px;font-weight:700;line-height:1.2;color:#0f172a}.bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #2d9643;border-radius:16px;position:relative;background:#fff}.g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}.s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}.s{background:#2d9643;border:3px solid #2d9643;color:#fff;font-weight:700;cursor:pointer;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}.s.selected{background:#f59e0b!important;border:3px solid #d97706!important;color:#fff!important;transform:scale(1.12);box-shadow:0 0 14px rgba(245,158,11,.6);z-index:10}.s.mine{background:#1e40af!important;border:3px solid #1d4ed8!important;color:#fff!important;pointer-events:none;box-shadow:0 4px 12px rgba(30,64,175,.35);font-size:14px;gap:2px}.s.lt{background:#123B1A;border-color:#123B1A;pointer-events:none}.s.white{background:#fff!important;border:3px solid #cbd5e1!important;color:transparent!important;pointer-events:none}.s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #2d9643;transition:border-color .15s ease}.s.selected::after{border-color:#d97706}.s.mine::after{border-color:#1d4ed8}.s.lt::after{border-color:#123B1A}.s.white::after{border-color:#cbd5e1}.e{pointer-events:none}#fb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}#fb.s-ok{background:#1e40af;display:flex}#fb.s-err{background:#ef4444;display:flex}#fb h1{font-size:34px;margin:0;font-weight:700;letter-spacing:-.5px}#fb p{font-size:20px;margin:15px 0 30px;opacity:.9;font-weight:400}.fb-num{font-size:110px;font-weight:800;margin-bottom:20px}@media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}.bc{margin:0 auto}}
 </style>
 </head>
 <body>
@@ -30,7 +30,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direc
 <div id="h"><b>Planner</b></div>
 
 <div class="scanner-container">
-  <input type="number" id="txtIngresso" placeholder="Nº do Ingresso (ex: 10)" autocomplete="off">
+  <input type="text" id="txtIngresso" placeholder="Cole ou digite o código/número" autocomplete="off">
   <button class="btn-cam" id="btnCam" onclick="toggleCamera()">📸 Ligar Câmera</button>
   <div id="reader"></div>
 </div>
@@ -55,7 +55,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direc
 </div>
 
 <script>
-// Dados locais embutidos do ônibus AAL
+// Lista atualizada contendo o número do ingresso (ex: "26") E opcionalmente o código exato do QR Code
 const passageiros = [
   {"poltrona": 1, "nome": "Alicia Tomazela", "ingresso": "10"},
   {"poltrona": 2, "nome": "Pietra Machado Bertholetti", "ingresso": "12"},
@@ -96,7 +96,7 @@ const passageiros = [
   {"poltrona": 37, "nome": "Antonia Gabriela Barbosa Francisco", "ingresso": "32"},
   {"poltrona": 38, "nome": "Bianca Vitoria Alves dos Santos", "ingresso": "24"},
   {"poltrona": 39, "nome": "Otavio Venancio Ferreira da Silva", "ingresso": "60"},
-  {"poltrona": 40, "nome": "Heloisa Beatriz Fincolo", "ingresso": "26"},
+  {"poltrona": 40, "nome": "Heloisa Beatriz Fincolo", "ingresso": "26", "qrcode": "KBjHS-AQ2uyaZUT-zZFq"},
   {"poltrona": 41, "nome": "Rodrigo dos Santos Silva", "ingresso": "8"},
   {"poltrona": 42, "nome": "Sophia Emanuelly de Oliveira Pires", "ingresso": "28"}
 ];
@@ -117,7 +117,6 @@ const layoutMap = [
 
 function desenharMapa() {
   const bc = document.querySelector('.bc');
-  // Remove grade antiga se houver
   document.querySelector('.g')?.remove();
 
   const g = document.createElement('div');
@@ -129,12 +128,11 @@ function desenharMapa() {
       if (v === null) {
         e.className = 'e';
       } else {
-        e.className = 's'; // Inicia verde (livre)
+        e.className = 's';
         const idStr = v.toString().padStart(2, "0");
         e.dataset.s = idStr;
         e.textContent = idStr;
 
-        // Verifica se já teve check-in salvo no celular
         if (localStorage.getItem(`checkin_${v}`) === 'ok') {
           e.classList.add('mine');
           e.innerHTML = `<span>${idStr}</span><small style="margin-left:2px;font-size:12px">✓</small>`;
@@ -146,43 +144,44 @@ function desenharMapa() {
   bc.appendChild(g);
 }
 
-// Processar número do ingresso digitado ou lido pela câmera
-function processarIngresso(numIngresso) {
-  numIngresso = numIngresso.trim().replace(/\D/g, "");
-  if (!numIngresso) return;
+// Processar o texto lido pela câmera ou digitado
+function processarIngresso(textoLido) {
+  textoLido = textoLido.trim();
+  if (!textoLido) return;
 
-  const aluno = passageiros.find(p => p.ingresso.toString() === numIngresso);
+  // Tenta encontrar o aluno comparando com o código do qrcode exato OU com o número do ingresso
+  const aluno = passageiros.find(p => {
+    let qrcodeMatch = p.qrcode && p.qrcode.toLowerCase() === textoLido.toLowerCase();
+    let numIngressoMatch = p.ingresso.toString() === textoLido.replace(/\D/g, "");
+    return qrcodeMatch || numIngressoMatch;
+  });
 
   if (aluno) {
     const seatId = aluno.poltrona.toString().padStart(2, "0");
     const seatEl = document.querySelector(`[data-s="${seatId}"]`);
 
     if (seatEl) {
-      seatEl.classList.add('mine'); // Fica azul escuro igual a "Sua Poltrona" do seu layout original
+      seatEl.classList.add('mine');
       seatEl.innerHTML = `<span>${seatId}</span><small style="margin-left:2px;font-size:12px">✓</small>`;
       localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
 
-      // Atualiza o topo com o nome do aluno
       document.getElementById('p1-n').textContent = aluno.nome;
       
-      // Feedback visual rápido de sucesso
       document.getElementById('txtIngresso').style.borderColor = '#1e40af';
       setTimeout(() => { document.getElementById('txtIngresso').style.borderColor = '#cbd5e1'; }, 400);
     }
   } else {
-    alert(`❌ Ingresso nº ${numIngresso} não encontrado!`);
+    alert(`❌ Ingresso não encontrado para o código: "${textoLido}"`);
   }
   document.getElementById('txtIngresso').value = '';
 }
 
-// Evento de tecla Enter no input de texto
 document.getElementById('txtIngresso').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
     processarIngresso(this.value);
   }
 });
 
-// Configuração da Câmera (Html5Qrcode)
 let html5QrCode = null;
 let cameraLigada = false;
 
@@ -197,16 +196,12 @@ function toggleCamera() {
 
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
-      { facingMode: "environment" }, // Usa a câmera traseira do celular
+      { facingMode: "environment" },
       { fps: 10, qrbox: { width: 200, height: 200 } },
       (decodedText) => {
-        // Sucesso na leitura do QR Code/Código
         processarIngresso(decodedText);
-        // Opcional: para desligar após ler 1: toggleCamera();
       },
-      (errorMessage) => {
-        // Erros de leitura quadro a quadro são normais, ignorar
-      }
+      (errorMessage) => {}
     ).catch(err => {
       alert("Erro ao iniciar a câmera: " + err);
       toggleCamera();
@@ -222,7 +217,6 @@ function toggleCamera() {
   }
 }
 
-// Inicializa o mapa ao carregar a página
 desenharMapa();
 </script>
 </body>
