@@ -154,8 +154,13 @@ function processarIngresso(textoLido) {
   textoLido = textoLido.trim();
   if (!textoLido) return;
 
+  // Limpa hífens das pontas caso a câmera corte na leitura
+  const lidoLimpo = textoLido.replace(/^-+|-+$/g, "").toLowerCase();
+
   const aluno = passageiros.find(p => {
-    let qrcodeMatch = p.qrcode && p.qrcode.toLowerCase() === textoLido.toLowerCase();
+    if (!p.qrcode) return false;
+    const qrcodeCadastrado = p.qrcode.replace(/^-+|-+$/g, "").toLowerCase();
+    let qrcodeMatch = qrcodeCadastrado === lidoLimpo || p.qrcode.toLowerCase() === textoLido.toLowerCase();
     let numIngressoMatch = p.ingresso && p.ingresso.toString() === textoLido.replace(/\D/g, "");
     return qrcodeMatch || numIngressoMatch;
   });
