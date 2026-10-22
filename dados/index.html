@@ -13,24 +13,24 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none;align-items:center}
 
-/* Cabeçalho original Planner */
+/* Cabeçalho exato do código original */
 #h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
-#h b{font-size:28px;font-weight:800;color:#2d9643;width:248px;letter-spacing:-.5px;text-align:center;}
+#h b{font-size:28px;font-weight:800;color:#2d9643;width:248px;letter-spacing:-.5px}
 
-/* Caixa da câmera bem compacta com espaçamento ajustado */
-.scanner-container { margin-top: 66px; width: 90%; max-width: 260px; background: #fff; padding: 6px; border-radius: 10px; text-align: center; z-index: 100; margin-bottom: 4px; }
-#reader { width: 100% !important; border: none !important; border-radius: 8px; overflow: hidden; display: none; margin-bottom: 4px; background: #000; }
+/* Caixa da câmera com espaçamento adequado entre o botão e o leitor */
+.scanner-container { margin-top: 68px; width: 90%; max-width: 260px; background: #fff; padding: 4px; border-radius: 10px; text-align: center; z-index: 100; margin-bottom: 12px; }
+.btn-cam { background: #1e40af; color: #fff; border: none; padding: 10px 14px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 12px; }
+#reader { width: 100% !important; border: none !important; border-radius: 8px; overflow: hidden; display: none; background: #000; }
 #reader video { width: 100% !important; border-radius: 8px; object-fit: cover; }
-.btn-cam { background: #1e40af; color: #fff; border: none; padding: 6px 10px; font-size: 13px; font-weight: 700; border-radius: 6px; cursor: pointer; width: 100%; }
 
 #w{display:flex;flex-direction:column;align-items:center;margin-top:2px}
 .map-outer{display:flex;flex-direction:column;align-items:flex-start}
 
-/* Nome do aluno alinhado exatamente com a borda esquerda do mapa (.bc) */
-.info-p{width:280px;margin-bottom:4px;color:#0f172a;font-weight:700;text-align:left;padding-left:4px;}
-#p1-n{font-size:16px;font-weight:700;line-height:1.2;color:#0f172a;margin-top:2px}
+/* Nome do aluno alinhado estritamente à borda esquerda do mapa (.bc) */
+.info-p{width:280px;margin-bottom:6px;color:#0f172a;font-weight:700;text-align:left;padding-left:0px;}
+#p1-n{font-size:18px;font-weight:700;line-height:1.2;color:#0f172a;margin-top:2px}
 
-.bc{transform:scale(.78);transform-origin:top center;padding:15px;border:3px solid #2d9643;border-radius:16px;position:relative;background:#fff;margin-left:0;}
+.bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #2d9643;border-radius:16px;position:relative;background:#fff;margin-left:0;}
 .g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}
 .s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}
 .s{background:#2d9643;border:3px solid #2d9643;color:#fff;font-weight:700;pointer-events:none}
@@ -40,8 +40,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direc
 .s.mine::after{border-color:#1d4ed8}
 .e{pointer-events:none}
 
-/* Botão Limpar */
-#btn{width:112px;height:48px;background:#ef4444;color:#fff;border:none;font-size:15px;font-weight:700;border-radius:10px;cursor:pointer;position:absolute;bottom:-56px;right:15px;box-shadow:0 4px 10px rgba(239,68,68,0.3)}
+/* Botão Limpar no lugar do Confirmar */
+#btn{width:112px;height:54px;background:#ef4444;color:#fff;border:none;font-size:16px;font-weight:700;border-radius:12px;cursor:pointer;position:absolute;bottom:-64px;right:20px;box-shadow:0 4px 10px rgba(239,68,68,0.3)}
 #btn:active{transform:scale(0.95)}
 </style>
 </head>
