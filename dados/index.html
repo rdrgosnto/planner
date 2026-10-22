@@ -7,30 +7,35 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- Biblioteca para leitura de QR Code/Código de Barras via Câmera -->
+<!-- Biblioteca de leitura de QR Code -->
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#f8fafc;-webkit-user-select:none;user-select:none;align-items:center}
 #h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
-#h b{font-size:28px;font-weight:800;color:#2d9643;width:248px;letter-spacing:-.5px}
+#h b{font-size:24px;font-weight:800;color:#2d9643;letter-spacing:-.5px}
 
-/* Caixa de controle do leitor e câmera */
-.scanner-container { margin-top: 70px; width: 90%; max-width: 320px; background: #fff; padding: 12px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); text-align: center; z-index: 100; margin-bottom: 10px; }
-.scanner-container input { width: 100%; padding: 10px; font-size: 16px; border: 2px solid #cbd5e1; border-radius: 8px; text-align: center; outline: none; margin-bottom: 8px; }
-.scanner-container input:focus { border-color: #2d9643; }
-#reader { width: 100%; border-radius: 8px; overflow: hidden; display: none; margin-bottom: 8px; }
-.btn-cam { background: #1e40af; color: #fff; border: none; padding: 8px 12px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; }
+/* Caixa compacta para a câmera e feedback */
+.scanner-container { margin-top: 64px; width: 90%; max-width: 280px; background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); text-align: center; z-index: 100; margin-bottom: 8px; }
+#reader { width: 100%; max-height: 180px; border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
+.btn-cam { background: #1e40af; color: #fff; border: none; padding: 6px 10px; font-size: 13px; font-weight: 700; border-radius: 6px; cursor: pointer; width: 100%; margin-bottom: 4px; }
 
-#w{display:flex;flex-direction:column;align-items:center;margin-top:10px}.map-outer{display:flex;flex-direction:column;align-items:center}.info-p{width:248px;margin-bottom:10px;color:#2d9643;font-weight:700}.info-p span{color:#2d9643;font-size:14px;font-weight:700}#p1-n{font-size:20px;font-weight:700;line-height:1.2;color:#0f172a}.bc{transform:scale(.8);transform-origin:top center;padding:20px;border:3px solid #2d9643;border-radius:16px;position:relative;background:#fff}.g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}.s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}.s{background:#2d9643;border:3px solid #2d9643;color:#fff;font-weight:700;cursor:pointer;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}.s.selected{background:#f59e0b!important;border:3px solid #d97706!important;color:#fff!important;transform:scale(1.12);box-shadow:0 0 14px rgba(245,158,11,.6);z-index:10}.s.mine{background:#1e40af!important;border:3px solid #1d4ed8!important;color:#fff!important;pointer-events:none;box-shadow:0 4px 12px rgba(30,64,175,.35);font-size:14px;gap:2px}.s.lt{background:#123B1A;border-color:#123B1A;pointer-events:none}.s.white{background:#fff!important;border:3px solid #cbd5e1!important;color:transparent!important;pointer-events:none}.s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #2d9643;transition:border-color .15s ease}.s.selected::after{border-color:#d97706}.s.mine::after{border-color:#1d4ed8}.s.lt::after{border-color:#123B1A}.s.white::after{border-color:#cbd5e1}.e{pointer-events:none}#fb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}#fb.s-ok{background:#1e40af;display:flex}#fb.s-err{background:#ef4444;display:flex}#fb h1{font-size:34px;margin:0;font-weight:700;letter-spacing:-.5px}#fb p{font-size:20px;margin:15px 0 30px;opacity:.9;font-weight:400}.fb-num{font-size:110px;font-weight:800;margin-bottom:20px}@media(min-width:800px){#h{justify-content:flex-start}#h b{padding-left:40px}.bc{margin:0 auto}}
+#w{display:flex;flex-direction:column;align-items:center;margin-top:5px}.map-outer{display:flex;flex-direction:column;align-items:center}.info-p{width:260px;margin-bottom:6px;color:#2d9643;font-weight:700;text-align:center}.info-p span{color:#64748b;font-size:12px;font-weight:600;display:block}#p1-n{font-size:16px;font-weight:700;line-height:1.2;color:#0f172a;margin-top:2px}
+
+.bc{transform:scale(.78);transform-origin:top center;padding:15px;border:3px solid #2d9643;border-radius:16px;position:relative;background:#fff}.g{display:grid;grid-template-columns:repeat(5,54px);gap:14px 10px;justify-content:center}.s,.e{width:54px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:12px;position:relative}.s{background:#2d9643;border:3px solid #2d9643;color:#fff;font-weight:700;pointer-events:none}.s.mine{background:#1e40af!important;border:3px solid #1d4ed8!important;color:#fff!important;box-shadow:0 4px 12px rgba(30,64,175,.35);font-size:14px;gap:2px}.s.white{background:#fff!important;border:3px solid #cbd5e1!important;color:transparent!important;pointer-events:none}.s::after{content:"";position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:32px;height:14px;border-radius:8px;background:#fff;border:3px solid #2d9643}.s.mine::after{border-color:#1d4ed8}.e{pointer-events:none}
+
+/* Botão Limpar no lugar do botão original */
+#btn{width:120px;height:48px;background:#ef4444;color:#fff;border:none;font-size:15px;font-weight:700;border-radius:10px;cursor:pointer;position:absolute;bottom:-56px;right:10px;box-align:center;box-shadow:0 4px 10px rgba(239,68,68,0.3)}
+#btn:active{transform:scale(0.95)}
+
+#fb{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:3000;color:#fff;text-align:center;padding:20px}#fb.s-ok{background:#1e40af;display:flex}#fb.s-err{background:#ef4444;display:flex}#fb h1{font-size:28px;margin:0;font-weight:700}#fb p{font-size:18px;margin:10px 0 20px}.fb-num{font-size:90px;font-weight:800;margin-bottom:10px}
 </style>
 </head>
 <body>
 
-<div id="h"><b>Planner</b></div>
+<div id="h"><b>Check-in Expresso</b></div>
 
 <div class="scanner-container">
-  <input type="text" id="txtIngresso" placeholder="Cole ou digite o código/número" autocomplete="off">
   <button class="btn-cam" id="btnCam" onclick="toggleCamera()">📸 Ligar Câmera</button>
   <div id="reader"></div>
 </div>
@@ -39,23 +44,20 @@ body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direc
 
 <div id="w">
   <div class="map-outer">
-    <div class="info-p"><span>Último Check-in</span><div id="p1-n">Nenhum</div></div>
+    <div class="info-p">
+      <span>Check-in:</span>
+      <div id="p1-n">Aguardando leitura...</div>
+    </div>
     <div class="bc">
-      <div id="cbx"><div id="ctx">AAL</div></div>
-      <div id="leg">
-        <div id="ltx">
-          <div class="l-item"><i class="mp l-ok"></i><span>LIVRE</span></div>
-          <div class="l-item"><i class="mp l-sel"></i><span>SELECIONADA</span></div>
-          <div class="l-item"><i class="mp l-mine"></i><span>CHECK-IN OK</span></div>
-        </div>
-      </div>
-      <button id="btn" style="display:none"></button>
+      <div id="wid-div"></div>
+      <!-- Botão LIMPAR no lugar do Confirmar -->
+      <button id="btn" onclick="limparCheckins()">LIMPAR</button>
     </div>
   </div>
 </div>
 
 <script>
-// Lista atualizada contendo o número do ingresso (ex: "26") E opcionalmente o código exato do QR Code
+// Base de dados com os passageiros, poltronas e QR codes
 const passageiros = [
   {"poltrona": 1, "nome": "Alicia Tomazela", "ingresso": "10"},
   {"poltrona": 2, "nome": "Pietra Machado Bertholetti", "ingresso": "12"},
@@ -133,6 +135,7 @@ function desenharMapa() {
         e.dataset.s = idStr;
         e.textContent = idStr;
 
+        // Mantém em azul se já foi feito check-in
         if (localStorage.getItem(`checkin_${v}`) === 'ok') {
           e.classList.add('mine');
           e.innerHTML = `<span>${idStr}</span><small style="margin-left:2px;font-size:12px">✓</small>`;
@@ -141,15 +144,14 @@ function desenharMapa() {
       g.appendChild(e);
     });
   });
-  bc.appendChild(g);
+  bc.insertBefore(g, document.getElementById('btn'));
 }
 
-// Processar o texto lido pela câmera ou digitado
+// Processa o ingresso lido sequencialmente pela câmera
 function processarIngresso(textoLido) {
   textoLido = textoLido.trim();
   if (!textoLido) return;
 
-  // Tenta encontrar o aluno comparando com o código do qrcode exato OU com o número do ingresso
   const aluno = passageiros.find(p => {
     let qrcodeMatch = p.qrcode && p.qrcode.toLowerCase() === textoLido.toLowerCase();
     let numIngressoMatch = p.ingresso.toString() === textoLido.replace(/\D/g, "");
@@ -165,23 +167,27 @@ function processarIngresso(textoLido) {
       seatEl.innerHTML = `<span>${seatId}</span><small style="margin-left:2px;font-size:12px">✓</small>`;
       localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
 
+      // Atualiza o topo com o nome limpo do aluno
       document.getElementById('p1-n').textContent = aluno.nome;
-      
-      document.getElementById('txtIngresso').style.borderColor = '#1e40af';
-      setTimeout(() => { document.getElementById('txtIngresso').style.borderColor = '#cbd5e1'; }, 400);
     }
   } else {
-    alert(`❌ Ingresso não encontrado para o código: "${textoLido}"`);
+    // Feedback rápido se não encontrar
+    document.getElementById('p1-n').textContent = "⚠️ Não encontrado: " + textoLido;
   }
-  document.getElementById('txtIngresso').value = '';
 }
 
-document.getElementById('txtIngresso').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    processarIngresso(this.value);
+// Botão Limpar para paradas no posto
+function limparCheckins() {
+  if (confirm("Deseja limpar todos os check-ins realizados?")) {
+    passageiros.forEach(p => {
+      localStorage.removeItem(`checkin_${p.poltrona}`);
+    });
+    document.getElementById('p1-n').textContent = "Aguardando leitura...";
+    desenharMapa();
   }
-});
+}
 
+// Controle da Câmera (menor e compacta)
 let html5QrCode = null;
 let cameraLigada = false;
 
@@ -197,7 +203,7 @@ function toggleCamera() {
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 200, height: 200 } },
+      { fps: 15, qrbox: { width: 150, height: 150 } },
       (decodedText) => {
         processarIngresso(decodedText);
       },
