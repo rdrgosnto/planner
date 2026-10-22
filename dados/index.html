@@ -14,7 +14,7 @@
   
   .bus-grid { display: grid; grid-template-columns: repeat(5, 55px); gap: 10px; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
   .seat { width: 55px; height: 55px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; font-size: 14px; background: #2d9643; color: #fff; border: 2px solid #237534; cursor: pointer; transition: all 0.2s; }
-  .seat.checked { background: #ef4444; border-color: #dc2626; } /* Vermelho para check-in realizado */
+  .seat.checked { background: #ef4444 !important; border-color: #dc2626 !important; color: #fff !important; } /* Vermelho para check-in realizado */
   .seat.empty { background: #cbd5e1; border-color: #94a3b8; pointer-events: none; color: transparent; }
   .seat span { font-size: 10px; font-weight: 500; }
   
@@ -29,28 +29,29 @@
 
   <h2>Check-in Expresso</h2>
   <div class="scanner-box">
-    <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b;">Digite o número do ingresso (ex: 3, 42) e dê Enter:</p>
+    <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b;">Digite o número do ingresso (ex: 10, 42) e dê Enter:</p>
     <input type="number" id="inputIngresso" placeholder="Nº do Ingresso" autofocus autocomplete="off">
   </div>
 
   <div class="bus-grid" id="busGrid"></div>
 
   <div class="legend">
-    <div class="legend-item"><div class="box-l l-green"></div> Pendente</div>
+    <div class="legend-item"><div class="box-l l-green"></div> Pendente (Livre)</div>
     <div class="legend-item"><div class="box-l l-red"></div> Check-in OK</div>
   </div>
 
 <script>
 let passageiros = [];
 
-// Carrega os dados do arquivo JSON local ou cache
+// Carrega os dados apontando para a pasta 'dados/' correta
 async function carregarDados() {
   try {
-    let res = await fetch('dados_onibus.json');
+    let res = await fetch('dados/dados.json');
+    if (!res.ok) throw new Error("Erro ao carregar arquivo");
     passageiros = await res.json();
     desenharMapa();
   } catch (e) {
-    alert("Erro ao carregar o arquivo dados_onibus.json");
+    alert("Erro ao carregar o arquivo dados/dados.json. Verifique se o caminho está correto.");
   }
 }
 
@@ -79,10 +80,10 @@ function desenharMapa() {
       if (seatNum === null) {
         div.className = 'seat empty';
       } else {
-        div.className = 'seat';
+        div.className = 'seat'; // Inicia verde por padrão
         div.id = `seat-${seatNum}`;
         
-        // Verifica status salvo no navegador
+        // Restaura check-ins salvos anteriormente no navegador do celular
         const statusCheck = localStorage.getItem(`checkin_${seatNum}`);
         if (statusCheck === 'ok') {
           div.classList.add('checked');
@@ -105,21 +106,24 @@ input.addEventListener('keydown', function(e) {
     const numIngresso = input.value.trim();
     if (!numIngresso) return;
 
-    // Busca o aluno pelo número do ingresso
-    const aluno = passageiros.find(p => p.ingresso === numIngresso);
+    // Busca o aluno pelo número exato do ingresso (ex: "10")
+    const aluno = passageiros.find(p => p.ingresso.toString() === numIngresso.toString());
 
     if (aluno) {
       const seatDiv = document.getElementById(`seat-${aluno.poltrona}`);
       if (seatDiv) {
-        seatDiv.classList.add('checked');
+        seatDiv.classList.add('checked'); // Fica vermelho na hora
         localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
-        alert(`✅ Check-in OK!\nPoltrona: ${aluno.poltrona}\nAluno: ${aluno.nome}`);
+        
+        // Feedback visual rápido
+        input.style.borderColor = '#2d9643';
+        setTimeout(() => { input.style.borderColor = '#cbd5e1'; }, 300);
       }
     } else {
-      alert(`❌ Ingresso nº ${numIngresso} não encontrado ou inválido!`);
+      alert(`❌ Ingresso nº ${numIngresso} não encontrado!`);
     }
 
-    input.value = '';
+    input.value = ''; // Limpa para o próximo ingresso
   }
 });
 
