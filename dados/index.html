@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Check-in Rápido - Ônibus</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; padding-top: 20px; }
+  h2 { color: #0f172a; margin-bottom: 5px; }
+  .scanner-box { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; width: 90%; max-width: 400px; text-align: center; }
+  .scanner-box input { width: 100%; padding: 12px; font-size: 18px; border: 2px solid #cbd5e1; border-radius: 8px; text-align: center; outline: none; }
+  .scanner-box input:focus { border-color: #2d9643; }
+  
+  .bus-grid { display: grid; grid-template-columns: repeat(5, 55px); gap: 10px; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+  .seat { width: 55px; height: 55px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; font-size: 14px; background: #2d9643; color: #fff; border: 2px solid #237534; cursor: pointer; transition: all 0.2s; }
+  .seat.checked { background: #ef4444; border-color: #dc2626; } /* Vermelho para check-in realizado */
+  .seat.empty { background: #cbd5e1; border-color: #94a3b8; pointer-events: none; color: transparent; }
+  .seat span { font-size: 10px; font-weight: 500; }
+  
+  .legend { display: flex; gap: 15px; margin-top: 20px; font-size: 14px; font-weight: 600; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .box-l { width: 20px; height: 20px; border-radius: 4px; }
+  .l-green { background: #2d9643; }
+  .l-red { background: #ef4444; }
+</style>
+</head>
+<body>
+
+  <h2>Check-in Expresso</h2>
+  <div class="scanner-box">
+    <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b;">Digite o número do ingresso (ex: 3, 42) e dê Enter:</p>
+    <input type="number" id="inputIngresso" placeholder="Nº do Ingresso" autofocus autocomplete="off">
+  </div>
+
+  <div class="bus-grid" id="busGrid"></div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="box-l l-green"></div> Pendente</div>
+    <div class="legend-item"><div class="box-l l-red"></div> Check-in OK</div>
+  </div>
+
+<script>
+let passageiros = [];
+
+// Carrega os dados do arquivo JSON local ou cache
+async function carregarDados() {
+  try {
+    let res = await fetch('dados_onibus.json');
+    passageiros = await res.json();
+    desenharMapa();
+  } catch (e) {
+    alert("Erro ao carregar o arquivo dados_onibus.json");
+  }
+}
+
+// Layout fixo das 42 poltronas do seu ônibus
+const layoutMap = [
+  [ 1, 2, null, 4, 3 ],
+  [ 5, 6, null, 8, 7 ],
+  [ 9, 10, null, 12, 11 ],
+  [ 13, 14, null, 16, 15 ],
+  [ 17, 18, null, 20, 19 ],
+  [ 21, 22, null, 24, 23 ],
+  [ 25, 26, null, 28, 27 ],
+  [ 29, 30, null, 32, 31 ],
+  [ 33, 34, null, 36, 35 ],
+  [ 37, 38, null, 40, 39 ],
+  [ 41, 42, null, null, null ]
+];
+
+function desenharMapa() {
+  const grid = document.getElementById('busGrid');
+  grid.innerHTML = '';
+
+  layoutMap.forEach(row => {
+    row.forEach(seatNum => {
+      const div = document.createElement('div');
+      if (seatNum === null) {
+        div.className = 'seat empty';
+      } else {
+        div.className = 'seat';
+        div.id = `seat-${seatNum}`;
+        
+        // Verifica status salvo no navegador
+        const statusCheck = localStorage.getItem(`checkin_${seatNum}`);
+        if (statusCheck === 'ok') {
+          div.classList.add('checked');
+        }
+
+        const pData = passageiros.find(p => p.poltrona === seatNum);
+        const nomeCurto = pData && pData.nome ? pData.nome.split(' ')[0] : '';
+        
+        div.innerHTML = `${seatNum}<span>${nomeCurto}</span>`;
+      }
+      grid.appendChild(div);
+    });
+  });
+}
+
+// Lógica de leitura do input de ingresso
+const input = document.getElementById('inputIngresso');
+input.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const numIngresso = input.value.trim();
+    if (!numIngresso) return;
+
+    // Busca o aluno pelo número do ingresso
+    const aluno = passageiros.find(p => p.ingresso === numIngresso);
+
+    if (aluno) {
+      const seatDiv = document.getElementById(`seat-${aluno.poltrona}`);
+      if (seatDiv) {
+        seatDiv.classList.add('checked');
+        localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
+        alert(`✅ Check-in OK!\nPoltrona: ${aluno.poltrona}\nAluno: ${aluno.nome}`);
+      }
+    } else {
+      alert(`❌ Ingresso nº ${numIngresso} não encontrado ou inválido!`);
+    }
+
+    input.value = '';
+  }
+});
+
+carregarDados();
+</script>
+</body>
+</html>
