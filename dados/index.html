@@ -13,9 +13,9 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direction:column;min-height:100vh;background:#fff;-webkit-user-select:none;user-select:none;align-items:center}
 
-/* Cabeçalho onde o nome do aluno vai aparecer no lugar de "Planner" */
-#h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
-#h b{font-size:20px;font-weight:800;color:#2d9643;width:90%;max-width:320px;letter-spacing:-.5px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* Cabeçalho alinhado à esquerda como no código original */
+#h{position:fixed;top:0;width:100%;height:54px;background:#fff;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:flex-start;padding-left:40px;transition:background-color 0.3s ease, color 0.3s ease;}
+#h b{font-size:28px;font-weight:800;color:#2d9643;letter-spacing:-.5px;transition:color 0.3s ease;}
 
 /* Caixa da câmera */
 .scanner-container { margin-top: 68px; width: 90%; max-width: 260px; background: #fff; padding: 4px; border-radius: 10px; text-align: center; z-index: 100; margin-bottom: 12px; }
@@ -43,7 +43,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;margin:0;display:flex;flex-direc
 </head>
 <body>
 
-<!-- O nome do aluno agora aparece diretamente aqui no topo -->
 <div id="h"><b id="p1-n">Planner</b></div>
 
 <div class="scanner-container">
@@ -149,6 +148,8 @@ function desenharMapa() {
   bc.insertBefore(g, document.getElementById('btn'));
 }
 
+let timeoutFeedback = null;
+
 function processarIngresso(textoLido) {
   textoLido = textoLido.trim();
   if (!textoLido) return;
@@ -159,6 +160,9 @@ function processarIngresso(textoLido) {
     return qrcodeMatch || numIngressoMatch;
   });
 
+  const header = document.getElementById('h');
+  const title = document.getElementById('p1-n');
+
   if (aluno) {
     const seatId = aluno.poltrona.toString().padStart(2, "0");
     const seatEl = document.querySelector(`[data-s="${seatId}"]`);
@@ -168,11 +172,29 @@ function processarIngresso(textoLido) {
       seatEl.innerHTML = `<span>${seatId}</span><small style="margin-left:2px;font-size:12px">✓</small>`;
       localStorage.setItem(`checkin_${aluno.poltrona}`, 'ok');
 
-      // Substitui o texto "Planner" no cabeçalho pelo nome do aluno
-      document.getElementById('p1-n').textContent = aluno.nome;
+      // Barra fica verde e texto branco com o nome do aluno
+      header.style.backgroundColor = '#2d9643';
+      title.style.color = '#ffffff';
+      title.textContent = aluno.nome;
+
+      clearTimeout(timeoutFeedback);
+      timeoutFeedback = setTimeout(() => {
+        header.style.backgroundColor = '#fff';
+        title.style.color = '#2d9643';
+        title.textContent = 'Planner';
+      }, 3000);
     }
   } else {
-    document.getElementById('p1-n').textContent = "⚠️ Não encontrado";
+    header.style.backgroundColor = '#ef4444';
+    title.style.color = '#ffffff';
+    title.textContent = '⚠️ Não encontrado';
+
+    clearTimeout(timeoutFeedback);
+    timeoutFeedback = setTimeout(() => {
+      header.style.backgroundColor = '#fff';
+      title.style.color = '#2d9643';
+      title.textContent = 'Planner';
+    }, 2500);
   }
 }
 
@@ -181,7 +203,11 @@ function limparCheckins() {
     passageiros.forEach(p => {
       localStorage.removeItem(`checkin_${p.poltrona}`);
     });
-    document.getElementById('p1-n').textContent = "Planner";
+    const header = document.getElementById('h');
+    const title = document.getElementById('p1-n');
+    header.style.backgroundColor = '#fff';
+    title.style.color = '#2d9643';
+    title.textContent = "Planner";
     desenharMapa();
   }
 }
